@@ -26,7 +26,7 @@ const groups=[
     {id:'usdkRW',no:12,name:'원/달러 환율',ticker:'KRW=X',unit:'fx',suffix:'원',decimals:2},
     {id:'wti',no:13,name:'WTI 유가',ticker:'CL=F',unit:'commodity',suffix:'$',decimals:2},
     {id:'brent',no:14,name:'브렌트유 유가',ticker:'BZ=F',unit:'commodity',suffix:'$',decimals:2},
-    {id:'vix',no:15,name:'VIX',ticker:'^VIX',unit:'index',decimals:2},
+    {id:'vix',no:15,name:'S&P 500 변동성 지수 VIX',ticker:'^VIX',unit:'index',decimals:2},
     {id:'vxn',no:16,name:'나스닥 100 변동성 지수 (VXN)',ticker:'^VXN',unit:'index',decimals:2,percentChart:true}
   ]},
   {label:'국내 증시',items:[
@@ -280,7 +280,7 @@ function makeSummary(){
     {items:[{no:11,id:'dxy',name:'달러인덱스'},{no:12,id:'usdkRW',name:'원/달러'}]},
     {items:[{no:13,id:'wti',name:'WTI 유가'},{no:14,id:'brent',name:'브렌트유'}],after:true},
     {groupTitle:'VIX · S&P 500 Expected Move'},
-    {expectedMoveGroup:{spotId:'sp500',volId:'vix',prefix:'spx',underlyingNote:'S&P 500 기준'},items:[{no:'',id:'vix',name:'VIX',ticker:'^VIX'}],after:true},
+    {expectedMoveGroup:{spotId:'sp500',volId:'vix',prefix:'spx',underlyingNote:'S&P 500 기준'},items:[{no:'',id:'vix',name:'S&P 500 변동성 지수 VIX',ticker:'^VIX'}],after:true},
     {groupTitle:'VXN · Nasdaq Expected Move'},
     {expectedMoveGroup:{spotId:'ndx-index',volId:'vxn',prefix:'ndx',underlyingNote:'Nasdaq 100 (NDX) 기준 · VXN 변동성 적용'},items:[{no:'',id:'vxn',name:'VXN',ticker:'^VXN'}],after:true}
   ];
