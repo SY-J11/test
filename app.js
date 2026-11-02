@@ -10,27 +10,27 @@ const groups=[
     {id:'nasdaq-futures',no:1,name:'나스닥 선물',ticker:'NQ=F',unit:'index',decimals:2,percentChart:true},
     {id:'sp500-futures',no:2,name:'S&P 500 선물',ticker:'ES=F',unit:'index',decimals:2,percentChart:true},
     {id:'sox',no:5,name:'필라델피아 반도체 지수',ticker:'^SOX',unit:'index',percentChart:true},
-    {id:'nvda-m7',no:3,name:'엔비디아',ticker:'NVDA',unit:'stock',percentChart:true},
-    {id:'aapl',no:3,name:'애플',ticker:'AAPL',unit:'stock',percentChart:true},
-    {id:'googl',no:3,name:'알파벳 Class A',ticker:'GOOGL',unit:'stock',percentChart:true},
-    {id:'msft',no:3,name:'마이크로소프트',ticker:'MSFT',unit:'stock',percentChart:true},
-    {id:'amzn',no:3,name:'아마존',ticker:'AMZN',unit:'stock',percentChart:true},
-    {id:'tsla',no:3,name:'테슬라',ticker:'TSLA',unit:'stock',percentChart:true},
-    {id:'meta',no:3,name:'메타',ticker:'META',unit:'stock',percentChart:true}
+    {id:'nvda-m7',no:6,name:'엔비디아',ticker:'NVDA',unit:'stock',percentChart:true},
+    {id:'aapl',no:6,name:'애플',ticker:'AAPL',unit:'stock',percentChart:true},
+    {id:'googl',no:6,name:'알파벳 Class A',ticker:'GOOGL',unit:'stock',percentChart:true},
+    {id:'msft',no:6,name:'마이크로소프트',ticker:'MSFT',unit:'stock',percentChart:true},
+    {id:'amzn',no:6,name:'아마존',ticker:'AMZN',unit:'stock',percentChart:true},
+    {id:'tsla',no:6,name:'테슬라',ticker:'TSLA',unit:'stock',percentChart:true},
+    {id:'meta',no:6,name:'메타',ticker:'META',unit:'stock',percentChart:true}
   ]},
   {label:'금리·환율·원자재',items:[
-    {id:'us2y',no:6,name:'미국 2년물 국채금리',source:'treasury',treasuryField:'BC_2YEAR',unit:'yield',suffix:'%',decimals:3},
-    {id:'us10y',no:7,name:'미국 10년물 국채금리',source:'treasury',treasuryField:'BC_10YEAR',unit:'yield',suffix:'%',decimals:3},
-    {id:'us30y',no:8,name:'미국 30년물 국채금리',source:'treasury',treasuryField:'BC_30YEAR',unit:'yield',suffix:'%',decimals:3},
-    {id:'dxy',no:9,name:'달러인덱스',ticker:'DX-Y.NYB',unit:'index'},
-    {id:'usdkRW',no:10,name:'원/달러 환율',ticker:'KRW=X',unit:'fx',suffix:'원',decimals:2},
-    {id:'wti',no:11,name:'WTI 유가',ticker:'CL=F',unit:'commodity',suffix:'$',decimals:2},
-    {id:'brent',no:12,name:'브렌트유 유가',ticker:'BZ=F',unit:'commodity',suffix:'$',decimals:2},
-    {id:'vix',no:13,name:'VIX',ticker:'^VIX',unit:'index',decimals:2}
+    {id:'us2y',no:8,name:'미국 2년물 국채금리',source:'treasury',treasuryField:'BC_2YEAR',unit:'yield',suffix:'%',decimals:3},
+    {id:'us10y',no:9,name:'미국 10년물 국채금리',source:'treasury',treasuryField:'BC_10YEAR',unit:'yield',suffix:'%',decimals:3},
+    {id:'us30y',no:10,name:'미국 30년물 국채금리',source:'treasury',treasuryField:'BC_30YEAR',unit:'yield',suffix:'%',decimals:3},
+    {id:'dxy',no:11,name:'달러인덱스',ticker:'DX-Y.NYB',unit:'index'},
+    {id:'usdkRW',no:12,name:'원/달러 환율',ticker:'KRW=X',unit:'fx',suffix:'원',decimals:2},
+    {id:'wti',no:13,name:'WTI 유가',ticker:'CL=F',unit:'commodity',suffix:'$',decimals:2},
+    {id:'brent',no:14,name:'브렌트유 유가',ticker:'BZ=F',unit:'commodity',suffix:'$',decimals:2},
+    {id:'vix',no:15,name:'VIX',ticker:'^VIX',unit:'index',decimals:2}
   ]},
   {label:'국내 증시',items:[
-    {id:'kospi200night',no:12,name:'코스피200 야간선물',source:'kredNightFutures',page:'https://kred.dev/ko/kospi-200-night-futures',unit:'futures',decimals:2},
-    {id:'kosdaq150night',no:13,name:'코스닥150 야간선물',source:'kredNightFutures',page:'https://kred.dev/ko/kosdaq-150-night-futures',unit:'futures',decimals:2}
+    {id:'kospi200night',no:3,name:'코스피200 야간선물',source:'kredNightFutures',page:'https://kred.dev/ko/kospi-200-night-futures',unit:'futures',decimals:2},
+    {id:'kosdaq150night',no:4,name:'코스닥150 야간선물',source:'kredNightFutures',page:'https://kred.dev/ko/kosdaq-150-night-futures',unit:'futures',decimals:2}
   ]}
 ];
 // SOXQ가 추종하는 PHLX Semiconductor Sector Index의 구성 종목 풀(현행 30개 종목).
@@ -46,14 +46,14 @@ const SEMICONDUCTOR_UNIVERSE=[
   ['gfs','GFS','글로벌파운드리스'],['q','Q','큐니티 일렉트로닉스'],['entg','ENTG','엔테그리스'],
   ['tsem','TSEM','타워 세미컨덕터'],['mtsi','MTSI','MACOM 테크놀로지'],['sitm','SITM','SiTime'],['lscc','LSCC','래티스 세미컨덕터']
 ].map(([id,ticker,name])=>({id,no:5,name,ticker,unit:'stock',semiconductorCandidate:true,summaryActive:false}));
-const SKHY_ITEM={id:'skhy',no:4,name:'SK hynix ADR',ticker:'SKHY',unit:'stock',percentChart:true};
-// Summary and chart order: indices -> M7 -> SK hynix ADR (No. 4) -> activity lists -> SOX (No. 5) -> SOX constituent top 16.
+const SKHY_ITEM={id:'skhy',no:7,name:'SK hynix ADR',ticker:'SKHY',unit:'stock',percentChart:true};
+// Summary and chart order: U.S. indices -> Korean night futures -> SOX (No. 5) -> M7 (No. 6) -> SK hynix ADR (No. 7) -> activity lists.
 const firstGroup=groups[0].items;
 const byId=new Map(firstGroup.map(item=>[item.id,item]));
 groups[0].items=[
   byId.get('nasdaq'),byId.get('nasdaq-futures'),byId.get('sp500'),byId.get('sp500-futures'),
-  ...['nvda-m7','aapl','googl','msft','amzn','tsla','meta'].map(id=>byId.get(id)),
-  SKHY_ITEM,byId.get('sox'),
+  byId.get('sox'),...['nvda-m7','aapl','googl','msft','amzn','tsla','meta'].map(id=>byId.get(id)),
+  SKHY_ITEM,
   ...SEMICONDUCTOR_UNIVERSE
 ].filter(Boolean);
 const all=groups.flatMap(g=>g.items);
@@ -234,7 +234,7 @@ async function renderActivityCharts(type,grid){
 }
 function makeSummaryCell(ref){
     const cell=document.createElement('div');
-    cell.className='summary-cell'+(ref.id==='kospi200night'||ref.id==='kosdaq150night'?' night-futures-summary-cell':'')+(ref.no===3?' m7-summary-cell':'')+(ref.id==='skhy'?' skhy-reversed-summary-cell':'')+(['nasdaq','sp500','sox','kospi200night','kosdaq150night'].includes(ref.id)?' soft-green-summary-cell':'');
+    cell.className='summary-cell'+(ref.id==='kospi200night'||ref.id==='kosdaq150night'?' night-futures-summary-cell':'')+(ref.no===6?' m7-summary-cell':'')+(ref.id==='skhy'?' skhy-reversed-summary-cell':'')+(['nasdaq','sp500','sox','kospi200night','kosdaq150night'].includes(ref.id)?' soft-green-summary-cell':'');
     const targetId=ref.chartId||ref.id;
     const link=ref.url?`<a class="summary-chart-link" href="${ref.url}" target="_blank" rel="noopener noreferrer">차트</a>`:`<a class="summary-chart-link internal-chart-link" href="#chart-card-${targetId}" data-chart-target="chart-card-${targetId}">차트</a>`;
     const ticker=ref.ticker||all.find(item=>item.id===ref.id)?.ticker;
@@ -257,8 +257,8 @@ function makeSummary(){
     if(av===null&&bv===null)return SEMICONDUCTOR_UNIVERSE.indexOf(a)-SEMICONDUCTOR_UNIVERSE.indexOf(b);
     if(av===null)return 1;if(bv===null)return -1;return bv-av;
   }).slice(0,16).map(x=>({no:5,id:x.id,name:x.name,ticker:x.ticker}));
-  const m7Refs=m7Items.map(x=>({no:3,id:x.id,name:m7Names[x.id],ticker:x.ticker}));
-  const skhyRef={no:4,id:'skhy',name:'SK hynix ADR',ticker:'SKHY'};
+  const m7Refs=m7Items.map(x=>({no:6,id:x.id,name:m7Names[x.id],ticker:x.ticker}));
+  const skhyRef={no:7,id:'skhy',name:'SK hynix ADR',ticker:'SKHY'};
   const m7Rows=[[m7Refs[0],m7Refs[1]],[m7Refs[2],m7Refs[3]],[m7Refs[4],m7Refs[5]],[m7Refs[6],skhyRef]];
   const rows=[
     {items:[
@@ -267,18 +267,18 @@ function makeSummary(){
       {no:2,id:'sp500',name:'S&P 500',ticker:'^GSPC'},
       {no:2,id:'sp500-futures',name:'S&P 500 선물',ticker:'ES=F'}
     ],marketIndex:true,after:true},
-    ...m7Rows.map((items,index)=>({items,m7:true,after:index===3})),
+    {items:[{no:3,id:'kospi200night',name:'코스피200 야간선물',url:'https://kred.dev/ko/kospi-200-night-futures'},{no:4,id:'kosdaq150night',name:'코스닥150 야간선물',url:'https://kred.dev/ko/kosdaq-150-night-futures'}],before:true,after:true},
+    {items:[{no:5,id:'sox',name:'필라델피아 반도체 지수',ticker:'^SOX'}],single:true,semis,before:true,after:true},
+    ...m7Rows.map((items,index)=>({items,m7:true,before:index===0,after:index===3})),
     {activityType:'turnover'},
     {activityType:'volume',after:true},
-    {items:[{no:5,id:'sox',name:'필라델피아 반도체 지수',ticker:'^SOX'}],single:true,semis,after:true},
-    {items:[{no:6,id:'us2y',name:'미국 2년물'},{no:7,id:'us10y',name:'미국 10년물'},{no:8,id:'us30y',name:'미국 30년물'}]},
-    {items:[{no:9,id:'dxy',name:'달러인덱스'},{no:10,id:'usdkRW',name:'원/달러'}]},
-    {items:[{no:11,id:'wti',name:'WTI 유가'},{no:12,id:'brent',name:'브렌트유'},{no:13,id:'vix',name:'VIX'}]},
-    {items:[{no:13,id:'kospi200night',name:'코스피200 야간선물',url:'https://kred.dev/ko/kospi-200-night-futures'},{no:14,id:'kosdaq150night',name:'코스닥150 야간선물',url:'https://kred.dev/ko/kosdaq-150-night-futures'}],before:true}
+    {items:[{no:8,id:'us2y',name:'미국 2년물'},{no:9,id:'us10y',name:'미국 10년물'},{no:10,id:'us30y',name:'미국 30년물'}],before:true},
+    {items:[{no:11,id:'dxy',name:'달러인덱스'},{no:12,id:'usdkRW',name:'원/달러'}]},
+    {items:[{no:13,id:'wti',name:'WTI 유가'},{no:14,id:'brent',name:'브렌트유'},{no:15,id:'vix',name:'VIX'}]}
   ];
   function makeSummaryCell(ref){
     const cell=document.createElement('div');
-    cell.className='summary-cell'+(ref.id==='kospi200night'||ref.id==='kosdaq150night'?' night-futures-summary-cell':'')+(ref.no===3?' m7-summary-cell':'')+(ref.id==='skhy'?' skhy-reversed-summary-cell':'')+(['nasdaq','sp500','sox','kospi200night','kosdaq150night'].includes(ref.id)?' soft-green-summary-cell':'');
+    cell.className='summary-cell'+(ref.id==='kospi200night'||ref.id==='kosdaq150night'?' night-futures-summary-cell':'')+(ref.no===6?' m7-summary-cell':'')+(ref.id==='skhy'?' skhy-reversed-summary-cell':'')+(['nasdaq','sp500','sox','kospi200night','kosdaq150night'].includes(ref.id)?' soft-green-summary-cell':'');
     const targetId=ref.chartId||ref.id;
     const link=ref.url?`<a class="summary-chart-link" href="${ref.url}" target="_blank" rel="noopener noreferrer">차트</a>`:`<a class="summary-chart-link internal-chart-link" href="#chart-card-${targetId}" data-chart-target="chart-card-${targetId}">차트</a>`;
     const ticker=ref.ticker||all.find(item=>item.id===ref.id)?.ticker;
@@ -336,8 +336,8 @@ function makeCharts(){
     const heading=document.createElement('div');heading.className='section-heading group-heading';heading.innerHTML=`<div><span class="eyebrow">${group.label==='미국 증시'?'U.S. MARKETS':group.label==='금리·환율·원자재'?'RATES · FX · COMMODITIES':'KOREA MARKETS'}</span><h2>${group.label}</h2></div>`;root.appendChild(heading);
     let semiconductorWrap=null;
     visibleItems.forEach(item=>{
-      if(item.id==='sox'){
-        // Place the two independent activity controls between SK hynix ADR and the SOX chart.
+      if(item.id==='us2y'){
+        // Keep the activity controls after the SOX, M7, and SK hynix chart cards.
         Object.entries(ACTIVITY_TYPES).forEach(([type,config])=>{
           const controlCell=document.createElement('article');
           controlCell.className='chart-card activity-chart-control-cell';
@@ -348,7 +348,7 @@ function makeCharts(){
         });
       }
       const card=document.createElement('article');
-      card.className='chart-card'+(['nvda-m7','sox','us2y'].includes(item.id)?' chart-divider-before':'');
+      card.className='chart-card'+(['sox','nvda-m7','us2y'].includes(item.id)?' chart-divider-before':'');
       card.id=`chart-card-${item.id}`;
       card.innerHTML=`<div class="chart-top"><div class="chart-title"><span class="number">${item.no}</span><h3>${item.name}${item.ticker?` [${item.ticker}]`:''}</h3></div><div class="quote-block"><div class="quote-close">${blank}</div><div class="quote-change neutral">${blank} · ${blank}</div><div class="quote-date">종가 기준</div></div></div><div class="chart-range-toolbar" data-range-for="${item.id}"><button type="button" data-range="1M">1M</button><button type="button" data-range="3M" class="selected">3M</button><button type="button" data-range="6M">6M</button><button type="button" data-range="YTD">YTD</button><button type="button" data-range="1Y">1Y</button><button type="button" data-range="ALL">ALL</button></div><div id="chart-${item.id}" class="chart-area"><div class="chart-empty">시세 데이터를 불러오는 중…</div></div><div class="chart-foot"><span class="chart-note">${item.ticker||''}</span><span class="bar-count">전체 기간 데이터</span></div>`;
       if(item.semiconductorCandidate&&semiconductorWrap){semiconductorWrap.appendChild(card);}
