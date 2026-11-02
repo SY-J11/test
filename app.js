@@ -245,7 +245,7 @@ async function renderActivityCharts(type,grid){
 }
 function makeSummaryCell(ref){
     const cell=document.createElement('div');
-    cell.className='summary-cell'+(ref.id==='kospi200night'||ref.id==='kosdaq150night'?' night-futures-summary-cell':'')+(ref.no===6?' m7-summary-cell':'')+(ref.id==='skhy'?' skhy-reversed-summary-cell':'')+(['nasdaq','sp500','sox','kospi200night','kosdaq150night'].includes(ref.id)?' soft-green-summary-cell':'');
+    cell.className='summary-cell'+(ref.id==='kospi200night'||ref.id==='kosdaq150night'?' night-futures-summary-cell':'')+(ref.no===6?' m7-summary-cell':'')+(ref.id==='skhy'?' skhy-reversed-summary-cell':'')+(['nasdaq','sp500','sox','kospi200night','kosdaq150night','ndx-index'].includes(ref.id)?' soft-green-summary-cell':'');
     const targetId=ref.chartId||ref.id;
     const link=ref.url?`<a class="summary-chart-link" href="${ref.url}" target="_blank" rel="noopener noreferrer">차트</a>`:`<a class="summary-chart-link internal-chart-link" href="#chart-card-${targetId}" data-chart-target="chart-card-${targetId}">차트</a>`;
     const ticker=ref.ticker||all.find(item=>item.id===ref.id)?.ticker;
@@ -288,23 +288,23 @@ function makeSummary(){
     {items:[{no:11,id:'dxy',name:'달러인덱스'},{no:12,id:'usdkRW',name:'원/달러'}]},
     {items:[{no:13,id:'wti',name:'WTI 유가'},{no:14,id:'brent',name:'브렌트유'}],after:true},
     {groupTitle:'SPX 옵션 지표'},
-    {items:[{no:2,id:'sp500',name:'S&P 500 (SPX)',ticker:'^GSPC'},{no:15,id:'spx-vix',name:'VIX',ticker:'^VIX'},{id:'spx-put-call-ratio',name:'Put/Call Ratio'}]},
-    {items:[{id:'spx-iv-change',name:'IV 변화율'},{id:'spx-call-oi',name:'Call OI',blankOnly:true},{id:'spx-put-oi',name:'Put OI',blankOnly:true}]},
-    {items:[{id:'spx-oi-change',name:'OI 변화량'},{id:'spx-call-wall',name:'Call Wall'},{id:'spx-put-wall',name:'Put Wall'}]},
-    {items:[{id:'spx-gamma-flip',name:'Gamma Flip'},{id:'spx-net-gex',name:'Net GEX'},{id:'spx-call-gex',name:'Call GEX'}]},
-    {items:[{id:'spx-put-gex',name:'Put GEX'}],after:true},
+    {items:[{no:2,id:'sp500',name:'S&P 500 (SPX)',ticker:'^GSPC'}],single:true},
+    {items:[{no:15,id:'spx-vix',name:'VIX',ticker:'^VIX'},{id:'spx-put-call-ratio',name:'Put/Call Ratio'},{id:'spx-iv-change',name:'IV 변화율'}]},
+    {items:[{id:'spx-call-oi',name:'Call OI'},{id:'spx-put-oi',name:'Put OI'},{id:'spx-oi-change',name:'OI 변화량'}]},
+    {items:[{id:'spx-call-wall',name:'Call Wall'},{id:'spx-put-wall',name:'Put Wall'},{id:'spx-gamma-flip',name:'Gamma Flip'}]},
+    {items:[{id:'spx-net-gex',name:'Net GEX'},{id:'spx-call-gex',name:'Call GEX'},{id:'spx-put-gex',name:'Put GEX'}]},
     {expectedMove:{prefix:'spx',spotId:'sp500',volId:'spx-vix'},after:true},
     {groupTitle:'NDX 옵션 지표'},
-    {items:[{no:17,id:'ndx-index',name:'나스닥 100 (NDX)',ticker:'^NDX'},{no:18,id:'ndx-vxn',name:'VXN',ticker:'^VXN'},{id:'ndx-put-call-ratio',name:'Put/Call Ratio'}]},
-    {items:[{id:'ndx-iv-change',name:'IV 변화율'},{id:'ndx-call-oi',name:'Call OI',blankOnly:true},{id:'ndx-put-oi',name:'Put OI',blankOnly:true}]},
-    {items:[{id:'ndx-oi-change',name:'OI 변화량'},{id:'ndx-call-wall',name:'Call Wall'},{id:'ndx-put-wall',name:'Put Wall'}]},
-    {items:[{id:'ndx-gamma-flip',name:'Gamma Flip'},{id:'ndx-net-gex',name:'Net GEX'},{id:'ndx-call-gex',name:'Call GEX'}]},
-    {items:[{id:'ndx-put-gex',name:'Put GEX'}],after:true},
+    {items:[{no:17,id:'ndx-index',name:'나스닥 100 (NDX)',ticker:'^NDX'}],single:true},
+    {items:[{no:18,id:'ndx-vxn',name:'VXN',ticker:'^VXN'},{id:'ndx-put-call-ratio',name:'Put/Call Ratio'},{id:'ndx-iv-change',name:'IV 변화율'}]},
+    {items:[{id:'ndx-call-oi',name:'Call OI'},{id:'ndx-put-oi',name:'Put OI'},{id:'ndx-oi-change',name:'OI 변화량'}]},
+    {items:[{id:'ndx-call-wall',name:'Call Wall'},{id:'ndx-put-wall',name:'Put Wall'},{id:'ndx-gamma-flip',name:'Gamma Flip'}]},
+    {items:[{id:'ndx-net-gex',name:'Net GEX'},{id:'ndx-call-gex',name:'Call GEX'},{id:'ndx-put-gex',name:'Put GEX'}]},
     {expectedMove:{prefix:'ndx',spotId:'ndx-index',volId:'ndx-vxn'},after:true}
   ];
   function makeSummaryCell(ref){
     const cell=document.createElement('div');
-    cell.className='summary-cell'+(ref.id==='kospi200night'||ref.id==='kosdaq150night'?' night-futures-summary-cell':'')+(ref.no===6?' m7-summary-cell':'')+(ref.id==='skhy'?' skhy-reversed-summary-cell':'')+(['nasdaq','sp500','sox','kospi200night','kosdaq150night'].includes(ref.id)?' soft-green-summary-cell':'');
+    cell.className='summary-cell'+(ref.id==='kospi200night'||ref.id==='kosdaq150night'?' night-futures-summary-cell':'')+(ref.no===6?' m7-summary-cell':'')+(ref.id==='skhy'?' skhy-reversed-summary-cell':'')+(['nasdaq','sp500','sox','kospi200night','kosdaq150night','ndx-index'].includes(ref.id)?' soft-green-summary-cell':'');
     const targetId=ref.chartId||ref.id;
     const link=ref.url?`<a class="summary-chart-link" href="${ref.url}" target="_blank" rel="noopener noreferrer">차트</a>`:`<a class="summary-chart-link internal-chart-link" href="#chart-card-${targetId}" data-chart-target="chart-card-${targetId}">차트</a>`;
     const ticker=ref.ticker||all.find(item=>item.id===ref.id)?.ticker;
