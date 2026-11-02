@@ -267,12 +267,12 @@ function makeSummary(){
       {no:2,id:'sp500',name:'S&P 500',ticker:'^GSPC'},
       {no:2,id:'sp500-futures',name:'S&P 500 선물',ticker:'ES=F'}
     ],marketIndex:true,after:true},
-    {items:[{no:3,id:'kospi200night',name:'코스피200 야간선물',url:'https://kred.dev/ko/kospi-200-night-futures'},{no:4,id:'kosdaq150night',name:'코스닥150 야간선물',url:'https://kred.dev/ko/kosdaq-150-night-futures'}],before:true,after:true},
-    {items:[{no:5,id:'sox',name:'필라델피아 반도체 지수',ticker:'^SOX'}],single:true,semis,before:true,after:true},
-    ...m7Rows.map((items,index)=>({items,m7:true,before:index===0,after:index===3})),
+    {items:[{no:3,id:'kospi200night',name:'코스피200 야간선물',url:'https://kred.dev/ko/kospi-200-night-futures'},{no:4,id:'kosdaq150night',name:'코스닥150 야간선물',url:'https://kred.dev/ko/kosdaq-150-night-futures'}],after:true},
+    {items:[{no:5,id:'sox',name:'필라델피아 반도체 지수',ticker:'^SOX'}],single:true,semis,after:true},
+    ...m7Rows.map((items,index)=>({items,m7:true,after:index===3})),
     {activityType:'turnover'},
     {activityType:'volume',after:true},
-    {items:[{no:8,id:'us2y',name:'미국 2년물'},{no:9,id:'us10y',name:'미국 10년물'},{no:10,id:'us30y',name:'미국 30년물'}],before:true},
+    {items:[{no:8,id:'us2y',name:'미국 2년물'},{no:9,id:'us10y',name:'미국 10년물'},{no:10,id:'us30y',name:'미국 30년물'}]},
     {items:[{no:11,id:'dxy',name:'달러인덱스'},{no:12,id:'usdkRW',name:'원/달러'}]},
     {items:[{no:13,id:'wti',name:'WTI 유가'},{no:14,id:'brent',name:'브렌트유'},{no:15,id:'vix',name:'VIX'}]}
   ];
