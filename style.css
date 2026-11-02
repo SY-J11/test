@@ -383,3 +383,15 @@
 .expected-move-range span{display:flex;justify-content:space-between;gap:6px}
 .expected-move-range b{font-size:10px;color:#34445b}
 @media(max-width:520px){.summary-group-title{font-size:11px;padding-top:8px}.expected-move-cell .expected-move-value{font-size:11px}.expected-move-range{font-size:8px}.expected-move-range b{font-size:9px}}
+
+
+/* CBOE options metrics */
+.option-metric-panel{height:100%;min-height:150px;padding:15px 12px;display:flex;flex-direction:column;justify-content:center;gap:8px;background:linear-gradient(180deg,#fafbfd,#fff);border-radius:8px}
+.option-metric-main{font-size:25px;font-weight:850;letter-spacing:-.5px;color:#24364d;text-align:center}
+.option-metric-note,.option-source-note{font-size:10px;line-height:1.5;color:#718096;text-align:center}
+.option-source-note{font-size:9px;color:#97a1af;margin-top:3px}
+.option-oi-bars{width:100%;max-width:560px;margin:4px auto 0;display:flex;flex-direction:column;gap:5px}
+.option-oi-row{display:grid;grid-template-columns:72px minmax(40px,1fr) 76px;gap:8px;align-items:center;font-size:10px;color:#536276}
+.option-oi-row i{display:block;height:7px;background:#edf1f5;border-radius:5px;overflow:hidden}
+.option-oi-row i b{display:block;height:100%;background:#7198bd;border-radius:5px}
+.option-oi-row strong{text-align:right;font-size:10px;color:#34445b}
