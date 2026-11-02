@@ -281,7 +281,7 @@ function makeSummary(){
     {groupTitle:'VIX · S&P 500 Expected Move'},
     {expectedMoveGroup:{spotId:'sp500',volId:'vix',prefix:'spx',underlyingNote:'S&P 500 기준'},items:[{no:'',id:'vix',name:'VIX',ticker:'^VIX'}],after:true},
     {groupTitle:'NDX · Expected Move'},
-    {expectedMoveGroup:{spotId:'ndx-index',volId:'ndx-vxn',prefix:'ndx',underlyingNote:'VXN 변동성 기준'},items:[{no:'',id:'ndx-index',name:'NDX',ticker:'^NDX'}],after:true}
+    {expectedMoveGroup:{spotId:'ndx-index',volId:'ndx-vxn',prefix:'ndx',underlyingNote:'VXN 변동성 기준'},items:[{no:'',id:'ndx-index',name:'NDX',ticker:'^NDX'}]}
   ];
   function makeSummaryCell(ref){
     const cell=document.createElement('div');
