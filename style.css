@@ -375,3 +375,11 @@
 
 /* Options indicator chart placeholders */
 .options-indicator-chart .options-chart-placeholder{color:#8793a3;background:linear-gradient(180deg,#fafbfd,#fff);}
+
+/* SPX / NDX options sections and calculated expected-move cards */
+.summary-group-title{font-size:12px;font-weight:850;color:#263e60;padding:9px 2px 3px;border-top:1px solid #e2e8f0;margin-top:4px}
+.expected-move-cell .expected-move-value{font-size:13px;font-weight:850;color:#263e60;margin:2px 0 7px}
+.expected-move-range{display:flex;flex-direction:column;gap:4px;font-size:9px;color:#6d7b8e}
+.expected-move-range span{display:flex;justify-content:space-between;gap:6px}
+.expected-move-range b{font-size:10px;color:#34445b}
+@media(max-width:520px){.summary-group-title{font-size:11px;padding-top:8px}.expected-move-cell .expected-move-value{font-size:11px}.expected-move-range{font-size:8px}.expected-move-range b{font-size:9px}}
