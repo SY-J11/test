@@ -371,3 +371,7 @@
   width:100%;
   min-width:0;
 }
+
+
+/* Options indicator chart placeholders */
+.options-indicator-chart .options-chart-placeholder{color:#8793a3;background:linear-gradient(180deg,#fafbfd,#fff);}
