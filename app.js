@@ -59,6 +59,7 @@ groups[0].items=[
 ].filter(Boolean);
 const all=groups.flatMap(g=>g.items);
 const dataById=new Map(),charts=new Map();
+let ndxVolatility=null; // ^VXN is fetched as a calculation input; it is not shown as a separate chart.
 let semiconductorExpanded=false;
 const ACTIVITY_TYPES={
   turnover:{label:'거래대금 상위(20종목)',metric:'turnover',expanded:false,items:[],containerId:'activity-turnover-summary',chartContainerId:'activity-turnover-charts'},
@@ -277,7 +278,10 @@ function makeSummary(){
     {items:[{no:8,id:'us2y',name:'미국 2년물'},{no:9,id:'us10y',name:'미국 10년물'},{no:10,id:'us30y',name:'미국 30년물'}]},
     {items:[{no:11,id:'dxy',name:'달러인덱스'},{no:12,id:'usdkRW',name:'원/달러'}]},
     {items:[{no:13,id:'wti',name:'WTI 유가'},{no:14,id:'brent',name:'브렌트유'}],after:true},
-    {items:[{no:15,id:'vix',name:'VIX',ticker:'^VIX'},{no:16,id:'ndx-index',name:'나스닥 100 (NDX)',ticker:'^NDX'}],after:true}
+    {groupTitle:'VIX · S&P 500 Expected Move'},
+    {expectedMoveGroup:{spotId:'sp500',volId:'vix',prefix:'spx',underlyingNote:'S&P 500 기준'},items:[{no:'',id:'vix',name:'VIX',ticker:'^VIX'}],after:true},
+    {groupTitle:'NDX · Expected Move'},
+    {expectedMoveGroup:{spotId:'ndx-index',volId:'ndx-vxn',prefix:'ndx',underlyingNote:'VXN 변동성 기준'},items:[{no:'',id:'ndx-index',name:'NDX',ticker:'^NDX'}],after:true}
   ];
   function makeSummaryCell(ref){
     const cell=document.createElement('div');
@@ -297,6 +301,20 @@ function makeSummary(){
       heading.className='summary-group-title';
       heading.textContent=row.groupTitle;
       root.appendChild(heading);
+      return;
+    }
+    if(row.expectedMoveGroup){
+      const line=document.createElement('div');
+      line.className='summary-row expected-move-group-row'+(row.after?' summary-divider-after':'');
+      line.style.setProperty('--cols',4);
+      row.items.forEach(ref=>line.appendChild(makeSummaryCell(ref)));
+      [['1일',1],['1주일',7],['1개월',30]].forEach(([label,days])=>{
+        const cell=document.createElement('div');
+        cell.className='summary-cell expected-move-cell';
+        cell.innerHTML=`<div class="summary-label">Expected Move (${label})</div><div class="expected-move-value" data-em-prefix="${row.expectedMoveGroup.prefix}" data-em-days="${days}">${blank}</div><div class="expected-move-note">${row.expectedMoveGroup.underlyingNote}</div><div class="expected-move-range"><span>예상 상단 <b data-em-side="upper">${blank}</b></span><span>예상 하단 <b data-em-side="lower">${blank}</b></span></div>`;
+        line.appendChild(cell);
+      });
+      root.appendChild(line);
       return;
     }
     if(row.activityType){
@@ -457,7 +475,52 @@ async function refreshMarketCaps(){
   }
 }
 function updateSummary(){
-  document.querySelectorAll('[data-summary-id]').forEach(cell=>{const item=all.find(x=>x.id===cell.dataset.summaryId);const price=cell.querySelector('.summary-price'),change=cell.querySelector('.summary-change');const colorIndex=!!item;if(item?.last==null){price.textContent=(item?.source==='nightFuturesEmbed'||item?.source==='tradingviewEmbed')?'차트 참조':blank;price.className=`summary-price${colorIndex?' neutral':''}`;change.textContent=(item?.source==='nightFuturesEmbed'||item?.source==='tradingviewEmbed')?'차트에서 시세 확인':'데이터 확인 필요';change.className='summary-change neutral';return;}price.textContent=closeText(item,item.last);price.className=`summary-price${colorIndex?' '+colorClass(item.delta):''}`;change.textContent=`${changeText(item,item.delta)} · ${pctText(item.pct)}`;change.className=`summary-change ${colorClass(item.delta)}`;if(item.unit==='stock'){const sessions=[['pre',item.preMarketPrice,item.preMarketDelta,item.preMarketPct],['regular',item.regularMarketPrice,item.regularMarketDelta,item.regularMarketPct],['post',item.afterMarketPrice,item.afterMarketDelta,item.afterMarketPct]];sessions.forEach(([key,p,d,pct])=>{const pEl=cell.querySelector(`.summary-${key}-price`),dEl=cell.querySelector(`.summary-${key}-delta`),pctEl=cell.querySelector(`.summary-${key}-pct`);if(!pEl||!dEl||!pctEl)return;const valid=Number.isFinite(p)&&p>0;pEl.textContent=valid?closeText(item,p):blank;pEl.className=`summary-session-value summary-${key}-price ${valid?colorClass(d):'neutral'}`;dEl.textContent=valid&&Number.isFinite(d)?changeText(item,d):blank;dEl.className=`summary-session-delta summary-${key}-delta ${valid?colorClass(d):'neutral'}`;pctEl.textContent=valid&&Number.isFinite(pct)?pctText(pct):blank;pctEl.className=`summary-session-pct summary-${key}-pct ${valid?colorClass(d):'neutral'}`;});}});}
+  document.querySelectorAll('[data-summary-id]').forEach(cell=>{
+    const item=all.find(x=>x.id===cell.dataset.summaryId);
+    const price=cell.querySelector('.summary-price'),change=cell.querySelector('.summary-change');
+    const colorIndex=!!item;
+    if(item?.last==null){
+      price.textContent=(item?.source==='nightFuturesEmbed'||item?.source==='tradingviewEmbed')?'차트 참조':blank;
+      price.className=`summary-price${colorIndex?' neutral':''}`;
+      change.textContent=(item?.source==='nightFuturesEmbed'||item?.source==='tradingviewEmbed')?'차트에서 시세 확인':'데이터 확인 필요';
+      change.className='summary-change neutral';
+      return;
+    }
+    price.textContent=closeText(item,item.last);
+    price.className=`summary-price${colorIndex?' '+colorClass(item.delta):''}`;
+    change.textContent=`${changeText(item,item.delta)} · ${pctText(item.pct)}`;
+    change.className=`summary-change ${colorClass(item.delta)}`;
+    if(item.unit==='stock'){
+      const sessions=[['pre',item.preMarketPrice,item.preMarketDelta,item.preMarketPct],['regular',item.regularMarketPrice,item.regularMarketDelta,item.regularMarketPct],['post',item.afterMarketPrice,item.afterMarketDelta,item.afterMarketPct]];
+      sessions.forEach(([key,p,d,pct])=>{
+        const pEl=cell.querySelector(`.summary-${key}-price`),dEl=cell.querySelector(`.summary-${key}-delta`),pctEl=cell.querySelector(`.summary-${key}-pct`);
+        if(!pEl||!dEl||!pctEl)return;
+        const valid=Number.isFinite(p)&&p>0;
+        pEl.textContent=valid?closeText(item,p):blank;
+        pEl.className=`summary-session-value summary-${key}-price ${valid?colorClass(d):'neutral'}`;
+        dEl.textContent=valid&&Number.isFinite(d)?changeText(item,d):blank;
+        dEl.className=`summary-session-delta summary-${key}-delta ${valid?colorClass(d):'neutral'}`;
+        pctEl.textContent=valid&&Number.isFinite(pct)?pctText(pct):blank;
+        pctEl.className=`summary-session-pct summary-${key}-pct ${valid?colorClass(d):'neutral'}`;
+      });
+    }
+  });
+  document.querySelectorAll('.expected-move-cell').forEach(cell=>{
+    const valueEl=cell.querySelector('.expected-move-value');
+    const prefix=valueEl?.dataset.emPrefix;
+    const days=Number(valueEl?.dataset.emDays);
+    const spotId=prefix==='spx'?'sp500':'ndx-index';
+    const spot=all.find(x=>x.id===spotId)?.last;
+    const vol=prefix==='spx'?all.find(x=>x.id==='vix')?.last:ndxVolatility;
+    const move=Number.isFinite(spot)&&spot>0&&Number.isFinite(vol)&&vol>0?spot*(vol/100)*Math.sqrt(days/365):null;
+    const upper=move===null?null:spot+move,lower=move===null?null:spot-move;
+    valueEl.textContent=move===null?blank:`±${fmt(move,1)} pt`;
+    const upperEl=cell.querySelector('[data-em-side="upper"]');
+    const lowerEl=cell.querySelector('[data-em-side="lower"]');
+    if(upperEl)upperEl.textContent=upper===null?blank:fmt(upper,1);
+    if(lowerEl)lowerEl.textContent=lower===null?blank:fmt(lower,1);
+  });
+}
 async function refreshAll(){
   const button=$('refresh');
   button.disabled=true;
@@ -497,6 +560,12 @@ async function refreshAll(){
     }
   }
   await Promise.all(Array.from({length:6},()=>worker()));
+  try{
+    const vxnSeries=await fetchSeries({id:'ndx-vxn',name:'VXN',ticker:'^VXN',unit:'index',decimals:2});
+    const latestVxn=vxnSeries.values[vxnSeries.values.length-1];
+    ndxVolatility=latestVxn?.value??null;
+    if(!Number.isFinite(ndxVolatility)||ndxVolatility<=0)throw new Error('VXN 변동성 데이터 없음');
+  }catch(vxnError){ndxVolatility=null;fail++;console.warn('VXN 변동성 데이터 조회 실패',vxnError);}
   updateSummary();
   $('updated').textContent=`${new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})} 갱신`;
   $('status').textContent=fail?`정상 ${success}개 · 확인 필요 ${fail}개`:`${success}개 시세 연결 완료`;

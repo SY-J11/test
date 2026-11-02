@@ -373,3 +373,14 @@
 }
 
 
+
+
+/* VIX / NDX Expected Move summary: one underlying quote plus 1D, 1W and 1M ranges. */
+.summary-row.expected-move-group-row{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+.expected-move-group-row .expected-move-cell{min-width:0;padding:8px 9px}
+.expected-move-cell .expected-move-value{font-size:13px;font-weight:850;color:#263e60;margin:2px 0 4px;white-space:nowrap}
+.expected-move-note{font-size:9px;color:#8793a3;margin:0 0 5px}
+.expected-move-range{display:flex;flex-direction:column;gap:4px;font-size:9px;color:#6d7b8e}
+.expected-move-range span{display:flex;justify-content:space-between;gap:4px;white-space:nowrap}
+.expected-move-range b{font-size:10px;color:#34445b}
+@media(max-width:520px){.summary-row.expected-move-group-row{grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}.expected-move-group-row .expected-move-cell{padding:7px 6px}.expected-move-cell .expected-move-value{font-size:11px}.expected-move-note,.expected-move-range{font-size:8px}.expected-move-range b{font-size:9px}}
