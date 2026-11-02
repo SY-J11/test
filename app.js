@@ -27,7 +27,7 @@ const groups=[
     {id:'wti',no:13,name:'WTI 유가',ticker:'CL=F',unit:'commodity',suffix:'$',decimals:2},
     {id:'brent',no:14,name:'브렌트유 유가',ticker:'BZ=F',unit:'commodity',suffix:'$',decimals:2},
     {id:'vix',no:15,name:'VIX',ticker:'^VIX',unit:'index',decimals:2},
-    {id:'ndx-index',no:16,name:'나스닥 100 (NDX)',ticker:'^NDX',unit:'index',percentChart:true}
+    {id:'vxn',no:16,name:'나스닥 100 변동성 지수 (VXN)',ticker:'^VXN',unit:'index',decimals:2,percentChart:true}
   ]},
   {label:'국내 증시',items:[
     {id:'kospi200night',no:3,name:'코스피200 야간선물',source:'kredNightFutures',page:'https://kred.dev/ko/kospi-200-night-futures',unit:'futures',decimals:2},
@@ -57,7 +57,8 @@ groups[0].items=[
   SKHY_ITEM,
   ...SEMICONDUCTOR_UNIVERSE
 ].filter(Boolean);
-const all=groups.flatMap(g=>g.items);
+const hiddenNdx={id:'ndx-index',name:'나스닥 100 (NDX)',ticker:'^NDX',unit:'index',percentChart:true,hidden:true};
+const all=[...groups.flatMap(g=>g.items),hiddenNdx];
 const dataById=new Map(),charts=new Map();
 let ndxVolatility=null; // ^VXN is fetched as a calculation input; it is not shown as a separate chart.
 let semiconductorExpanded=false;
@@ -236,7 +237,7 @@ async function renderActivityCharts(type,grid){
 }
 function makeSummaryCell(ref){
     const cell=document.createElement('div');
-    cell.className='summary-cell'+(ref.id==='kospi200night'||ref.id==='kosdaq150night'?' night-futures-summary-cell':'')+(ref.no===6?' m7-summary-cell':'')+(ref.id==='skhy'?' skhy-reversed-summary-cell':'')+(['nasdaq','sp500','sox','kospi200night','kosdaq150night','ndx-index'].includes(ref.id)?' soft-green-summary-cell':'');
+    cell.className='summary-cell'+(ref.id==='kospi200night'||ref.id==='kosdaq150night'?' night-futures-summary-cell':'')+(ref.no===6?' m7-summary-cell':'')+(ref.id==='skhy'?' skhy-reversed-summary-cell':'')+(['nasdaq','sp500','sox','kospi200night','kosdaq150night','vxn'].includes(ref.id)?' soft-green-summary-cell':'');
     const targetId=ref.chartId||ref.id;
     const link=ref.url?`<a class="summary-chart-link" href="${ref.url}" target="_blank" rel="noopener noreferrer">차트</a>`:`<a class="summary-chart-link internal-chart-link" href="#chart-card-${targetId}" data-chart-target="chart-card-${targetId}">차트</a>`;
     const ticker=ref.ticker||all.find(item=>item.id===ref.id)?.ticker;
@@ -280,12 +281,12 @@ function makeSummary(){
     {items:[{no:13,id:'wti',name:'WTI 유가'},{no:14,id:'brent',name:'브렌트유'}],after:true},
     {groupTitle:'VIX · S&P 500 Expected Move'},
     {expectedMoveGroup:{spotId:'sp500',volId:'vix',prefix:'spx',underlyingNote:'S&P 500 기준'},items:[{no:'',id:'vix',name:'VIX',ticker:'^VIX'}],after:true},
-    {groupTitle:'NDX · Expected Move'},
-    {expectedMoveGroup:{spotId:'ndx-index',volId:'ndx-vxn',prefix:'ndx',underlyingNote:'VXN 변동성 기준'},items:[{no:'',id:'ndx-index',name:'NDX',ticker:'^NDX'}]}
+    {groupTitle:'VXN · Nasdaq Expected Move'},
+    {expectedMoveGroup:{spotId:'ndx-index',volId:'vxn',prefix:'ndx',underlyingNote:'Nasdaq 100 (NDX) 기준 · VXN 변동성 적용'},items:[{no:'',id:'vxn',name:'VXN',ticker:'^VXN'}],after:true}
   ];
   function makeSummaryCell(ref){
     const cell=document.createElement('div');
-    cell.className='summary-cell'+(ref.id==='kospi200night'||ref.id==='kosdaq150night'?' night-futures-summary-cell':'')+(ref.no===6?' m7-summary-cell':'')+(ref.id==='skhy'?' skhy-reversed-summary-cell':'')+(['nasdaq','sp500','sox','kospi200night','kosdaq150night','ndx-index'].includes(ref.id)?' soft-green-summary-cell':'');
+    cell.className='summary-cell'+(ref.id==='kospi200night'||ref.id==='kosdaq150night'?' night-futures-summary-cell':'')+(ref.no===6?' m7-summary-cell':'')+(ref.id==='skhy'?' skhy-reversed-summary-cell':'')+(['nasdaq','sp500','sox','kospi200night','kosdaq150night','vxn'].includes(ref.id)?' soft-green-summary-cell':'');
     const targetId=ref.chartId||ref.id;
     const link=ref.url?`<a class="summary-chart-link" href="${ref.url}" target="_blank" rel="noopener noreferrer">차트</a>`:`<a class="summary-chart-link internal-chart-link" href="#chart-card-${targetId}" data-chart-target="chart-card-${targetId}">차트</a>`;
     const ticker=ref.ticker||all.find(item=>item.id===ref.id)?.ticker;
@@ -511,7 +512,7 @@ function updateSummary(){
     const days=Number(valueEl?.dataset.emDays);
     const spotId=prefix==='spx'?'sp500':'ndx-index';
     const spot=all.find(x=>x.id===spotId)?.last;
-    const vol=prefix==='spx'?all.find(x=>x.id==='vix')?.last:ndxVolatility;
+    const vol=prefix==='spx'?all.find(x=>x.id==='vix')?.last:all.find(x=>x.id==='vxn')?.last;
     const move=Number.isFinite(spot)&&spot>0&&Number.isFinite(vol)&&vol>0?spot*(vol/100)*Math.sqrt(days/365):null;
     const upper=move===null?null:spot+move,lower=move===null?null:spot-move;
     valueEl.textContent=move===null?blank:`±${fmt(move,1)} pt`;
@@ -530,7 +531,7 @@ async function refreshAll(){
   $('status').parentElement.querySelector('.live-dot').classList.remove('active');
   let success=0,fail=0;
   await refreshMarketCaps();
-  const queue=all.filter(item=>(!item.semiconductorCandidate||item.summaryActive)&&(!item.activityType||ACTIVITY_TYPES[item.activityType]?.expanded));
+  const queue=all.filter(item=>!item.hidden&&(!item.semiconductorCandidate||item.summaryActive)&&(!item.activityType||ACTIVITY_TYPES[item.activityType]?.expanded));
   let cursor=0;
   async function worker(){
     while(cursor<queue.length){
@@ -561,11 +562,10 @@ async function refreshAll(){
   }
   await Promise.all(Array.from({length:6},()=>worker()));
   try{
-    const vxnSeries=await fetchSeries({id:'ndx-vxn',name:'VXN',ticker:'^VXN',unit:'index',decimals:2});
-    const latestVxn=vxnSeries.values[vxnSeries.values.length-1];
-    ndxVolatility=latestVxn?.value??null;
-    if(!Number.isFinite(ndxVolatility)||ndxVolatility<=0)throw new Error('VXN 변동성 데이터 없음');
-  }catch(vxnError){ndxVolatility=null;fail++;console.warn('VXN 변동성 데이터 조회 실패',vxnError);}
+    const ndxSeries=await fetchSeries(hiddenNdx);
+    hiddenNdx.last=ndxSeries.values[ndxSeries.values.length-1]?.value??null;
+    if(!Number.isFinite(hiddenNdx.last)||hiddenNdx.last<=0)throw new Error('NDX 현물 지수 데이터 없음');
+  }catch(ndxError){hiddenNdx.last=null;fail++;console.warn('NDX 현물 지수 조회 실패',ndxError);}
   updateSummary();
   $('updated').textContent=`${new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})} 갱신`;
   $('status').textContent=fail?`정상 ${success}개 · 확인 필요 ${fail}개`:`${success}개 시세 연결 완료`;
