@@ -1,6 +1,6 @@
 'use strict';
 // Yahoo Finance chart API is accessed through the companion Cloudflare Worker.
-const PROXY_BASE='https://test.mcraft-tiger-574.workers.dev';
+const PROXY_BASE='https://pmc.mcraft-tiger-574.workers.dev';
 const $=id=>document.getElementById(id);
 const blank='—';
 const groups=[
@@ -591,6 +591,11 @@ async function refreshOptionMetrics(){
     const response=await fetch(`${PROXY_BASE}/options/${symbol}`,{cache:'no-store'});
     const payload=await response.json().catch(()=>({error:`HTTP ${response.status}`}));
     if(!response.ok)throw new Error(payload.message||payload.error||`옵션 API HTTP ${response.status}`);
+    if(!payload||!payload.data||!Array.isArray(payload.data.options)){
+      if(payload?.ok)throw new Error('Cloudflare Worker에 새 옵션 API 코드가 배포되지 않았습니다. cloudflare_worker.js를 전체 교체한 뒤 Deploy 해주세요.');
+      throw new Error(payload?.message||payload?.error||'옵션 API 응답에 data.options 배열이 없습니다. Worker 배포와 API 응답을 확인해 주세요.');
+    }
+    if(payload.data.options.length===0)throw new Error('Market Data에서 옵션 계약 0건을 반환했습니다. MARKETDATA_MODE, 만기 필터, API 권한을 확인해 주세요.');
     const result=calculateOptionMetrics(prefix,payload);
     all.filter(x=>x.id.startsWith(`${prefix}-`)&&x.source==='manual').forEach(item=>renderOptionMetric(item,result));
     return result;
