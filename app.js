@@ -525,47 +525,71 @@ function updateSummary(){
 async function refreshAll(){
   const button=$('refresh');
   button.disabled=true;
-  $('status').textContent='시세 데이터 불러오는 중…';
+  $('status').textContent='핵심 지수·야간선물 우선 조회 중…';
   $('updated').textContent='업데이트 중';
   $('status').classList.remove('error-note');
   $('status').parentElement.querySelector('.live-dot').classList.remove('active');
   let success=0,fail=0;
-  await refreshMarketCaps();
-  const queue=all.filter(item=>!item.hidden&&(!item.semiconductorCandidate||item.summaryActive)&&(!item.activityType||ACTIVITY_TYPES[item.activityType]?.expanded));
+
+  // 시가총액 갱신과 야간선물 조회를 병렬로 시작합니다.
+  // 이전에는 시가총액 조회가 끝난 뒤, 긴 종목 목록을 6개씩 순서대로 처리해
+  // 국내 야간선물이 큐의 맨 마지막에서야 조회되는 문제가 있었습니다.
+  const marketCapsTask=refreshMarketCaps();
+  const priorityItems=groups.flatMap(group=>group.items)
+    .filter(item=>item.source==='kredNightFutures');
+
+  async function loadItem(item){
+    try{
+      const series=await fetchSeries(item);
+      renderOne(item,series);
+      success++;
+    }catch(error){
+      fail++;
+      const container=$(`chart-${item.id}`);
+      if(container)container.innerHTML=`<div class="chart-empty"><span>${item.name} 데이터를 불러오지 못했습니다.<br><small>${String(error.message||error).slice(0,90)}</small></span></div>`;
+      if(item.card){
+        item.card.querySelector('.quote-close').textContent=blank;
+        item.card.querySelector('.quote-change').textContent=item.source==='kredNightFutures'?'시세 연결 실패':'데이터 확인 필요';
+        item.card.querySelector('.quote-change').className='quote-change neutral';
+        item.card.querySelector('.quote-date').textContent=item.source==='kredNightFutures'?'KRED 응답 확인 필요':'시세 제공처 확인 필요';
+      }
+    }
+    updateSummary();
+  }
+
+  // 야간선물은 나머지 수십 개 데이터보다 먼저 조회합니다.
+  // NDX 현물도 VXN Expected Move 계산을 위해 동시에 가져옵니다.
+  const ndxTask=(async()=>{
+    try{
+      const series=await fetchSeries(hiddenNdx);
+      hiddenNdx.last=series.values[series.values.length-1]?.value??null;
+      if(!Number.isFinite(hiddenNdx.last)||hiddenNdx.last<=0)throw new Error('NDX 현물 지수 데이터 없음');
+    }catch(error){
+      hiddenNdx.last=null;
+      fail++;
+      console.warn('NDX 현물 지수 조회 실패',error);
+    }
+    updateSummary();
+  })();
+  await Promise.all([marketCapsTask,Promise.all(priorityItems.map(loadItem)),ndxTask]);
+
+  $('status').textContent='핵심 지수 조회 완료 · 나머지 차트 불러오는 중…';
+  const priorityIds=new Set(priorityItems.map(item=>item.id));
+  const queue=all.filter(item=>
+    !item.hidden &&
+    !priorityIds.has(item.id) &&
+    (!item.semiconductorCandidate||item.summaryActive) &&
+    (!item.activityType||ACTIVITY_TYPES[item.activityType]?.expanded)
+  );
   let cursor=0;
   async function worker(){
     while(cursor<queue.length){
       const item=queue[cursor++];
-      try{
-        const series=await fetchSeries(item);
-        renderOne(item,series);
-        success++;
-      }catch(e){
-        fail++;
-        const c=$(`chart-${item.id}`);
-        if(c)c.innerHTML=`<div class="chart-empty"><span>${item.name} 데이터를 불러오지 못했습니다.<br><small>${String(e.message||e).slice(0,90)}</small></span></div>`;
-        if(item.card){
-          if(item.source==='kredNightFutures'){
-            item.card.querySelector('.quote-close').textContent=blank;
-            item.card.querySelector('.quote-change').textContent='시세 연결 실패';
-            item.card.querySelector('.quote-change').className='quote-change neutral';
-            item.card.querySelector('.quote-date').textContent='KRED 응답 확인 필요';
-          }else{
-            item.card.querySelector('.quote-close').textContent=blank;
-            item.card.querySelector('.quote-change').textContent='데이터 확인 필요';
-            item.card.querySelector('.quote-change').className='quote-change neutral';
-          }
-        }
-      }
-      if((success+fail)%4===0)updateSummary();
+      await loadItem(item);
     }
   }
-  await Promise.all(Array.from({length:6},()=>worker()));
-  try{
-    const ndxSeries=await fetchSeries(hiddenNdx);
-    hiddenNdx.last=ndxSeries.values[ndxSeries.values.length-1]?.value??null;
-    if(!Number.isFinite(hiddenNdx.last)||hiddenNdx.last<=0)throw new Error('NDX 현물 지수 데이터 없음');
-  }catch(ndxError){hiddenNdx.last=null;fail++;console.warn('NDX 현물 지수 조회 실패',ndxError);}
+  await Promise.all(Array.from({length:8},()=>worker()));
+
   updateSummary();
   $('updated').textContent=`${new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})} 갱신`;
   $('status').textContent=fail?`정상 ${success}개 · 확인 필요 ${fail}개`:`${success}개 시세 연결 완료`;
