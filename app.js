@@ -572,8 +572,10 @@ if(item.unit==='stock'){
 
     const change=(price,base)=>positive(price)!==null&&positive(base)!==null?price-base:null;
     const pct=(delta,base)=>delta!==null&&positive(base)!==null?delta/base*100:null;
-    // 프리마켓 등락과 등락률은 모든 시간대에서 직전 정규장 종가를 기준으로 일관되게 계산합니다.
-    const preDelta=change(prePrice,priorRegularClose);
+    // 프리마켓 등락과 등락률은 정규장과 동일한 직전 거래일 종가를 기준으로 계산합니다.
+    // regularReferenceClose는 정규장 등락 계산에도 사용하는 일봉 values의 직전 값입니다.
+    const preReferenceClose=regularReferenceClose??priorRegularClose;
+    const preDelta=change(prePrice,preReferenceClose);
     // 등락·등락률도 상단 카드와 동일하게 같은 두 일봉 값으로 직접 계산합니다.
     const regularDelta=change(regularPrice,regularReferenceClose);
     const regularPct=pct(regularDelta,regularReferenceClose);
@@ -582,7 +584,7 @@ if(item.unit==='stock'){
     const postQuoteDelta=quotePostChangeValid?numOrNull(quote.postMarketChange):null;
     const postDelta=beforePremarket?0:(postPrice===null?null:postQuoteDelta??change(postPrice,postReference));
     sessionQuotes={
-      preMarketPrice:prePrice,preMarketChange:preDelta,preMarketChangePercent:pct(preDelta,priorRegularClose),
+      preMarketPrice:prePrice,preMarketChange:preDelta,preMarketChangePercent:pct(preDelta,preReferenceClose),
       regularMarketPrice:regularPrice,regularMarketChange:regularDelta,regularMarketChangePercent:regularPct,
       postMarketPrice:postPrice,postMarketChange:postDelta,postMarketChangePercent:pct(postDelta,postReference)
     };
