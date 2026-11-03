@@ -547,7 +547,6 @@ if(item.unit==='stock'){
     // 분봉이 없으면 오늘 날짜로 확인된 Yahoo preMarketPrice를 사용합니다.
     const preClose=lastOf(preToday)??currentPre;
     const regularClose=lastOf(regularToday)??currentRegular;
-    const postClose=lastOf(postToday)??currentPost;
 
     // 프리마켓 04:00~09:30 / 정규장 09:30~16:00 / 애프터마켓 16:00~20:00 (미 동부시간)
     const beforePremarket=isWeekend||minute<240;
@@ -556,33 +555,66 @@ if(item.unit==='stock'){
     else if(minute<570)prePrice=currentPre??lastOf(preToday)??priorPreClose??priorRegularClose;
     else prePrice=preClose??currentPre??priorPreClose??priorRegularClose;
 
-    // 정규장 칸은 상단 종목 카드와 반드시 같은 일봉 종가 배열을 사용합니다.
-    // 상단 카드도 values 마지막 값과 직전 값을 이용해 가격·등락·등락률을 계산하므로,
-    // 별도의 quote/meta 필드를 섞으면 서로 다른 시점의 가격과 등락이 조합될 수 있습니다.
-    // 장전에는 직전 거래일 종가, 장중에는 Yahoo 일봉의 당일 현재값,
-    // 장후에는 당일 정규장 종가가 상단 카드와 동일하게 표시됩니다.
+    // 정규장 칸은 기존 계산을 그대로 유지합니다.
     const regularPrice=positive(values[values.length-1]?.value);
     const regularReferenceClose=positive(values[values.length-2]?.value);
 
+    // 날짜별 정규장 종가를 만든 뒤, 각 날짜의 애프터마켓 종가와 짝을 맞춥니다.
+    // Yahoo postMarketPrice는 postMarketTime이 해당 날짜의 16:00~20:00 ET인지
+    // 확인된 경우에만 사용하고, 그 외에는 1분봉을 기준으로 삼습니다.
+    const dailyCloseByDate=new Map();
+    for(const point of values){
+      const date=dateAt(point.time);
+      if(date)dailyCloseByDate.set(date,point.value);
+    }
+    const regularCloseForDate=date=>{
+      const sameDayRegular=bars.filter(b=>b.date===date&&b.minute>=570&&b.minute<960);
+      return lastOf(sameDayRegular)??dailyCloseByDate.get(date)??null;
+    };
+    const postQuoteParts=quotePostTimestamp?partsAt(quote.postMarketTime):null;
+    const postQuoteMinute=postQuoteParts?Number(postQuoteParts.hour)*60+Number(postQuoteParts.minute):null;
+    const quotePostIsSessionTime=postQuoteMinute!==null&&postQuoteMinute>=960&&postQuoteMinute<1200;
+    const postDates=[...new Set(bars.filter(b=>b.minute>=960&&b.minute<1200).map(b=>b.date))];
+    if(quotePostPrice!==null&&quotePostTimestamp&&quotePostTimestamp<today&&quotePostIsSessionTime)postDates.push(quotePostTimestamp);
+    const latestCompletedPostDate=postDates.filter(date=>date<today).sort().at(-1)??null;
+    const todayPostBars=bars.filter(b=>b.date===today&&b.minute>=960&&b.minute<1200);
+    const latestCompletedPostBars=latestCompletedPostDate?bars.filter(b=>b.date===latestCompletedPostDate&&b.minute>=960&&b.minute<1200):[];
+
+    const todayQuotePostPrice=quotePostPrice!==null&&quotePostTimestamp===today&&quotePostIsSessionTime?quotePostPrice:null;
+    const completedQuotePostPrice=quotePostPrice!==null&&quotePostTimestamp===latestCompletedPostDate&&quotePostIsSessionTime?quotePostPrice:null;
+    const todayPostClose=lastOf(todayPostBars)??todayQuotePostPrice;
+    const latestCompletedPostClose=lastOf(latestCompletedPostBars)??completedQuotePostPrice;
+
+    // 애프터마켓 표시 규칙:
+    // 04:00 이전 = 가장 최근 완료된 애프터마켓 종가(해당 날짜 정규장 종가 대비)
+    // 04:00~16:00 = 공란
+    // 16:00~20:00 = 오늘 애프터마켓 최근 체결가(오늘 정규장 종가 대비)
+    // 20:00 이후 = 오늘 애프터마켓 종가(오늘 정규장 종가 대비), 다음 04:00까지 유지
     let postPrice=null;
-    if(beforePremarket)postPrice=priorRegularClose;
-    else if(minute<960)postPrice=null;
-    else if(minute<1200)postPrice=currentPost;
-    else postPrice=postClose;
+    let postReference=null;
+    if(beforePremarket){
+      postPrice=latestCompletedPostClose;
+      postReference=latestCompletedPostDate?regularCloseForDate(latestCompletedPostDate):null;
+    }else if(minute<960){
+      postPrice=null;
+      postReference=null;
+    }else if(minute<1200){
+      postPrice=todayQuotePostPrice??lastOf(todayPostBars);
+      postReference=regularClose;
+    }else{
+      postPrice=todayPostClose;
+      postReference=regularClose;
+    }
 
     const change=(price,base)=>positive(price)!==null&&positive(base)!==null?price-base:null;
     const pct=(delta,base)=>delta!==null&&positive(base)!==null?delta/base*100:null;
-    // 프리마켓 등락과 등락률은 정규장과 동일한 직전 거래일 종가를 기준으로 계산합니다.
-    // regularReferenceClose는 정규장 등락 계산에도 사용하는 일봉 values의 직전 값입니다.
+    // 프리마켓 등락과 등락률은 직전 거래일 정규장 종가를 기준으로 계산합니다.
     const preReferenceClose=regularReferenceClose??priorRegularClose;
     const preDelta=change(prePrice,preReferenceClose);
-    // 등락·등락률도 상단 카드와 동일하게 같은 두 일봉 값으로 직접 계산합니다.
     const regularDelta=change(regularPrice,regularReferenceClose);
     const regularPct=pct(regularDelta,regularReferenceClose);
-    const postReference=regularClose??regularPrice??currentRegular??priorRegularClose;
-    const quotePostChangeValid=quotePostPrice!==null&&(quotePostTimestamp===today||quotePostTimestamp===null);
-    const postQuoteDelta=quotePostChangeValid?numOrNull(quote.postMarketChange):null;
-    const postDelta=beforePremarket?0:(postPrice===null?null:postQuoteDelta??change(postPrice,postReference));
+    // 애프터마켓은 해당 애프터마켓 세션과 같은 날짜의 정규장 종가를 기준으로 계산합니다.
+    const postDelta=postPrice===null?null:change(postPrice,postReference);
     sessionQuotes={
       preMarketPrice:prePrice,preMarketChange:preDelta,preMarketChangePercent:pct(preDelta,preReferenceClose),
       regularMarketPrice:regularPrice,regularMarketChange:regularDelta,regularMarketChangePercent:regularPct,
