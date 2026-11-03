@@ -1,6 +1,6 @@
 'use strict';
 // Yahoo Finance chart API is accessed through the companion Cloudflare Worker.
-const PROXY_BASE='https://test.mcraft-tiger-574.workers.dev';
+const PROXY_BASE='https://pmc.mcraft-tiger-574.workers.dev';
 const $=id=>document.getElementById(id);
 const blank='—';
 const groups=[
@@ -482,7 +482,7 @@ if(item.unit==='stock'){
       const intraday=intradayJson?.chart?.result?.[0];
       const times=intraday?.timestamp||[];
       const closes1m=intraday?.indicators?.quote?.[0]?.close||[];
-      const formatter=new Intl.DateTimeFormat('en-US',{timeZone:intraday?.meta?.exchangeTimezoneName||'America/New_York',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'});
+      const formatter=new Intl.DateTimeFormat('en-US',{timeZone:intraday?.meta?.exchangeTimezoneName||'America/New_York',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',weekday:'short',hourCycle:'h23'});
       const bars=[];
       for(let i=0;i<times.length;i++){
         const v=Number(closes1m[i]); if(!Number.isFinite(v)||v<=0)continue;
@@ -490,44 +490,62 @@ if(item.unit==='stock'){
         const minute=Number(parts.hour)*60+Number(parts.minute);
         bars.push({date:`${parts.year}-${parts.month}-${parts.day}`,minute,value:v,time:times[i]});
       }
+      bars.sort((a,b)=>a.time-b.time);
       if(bars.length){
         const nowParts=Object.fromEntries(formatter.formatToParts(new Date()).map(p=>[p.type,p.value]));
-        const today=`${nowParts.year}-${nowParts.month}-${nowParts.day}`;
-        const minute=Number(nowParts.hour)*60+Number(nowParts.minute);
-        const dayBars=bars.filter(b=>b.date===today);
-        const priorDates=[...new Set(bars.filter(b=>b.date<today).map(b=>b.date))].sort();
-        const priorDate=priorDates[priorDates.length-1];
-        const priorBars=priorDate?bars.filter(b=>b.date===priorDate):[];
-        const lastOf=list=>list.length?list[list.length-1].value:null;
-        const preToday=dayBars.filter(b=>b.minute>=240&&b.minute<570);
-        const regularToday=dayBars.filter(b=>b.minute>=570&&b.minute<960);
-        const postToday=dayBars.filter(b=>b.minute>=960&&b.minute<1200);
-        const prePrior=priorBars.filter(b=>b.minute>=240&&b.minute<570);
-        const regularPrior=priorBars.filter(b=>b.minute>=570&&b.minute<960);
-        const postPrior=priorBars.filter(b=>b.minute>=960&&b.minute<1200);
-        const priorClose=values.length>1?values[values.length-2].value:values[values.length-1]?.value??null;
-        const currentRegular=lastOf(regularToday)??numOrNull(meta.regularMarketPrice);
-        const currentPre=lastOf(preToday)??numOrNull(meta.preMarketPrice);
-        const currentPost=lastOf(postToday)??numOrNull(meta.postMarketPrice);
-        const preClose=lastOf(preToday)??lastOf(prePrior)??numOrNull(meta.preMarketPrice);
-        const regularClose=lastOf(regularToday)??(minute>=960?numOrNull(meta.regularMarketPrice):null)??priorClose;
-        const postClose=lastOf(postToday)??lastOf(postPrior)??numOrNull(meta.postMarketPrice);
-        const prePrice=minute<240?lastOf(prePrior):minute<570?(currentPre??lastOf(prePrior)):preClose;
-        const regularPrice=minute<570?priorClose:minute<960?(currentRegular??priorClose):regularClose;
-        const postPrice=minute<240?null:minute<960?null:minute<1200?(currentPost??null):postClose;
-        const change=(price,base)=>price!==null&&base!==null&&base>0?price-base:null;
-        const pct=(delta,base)=>delta!==null&&base>0?delta/base*100:null;
-        const preDelta=change(prePrice,priorClose), regularDelta=change(regularPrice,priorClose), postDelta=change(postPrice,regularClose??priorClose);
-        sessionQuotes={
-          preMarketPrice:prePrice,preMarketChange:preDelta,preMarketChangePercent:pct(preDelta,priorClose),
-          regularMarketPrice:regularPrice,regularMarketChange:regularDelta,regularMarketChangePercent:pct(regularDelta,priorClose),
-          postMarketPrice:postPrice,postMarketChange:postDelta,postMarketChangePercent:pct(postDelta,regularClose??priorClose)
-        };
+      const today=`${nowParts.year}-${nowParts.month}-${nowParts.day}`;
+      const dateOfTimestamp=ts=>{if(!Number.isFinite(Number(ts))||Number(ts)<=0)return null;const parts=Object.fromEntries(formatter.formatToParts(new Date(Number(ts)*1000)).map(p=>[p.type,p.value]));return `${parts.year}-${parts.month}-${parts.day}`;};
+      const metaPriceToday=(priceKey,timeKey)=>dateOfTimestamp(meta[timeKey])===today?numOrNull(meta[priceKey]):null;
+      const minute=Number(nowParts.hour)*60+Number(nowParts.minute);
+      const weekday=nowParts.weekday;
+      const isWeekend=weekday==='Sat'||weekday==='Sun';
+      const dayBars=bars.filter(b=>b.date===today);
+      const priorDates=[...new Set(bars.filter(b=>b.date<today).map(b=>b.date))].sort();
+      const lastOf=list=>list.length?list[list.length-1].value:null;
+      const priorTradingDate=[...priorDates].reverse().find(date=>bars.some(b=>b.date===date&&b.minute>=570&&b.minute<960))||priorDates[priorDates.length-1];
+      const priorPreDate=[...priorDates].reverse().find(date=>bars.some(b=>b.date===date&&b.minute>=240&&b.minute<570))||priorTradingDate;
+      const priorRegular=priorTradingDate?bars.filter(b=>b.date===priorTradingDate&&b.minute>=570&&b.minute<960):[];
+      const priorPre=priorPreDate?bars.filter(b=>b.date===priorPreDate&&b.minute>=240&&b.minute<570):[];
+      const preToday=dayBars.filter(b=>b.minute>=240&&b.minute<570);
+      const regularToday=dayBars.filter(b=>b.minute>=570&&b.minute<960);
+      const postToday=dayBars.filter(b=>b.minute>=960&&b.minute<1200);
+      const dailyPriorClose=values.length>1?values[values.length-2].value:values[values.length-1]?.value??null;
+      const priorRegularClose=lastOf(priorRegular)??dailyPriorClose;
+      const priorPreClose=lastOf(priorPre);
+      const currentPre=lastOf(preToday)??metaPriceToday('preMarketPrice','preMarketTime');
+      const currentRegular=lastOf(regularToday)??metaPriceToday('regularMarketPrice','regularMarketTime');
+      const currentPost=lastOf(postToday)??metaPriceToday('postMarketPrice','postMarketTime');
+      const preClose=lastOf(preToday)??priorPreClose;
+      const regularClose=lastOf(regularToday)??(minute>=960?metaPriceToday('regularMarketPrice','regularMarketTime'):null)??priorRegularClose;
+      const postClose=lastOf(postToday)??(minute>=1200?metaPriceToday('postMarketPrice','postMarketTime'):null);
+
+      // 미국 동부시간 기준 세션 표시 규칙
+      // 프리마켓 04:00~09:30 / 정규장 09:30~16:00 / 애프터마켓 16:00~20:00
+      // 주말 및 프리마켓 시작 전에는 직전 거래일 세션 종가를 기준으로 표시한다.
+      const beforePremarket=isWeekend||minute<240;
+      const prePrice=beforePremarket?priorPreClose:minute<570?(currentPre??priorPreClose):preClose;
+      const regularPrice=beforePremarket||minute<570?priorRegularClose:minute<960?(currentRegular??priorRegularClose):(regularClose??priorRegularClose);
+      let postPrice;
+      if(beforePremarket)postPrice=priorRegularClose;
+      else if(minute<960)postPrice=null;
+      else if(minute<1200)postPrice=currentPost;
+      else postPrice=postClose;
+
+      const change=(price,base)=>price!==null&&price!==undefined&&base!==null&&base!==undefined&&base>0?price-base:null;
+      const pct=(delta,base)=>delta!==null&&base>0?delta/base*100:null;
+      const preDelta=change(prePrice,priorRegularClose);
+      const regularDelta=change(regularPrice,priorRegularClose);
+      const postDelta=change(postPrice,regularClose??priorRegularClose);
+      sessionQuotes={
+        preMarketPrice:prePrice,preMarketChange:preDelta,preMarketChangePercent:pct(preDelta,priorRegularClose),
+        regularMarketPrice:regularPrice,regularMarketChange:regularDelta,regularMarketChangePercent:pct(regularDelta,priorRegularClose),
+        postMarketPrice:postPrice,postMarketChange:postDelta,postMarketChangePercent:pct(postDelta,regularClose??priorRegularClose)
+      };
       }
     }
   }catch(sessionError){console.warn(`${item.ticker} 확장거래 시세 조회 실패`,sessionError);}
 }
-return {values,currency:meta.currency||'',exchange:meta.exchangeName||'',regularMarketPrice:sessionQuotes.regularMarketPrice??numOrNull(meta.regularMarketPrice),regularMarketChange:sessionQuotes.regularMarketChange??numOrNull(meta.regularMarketChange),regularMarketChangePercent:sessionQuotes.regularMarketChangePercent??numOrNull(meta.regularMarketChangePercent),preMarketPrice:sessionQuotes.preMarketPrice??numOrNull(meta.preMarketPrice),preMarketChange:sessionQuotes.preMarketChange??numOrNull(meta.preMarketChange),preMarketChangePercent:sessionQuotes.preMarketChangePercent??numOrNull(meta.preMarketChangePercent),postMarketPrice:sessionQuotes.postMarketPrice??numOrNull(meta.postMarketPrice),postMarketChange:sessionQuotes.postMarketChange??numOrNull(meta.postMarketChange),postMarketChangePercent:sessionQuotes.postMarketChangePercent??numOrNull(meta.postMarketChangePercent)};}
+const hasSessionQuotes=Object.prototype.hasOwnProperty.call(sessionQuotes,'preMarketPrice');return {values,currency:meta.currency||'',exchange:meta.exchangeName||'',regularMarketPrice:hasSessionQuotes?sessionQuotes.regularMarketPrice:numOrNull(meta.regularMarketPrice),regularMarketChange:hasSessionQuotes?sessionQuotes.regularMarketChange:numOrNull(meta.regularMarketChange),regularMarketChangePercent:hasSessionQuotes?sessionQuotes.regularMarketChangePercent:numOrNull(meta.regularMarketChangePercent),preMarketPrice:hasSessionQuotes?sessionQuotes.preMarketPrice:numOrNull(meta.preMarketPrice),preMarketChange:hasSessionQuotes?sessionQuotes.preMarketChange:numOrNull(meta.preMarketChange),preMarketChangePercent:hasSessionQuotes?sessionQuotes.preMarketChangePercent:numOrNull(meta.preMarketChangePercent),postMarketPrice:hasSessionQuotes?sessionQuotes.postMarketPrice:numOrNull(meta.postMarketPrice),postMarketChange:hasSessionQuotes?sessionQuotes.postMarketChange:numOrNull(meta.postMarketChange),postMarketChangePercent:hasSessionQuotes?sessionQuotes.postMarketChangePercent:numOrNull(meta.postMarketChangePercent)};}
 function dateString(ts){return new Date(ts*1000).toLocaleDateString('ko-KR',{year:'numeric',month:'2-digit',day:'2-digit',timeZone:'UTC'});}
 function renderOne(item,series){if(series.nightFutures){item.last=series.current;item.delta=series.delta;item.pct=series.pct;item.prev=series.reference;dataById.set(item.id,series);if(!item.card)return;const card=item.card,container=$(`chart-${item.id}`);const close=card.querySelector('.quote-close'),change=card.querySelector('.quote-change'),date=card.querySelector('.quote-date');close.textContent=closeText(item,series.current);change.textContent=`${series.delta>0?'+':''}${fmt(series.delta,item.decimals??2)} · ${series.pct>0?'+':''}${series.pct.toFixed(2)}%`;change.className=`quote-change ${colorClass(series.delta)}`;date.textContent='KRED 공개 시세 · 조회 시점';item.last=series.current;item.delta=series.delta;item.pct=series.pct;item.prev=series.reference;dataById.set(item.id,series);container.innerHTML='';if(!window.LightweightCharts){container.innerHTML='<div class=\'chart-empty\'>차트 라이브러리를 불러오지 못했습니다.</div>';return;}const chart=LightweightCharts.createChart(container,{width:container.clientWidth,height:container.clientHeight,layout:{background:{type:'solid',color:'#ffffff'},textColor:'#8995a6',fontFamily:'-apple-system,BlinkMacSystemFont,sans-serif',fontSize:10},grid:{vertLines:{color:'#f0f3f7'},horzLines:{color:'#f0f3f7'}},rightPriceScale:{borderColor:'#e6eaf1',scaleMargins:{top:.12,bottom:.1}},timeScale:{borderColor:'#e6eaf1',timeVisible:true,secondsVisible:false,rightOffset:1,barSpacing:12,minBarSpacing:2},localization:{locale:'ko-KR',priceFormatter:p=>fmt(p,item.decimals??2)}});const line=chart.addLineSeries({color:series.delta>=0?'#d84a4a':'#3478d4',lineWidth:2,priceLineVisible:false,lastValueVisible:true});line.setData(series.values);chart.timeScale().fitContent();charts.set(item.id,{chart,line});const toolbar=card.querySelector('.chart-range-toolbar');if(toolbar)toolbar.style.display='none';card.querySelector('.chart-note').textContent='야간 세션 18:00~06:00 · 기준가와 최신가만 표시 (분봉 이력 API 미확인)';card.querySelector('.bar-count').textContent='야간 세션 전체 시간축 · 실제 분봉 이력 미제공';return;}if(series.tradingView){const card=item.card,container=$(`chart-${item.id}`);container.innerHTML='';const isKospi=item.id==='kospi200night';const title=isKospi?'코스피200 야간선물':'코스닥150 야간선물';const url=isKospi?'https://kred.dev/ko/kospi-200-night-futures':'https://kred.dev/ko/kosdaq-150-night-futures';card.querySelector('.quote-close').textContent='KRED 실시간 차트';card.querySelector('.quote-change').textContent='실시간 가격·등락은 아래 차트에서 확인';card.querySelector('.quote-change').className='quote-change neutral';card.querySelector('.quote-date').textContent='KRED 데이터';const frame=document.createElement('iframe');frame.className='kred-frame';frame.title=title+' 실시간 시세 및 차트';frame.loading='eager';frame.referrerPolicy='strict-origin-when-cross-origin';frame.allow='fullscreen';frame.src=url;container.appendChild(frame);card.querySelector('.chart-note').textContent='KRED 원본 페이지 · 실제 야간선물 시세와 분봉 차트';card.querySelector('.bar-count').textContent='KRED 페이지에서 1분 · 5분 · 10분 · 15분 · 30분 선택';const toolbar=card.querySelector('.chart-range-toolbar');if(toolbar)toolbar.style.display='none';return;}const toolbar=item.card.querySelector('.chart-range-toolbar');if(toolbar){toolbar.style.display='flex';toolbar.querySelectorAll('button').forEach(btn=>{btn.onclick=()=>{toolbar.querySelectorAll('button').forEach(b=>b.classList.toggle('selected',b===btn));const chartObj=charts.get(item.id)?.chart;if(!chartObj)return;const now=Math.floor(Date.now()/1000),days={'1M':31,'3M':92,'6M':184,'YTD':Math.ceil((Date.now()-new Date(new Date().getFullYear(),0,1).getTime())/86400000),'1Y':366,'ALL':730}[btn.dataset.range]||92;const to=series.values[series.values.length-1].time;let from;if(btn.dataset.range==='ALL'){from=series.values[0].time;}else if(btn.dataset.range==='YTD'){from=Math.max(series.values[0].time,Math.floor(new Date(new Date().getFullYear(),0,1).getTime()/1000));}else{from=Math.max(series.values[0].time,to-days*86400);}const visibleCount=series.values.filter(v=>v.time>=from&&v.time<=to).length;const plotWidth=Math.max(120,(chartObj.options().width||chartObj.chartElement?.clientWidth||item.card.querySelector('.chart-area').clientWidth)-58);chartObj.applyOptions({timeScale:{minBarSpacing:.25,barSpacing:Math.max(.25,Math.min(7,plotWidth/Math.max(1,visibleCount))),rightOffset:0}});chartObj.timeScale().setVisibleRange({from,to});};});}dataById.set(item.id,series);const vals=series.values,last=vals[vals.length-1],prev=vals[vals.length-2],delta=last.value-prev.value,pct=prev.value?delta/prev.value*100:null;item.last=last.value;item.delta=delta;item.pct=pct;item.prev=prev.value;if(item.unit==='stock'){item.preMarketPrice=series.preMarketPrice;item.preMarketDelta=series.preMarketChange;item.preMarketPct=series.preMarketChangePercent;item.regularMarketPrice=series.regularMarketPrice??last.value;item.regularMarketDelta=series.regularMarketChange??delta;item.regularMarketPct=series.regularMarketChangePercent??pct;item.afterMarketPrice=series.postMarketPrice;item.afterMarketDelta=series.postMarketChange;item.afterMarketPct=series.postMarketChangePercent;}const card=item.card;const close=card.querySelector('.quote-close'),change=card.querySelector('.quote-change'),date=card.querySelector('.quote-date');close.textContent=closeText(item,last.value);change.textContent=`${changeText(item,delta)} · ${pctText(pct)}`;change.className=`quote-change ${colorClass(delta)}`;date.textContent=`${dateString(last.time)} 종가`;const container=$(`chart-${item.id}`);container.innerHTML='';if(!window.LightweightCharts){container.innerHTML='<div class="chart-empty">차트 라이브러리를 불러오지 못했습니다.</div>';return;}const chart=LightweightCharts.createChart(container,{width:container.clientWidth,height:container.clientHeight,layout:{background:{type:'solid',color:'#ffffff'},textColor:'#8995a6',fontFamily:'-apple-system,BlinkMacSystemFont,sans-serif',fontSize:10},grid:{vertLines:{color:'#f0f3f7'},horzLines:{color:'#f0f3f7'}},rightPriceScale:{borderColor:'#e6eaf1',scaleMargins:{top:.12,bottom:.1}},timeScale:{borderColor:'#e6eaf1',timeVisible:false,secondsVisible:false,rightOffset:1,barSpacing:7,minBarSpacing:.25},crosshair:{vertLine:{color:'#a9b9cc',width:1,style:2},horzLine:{color:'#a9b9cc',width:1,style:2}},localization:{locale:'ko-KR',priceFormatter:p=>item.percentChart?`${p>0?'+':''}${p.toFixed(1)}%`:fmt(p,item.decimals??2)}});let points=vals;if(item.percentChart){const base=vals[0].value;points=vals.map(v=>({time:v.time,value:(v.value/base-1)*100}));}const seriesLine=chart.addLineSeries({color:last.value>=prev.value?'#d83b4b':'#2874d0',lineWidth:2,priceLineVisible:false,lastValueVisible:true,crosshairMarkerVisible:true,priceFormat:item.percentChart?{type:'custom',formatter:p=>`${p>0?'+':''}${p.toFixed(1)}%`,minMove:.1}:{type:'price',precision:item.decimals??2,minMove:item.unit==='yield'?.001:.01}});seriesLine.setData(points);chart.timeScale().fitContent();charts.set(item.id,{chart,container,series:seriesLine});const initialFrom=Math.max(vals[0].time,Math.floor(Date.now()/1000)-92*86400);try{chart.timeScale().setVisibleRange({from:initialFrom,to:last.time});}catch(e){}const foot=card.querySelector('.bar-count');foot.textContent=`${vals.length}봉 · ${dateString(vals[0].time)} ~ ${dateString(last.time)}`;}
 async function refreshMarketCaps(){
