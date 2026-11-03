@@ -1,6 +1,6 @@
 'use strict';
 // Yahoo Finance chart API is accessed through the companion Cloudflare Worker.
-const PROXY_BASE='https://test.mcraft-tiger-574.workers.dev';
+const PROXY_BASE='https://pmc.mcraft-tiger-574.workers.dev';
 const $=id=>document.getElementById(id);
 const blank='—';
 const groups=[
@@ -19,16 +19,16 @@ const groups=[
     {id:'meta',no:6,name:'메타',ticker:'META',unit:'stock',percentChart:true}
   ]},
   {label:'금리·환율·원자재',items:[
-    {id:'us2y',no:9,name:'미국 2년물 국채금리',source:'treasury',treasuryField:'BC_2YEAR',unit:'yield',suffix:'%',decimals:3},
-    {id:'us10y',no:10,name:'미국 10년물 국채금리',source:'treasury',treasuryField:'BC_10YEAR',unit:'yield',suffix:'%',decimals:3},
-    {id:'us30y',no:11,name:'미국 30년물 국채금리',source:'treasury',treasuryField:'BC_30YEAR',unit:'yield',suffix:'%',decimals:3},
-    {id:'highyield',no:12,name:'하이일드 스프레드',source:'fred',ticker:'BAMLH0A0HYM2',unit:'yield',suffix:'%',decimals:2},
-    {id:'dxy',no:13,name:'달러인덱스',ticker:'DX-Y.NYB',unit:'index'},
-    {id:'usdkRW',no:14,name:'원/달러 환율',ticker:'KRW=X',unit:'fx',suffix:'원',decimals:2},
-    {id:'wti',no:15,name:'WTI 유가',ticker:'CL=F',unit:'commodity',suffix:'$',decimals:2},
-    {id:'brent',no:16,name:'브렌트유 유가',ticker:'BZ=F',unit:'commodity',suffix:'$',decimals:2},
-    {id:'vix',no:17,name:'S&P 500 변동성 지수 VIX',ticker:'^VIX',unit:'index',decimals:2},
-    {id:'vxn',no:18,name:'나스닥 100 변동성 지수 (VXN)',ticker:'^VXN',unit:'index',decimals:2,percentChart:true}
+    {id:'us2y',no:8,name:'미국 2년물 국채금리',source:'treasury',treasuryField:'BC_2YEAR',unit:'yield',suffix:'%',decimals:3},
+    {id:'us10y',no:9,name:'미국 10년물 국채금리',source:'treasury',treasuryField:'BC_10YEAR',unit:'yield',suffix:'%',decimals:3},
+    {id:'us30y',no:10,name:'미국 30년물 국채금리',source:'treasury',treasuryField:'BC_30YEAR',unit:'yield',suffix:'%',decimals:3},
+    {id:'highyield',no:11,name:'하이일드 스프레드',source:'fred',ticker:'BAMLH0A0HYM2',unit:'yield',suffix:'%',decimals:2},
+    {id:'dxy',no:12,name:'달러인덱스',ticker:'DX-Y.NYB',unit:'index'},
+    {id:'usdkRW',no:13,name:'원/달러 환율',ticker:'KRW=X',unit:'fx',suffix:'원',decimals:2},
+    {id:'wti',no:14,name:'WTI 유가',ticker:'CL=F',unit:'commodity',suffix:'$',decimals:2},
+    {id:'brent',no:15,name:'브렌트유 유가',ticker:'BZ=F',unit:'commodity',suffix:'$',decimals:2},
+    {id:'vix',no:16,name:'S&P 500 변동성 지수 VIX',ticker:'^VIX',unit:'index',decimals:2},
+    {id:'vxn',no:17,name:'나스닥 100 변동성 지수 (VXN)',ticker:'^VXN',unit:'index',decimals:2,percentChart:true}
   ]},
   {label:'국내 증시',items:[
     {id:'kospi200night',no:3,name:'코스피200 야간선물',source:'kredNightFutures',page:'https://kred.dev/ko/kospi-200-night-futures',unit:'futures',decimals:2},
@@ -73,6 +73,8 @@ const ACTIVITY_TYPES={
   turnover:{label:'거래대금 상위(20종목)',metric:'turnover',expanded:false,items:[],containerId:'activity-turnover-summary',chartContainerId:'activity-turnover-charts'},
   volume:{label:'거래량 상위(20종목)',metric:'volume',expanded:false,items:[],containerId:'activity-volume-summary',chartContainerId:'activity-volume-charts'}
 };
+let hyperscalerExpanded=false;
+let hyperscalerLoadPromise=null;
 let activityQuotesCache=null;
 let activityQuotesFetchedAt=0;
 let activityLoadPromise=null;
@@ -188,6 +190,37 @@ function buildActivityItems(type,quotes){
   });
   return config.items;
 }
+function updateHyperscalerToggle(){
+  document.querySelectorAll('[data-hyperscaler-toggle]').forEach(button=>{
+    button.textContent=`하이퍼스케일러 ${hyperscalerExpanded?'접기 ▲':'펼치기 ▼'}`;
+    button.setAttribute('aria-expanded',String(hyperscalerExpanded));
+  });
+  document.querySelectorAll('[data-hyperscaler-result]').forEach(el=>{el.hidden=!hyperscalerExpanded;});
+  const grid=$('hyperscaler-charts');if(grid)grid.hidden=!hyperscalerExpanded;
+  if(hyperscalerExpanded)requestAnimationFrame(resizeCharts);
+}
+async function toggleHyperscalers(){
+  hyperscalerExpanded=!hyperscalerExpanded;
+  updateHyperscalerToggle();
+  if(!hyperscalerExpanded)return;
+  const pending=HYPERSCALERS.filter(item=>!item.hyperscalerLoaded);
+  if(!pending.length)return;
+  const status=$('status');const previous=status.textContent;status.textContent='하이퍼스케일러 4종목 차트 조회 중…';
+  if(hyperscalerLoadPromise){await hyperscalerLoadPromise;return;}
+  hyperscalerLoadPromise=(async()=>{
+    let failures=0;
+    await Promise.all(pending.map(async item=>{
+      try{const series=await fetchSeries(item);renderOne(item,series);item.hyperscalerLoaded=true;}
+      catch(error){failures++;const target=$(`chart-${item.id}`);if(target)target.innerHTML=`<div class="chart-empty">${item.name} 차트 조회 실패: ${String(error?.message||error)}</div>`;}
+    }));
+    updateSummary();
+    status.textContent=failures?`하이퍼스케일러 ${4-failures}/4개 연결 · 확인 필요 ${failures}개`:'하이퍼스케일러 4개 차트 연결 완료';
+    if(!failures)status.classList.remove('error-note');else status.classList.add('error-note');
+    hyperscalerLoadPromise=null;
+    requestAnimationFrame(resizeCharts);
+  })();
+  await hyperscalerLoadPromise;
+}
 function updateActivityButtons(){
   Object.entries(ACTIVITY_TYPES).forEach(([type,config])=>{
     document.querySelectorAll(`[data-activity-toggle="${type}"]`).forEach(button=>{
@@ -283,11 +316,11 @@ function makeSummary(){
     ...m7Rows.map((items,index)=>({items,m7:true,after:index===3})),
     {activityType:'turnover'},
     {activityType:'volume',after:true},
-    {items:HYPERSCALERS.map(item=>({no:8,id:item.id,name:item.name,ticker:item.ticker})),hyperscaler:true,after:true},
-    {items:[{no:9,id:'us2y',name:'미국 2년물'},{no:10,id:'us10y',name:'미국 10년물'}]},
-    {items:[{no:11,id:'us30y',name:'미국 30년물'},{no:12,id:'highyield',name:'하이일드 스프레드'}],after:true},
-    {items:[{no:13,id:'dxy',name:'달러인덱스'},{no:14,id:'usdkRW',name:'원/달러'}]},
-    {items:[{no:15,id:'wti',name:'WTI 유가'},{no:16,id:'brent',name:'브렌트유'}],after:true},
+    {hyperscalerToggle:true,after:true},
+    {items:[{no:8,id:'us2y',name:'미국 2년물'},{no:9,id:'us10y',name:'미국 10년물'}]},
+    {items:[{no:10,id:'us30y',name:'미국 30년물'},{no:11,id:'highyield',name:'하이일드 스프레드'}],after:true},
+    {items:[{no:12,id:'dxy',name:'달러인덱스'},{no:13,id:'usdkRW',name:'원/달러'}]},
+    {items:[{no:14,id:'wti',name:'WTI 유가'},{no:15,id:'brent',name:'브렌트유'}],after:true},
     {groupTitle:'VIX · S&P 500 Expected Move'},
     {expectedMoveGroup:{spotId:'sp500',volId:'vix',prefix:'spx',underlyingNote:'S&P 500 기준'},items:[{no:'',id:'vix',name:'S&P 500 변동성 지수 VIX',ticker:'^VIX'}],after:true},
     {groupTitle:'VXN · Nasdaq Expected Move'},
@@ -325,6 +358,20 @@ function makeSummary(){
         line.appendChild(cell);
       });
       root.appendChild(line);
+      return;
+    }
+    if(row.hyperscalerToggle){
+      const buttonRow=document.createElement('div');
+      buttonRow.className='summary-row activity-control-row summary-divider-after';
+      buttonRow.style.setProperty('--cols',1);
+      const cell=document.createElement('div');cell.className='summary-cell activity-button-cell';
+      const button=document.createElement('button');button.type='button';button.className='activity-toggle';button.dataset.hyperscalerToggle='true';
+      button.textContent=`하이퍼스케일러 ${hyperscalerExpanded?'접기 ▲':'펼치기 ▼'}`;button.setAttribute('aria-expanded',String(hyperscalerExpanded));
+      button.addEventListener('click',toggleHyperscalers);cell.appendChild(button);
+      const result=document.createElement('div');result.className='activity-result-content';result.dataset.hyperscalerResult='true';result.hidden=!hyperscalerExpanded;
+      const grid=document.createElement('div');grid.className='activity-summary-grid';grid.id='hyperscaler-summary';
+      HYPERSCALERS.forEach(item=>grid.appendChild(makeSummaryCell({no:'',id:item.id,name:item.name,ticker:item.ticker})));
+      result.appendChild(grid);cell.appendChild(result);buttonRow.appendChild(cell);root.appendChild(buttonRow);
       return;
     }
     if(row.activityType){
@@ -385,17 +432,27 @@ function makeCharts(){
           const activityGrid=document.createElement('div');activityGrid.className='activity-chart-grid';activityGrid.id=config.chartContainerId;activityGrid.hidden=!config.expanded;controlCell.appendChild(activityGrid);
           root.appendChild(controlCell);
         });
+        const hyperscalerControl=document.createElement('article');
+        hyperscalerControl.className='chart-card activity-chart-control-cell';
+        hyperscalerControl.dataset.hyperscalerControlCard='true';
+        const hyperscalerButton=document.createElement('button');
+        hyperscalerButton.type='button';hyperscalerButton.className='activity-toggle';hyperscalerButton.dataset.hyperscalerToggle='true';
+        hyperscalerButton.textContent=`하이퍼스케일러 ${hyperscalerExpanded?'접기 ▲':'펼치기 ▼'}`;
+        hyperscalerButton.setAttribute('aria-expanded',String(hyperscalerExpanded));
+        hyperscalerButton.addEventListener('click',toggleHyperscalers);
+        hyperscalerControl.appendChild(hyperscalerButton);
         const hyperscalerGrid=document.createElement('div');
         hyperscalerGrid.className='activity-chart-grid hyperscaler-chart-grid';
-        hyperscalerGrid.id='hyperscaler-charts';
+        hyperscalerGrid.id='hyperscaler-charts';hyperscalerGrid.hidden=!hyperscalerExpanded;
         HYPERSCALERS.forEach(item=>{
           const hyperCard=document.createElement('article');
           hyperCard.className='chart-card activity-chart-card hyperscaler-chart-card';
           hyperCard.id=`chart-card-${item.id}`;
-          hyperCard.innerHTML=`<div class="chart-top"><div class="chart-title"><h3><span class="number">8</span> ${item.name} [${item.ticker}]</h3></div><div class="quote-block"><div class="quote-close">${blank}</div><div class="quote-change neutral">${blank} · ${blank}</div><div class="quote-date">종가 기준</div></div></div><div id="chart-${item.id}" class="chart-area"><div class="chart-empty">시세 데이터를 불러오는 중…</div></div><div class="chart-foot"><span class="chart-note">${item.ticker}</span><span class="bar-count">전체 기간 데이터</span></div>`;
+          hyperCard.innerHTML=`<div class="chart-top"><div class="chart-title"><h3>${item.name} [${item.ticker}]</h3></div><div class="quote-block"><div class="quote-close">${blank}</div><div class="quote-change neutral">${blank} · ${blank}</div><div class="quote-date">종가 기준</div></div></div><div id="chart-${item.id}" class="chart-area"><div class="chart-empty">하이퍼스케일러 펼침 후 시세를 불러옵니다.</div></div><div class="chart-foot"><span class="chart-note">${item.ticker}</span><span class="bar-count">전체 기간 데이터</span></div>`;
           item.card=hyperCard;hyperscalerGrid.appendChild(hyperCard);
         });
-        root.appendChild(hyperscalerGrid);
+        hyperscalerControl.appendChild(hyperscalerGrid);
+        root.appendChild(hyperscalerControl);
       }
       const card=document.createElement('article');
       card.className='chart-card'+(['sox','nvda-m7','us2y','vix'].includes(item.id)?' chart-divider-before':'');
@@ -613,7 +670,8 @@ async function refreshAll(){
     !item.hidden &&
     !priorityIds.has(item.id) &&
     (!item.semiconductorCandidate||item.summaryActive) &&
-    (!item.activityType||ACTIVITY_TYPES[item.activityType]?.expanded)
+    (!item.activityType||ACTIVITY_TYPES[item.activityType]?.expanded) &&
+    (!item.id.startsWith('hyperscaler-')||hyperscalerExpanded)
   );
   let cursor=0;
   async function worker(){
