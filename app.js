@@ -237,11 +237,11 @@ async function renderActivityCharts(type,grid){
 }
 function makeSummaryCell(ref){
     const cell=document.createElement('div');
-    cell.className='summary-cell'+(ref.id==='kospi200night'||ref.id==='kosdaq150night'?' night-futures-summary-cell':'')+(ref.no===6?' m7-summary-cell':'')+(ref.id==='skhy'?' skhy-reversed-summary-cell':'')+(['nasdaq','sp500','sox','kospi200night','kosdaq150night','vxn'].includes(ref.id)?' soft-green-summary-cell':'');
+    cell.className='summary-cell'+(ref.id==='kospi200night'||ref.id==='kosdaq150night'?' night-futures-summary-cell':'')+(ref.no===6?' m7-summary-cell':'')+(ref.id==='skhy'?' skhy-reversed-summary-cell':'')+(ref.id==='vix'?' vix-summary-cell':'')+(['nasdaq','sp500','sox','kospi200night','kosdaq150night','vxn'].includes(ref.id)?' soft-green-summary-cell':'');
     const targetId=ref.chartId||ref.id;
     const link=ref.url?`<a class="summary-chart-link" href="${ref.url}" target="_blank" rel="noopener noreferrer">차트</a>`:`<a class="summary-chart-link internal-chart-link" href="#chart-card-${targetId}" data-chart-target="chart-card-${targetId}">차트</a>`;
     const ticker=ref.ticker||all.find(item=>item.id===ref.id)?.ticker;
-    const displayName=`${ref.no!==''&&ref.no!==null&&ref.no!==undefined?`${ref.no}. `:''}${ref.name}${ticker?` [${ticker}]`:''}`;
+    const displayName=`${ref.no!==''&&ref.no!==null&&ref.no!==undefined?`${ref.no}. `:''}${ref.id==='vix'?'VIX':ref.name}${ticker?` [${ticker}]`:''}`;
     const blankOnly=!!ref.blankOnly||!!all.find(item=>item.id===ref.id)?.blankSummary;
     cell.innerHTML=`<div class="summary-titleline"><div class="summary-label">${displayName}</div>${link}</div>${blankOnly?'':`<div class="summary-price-line"><div class="summary-quote-values"><div class="summary-price">${blank}</div><div class="summary-change neutral">${blank} · ${blank}</div>${all.find(item=>item.id===ref.id)?.unit==='stock'?`<div class="summary-session-box"><div class="summary-session-item"><span class="summary-session-label">프리마켓</span><span class="summary-session-value summary-pre-price">${blank}</span><span class="summary-session-delta summary-pre-delta neutral">${blank}</span><span class="summary-session-pct summary-pre-pct neutral">${blank}</span></div><div class="summary-session-item"><span class="summary-session-label">정규장</span><span class="summary-session-value summary-regular-price">${blank}</span><span class="summary-session-delta summary-regular-delta neutral">${blank}</span><span class="summary-session-pct summary-regular-pct neutral">${blank}</span></div><div class="summary-session-item"><span class="summary-session-label">애프터마켓</span><span class="summary-session-value summary-post-price">${blank}</span><span class="summary-session-delta summary-post-delta neutral">${blank}</span><span class="summary-session-pct summary-post-pct neutral">${blank}</span></div></div>`:''}</div></div>`}`;
     cell.dataset.summaryId=ref.id;
@@ -286,11 +286,11 @@ function makeSummary(){
   ];
   function makeSummaryCell(ref){
     const cell=document.createElement('div');
-    cell.className='summary-cell'+(ref.id==='kospi200night'||ref.id==='kosdaq150night'?' night-futures-summary-cell':'')+(ref.no===6?' m7-summary-cell':'')+(ref.id==='skhy'?' skhy-reversed-summary-cell':'')+(['nasdaq','sp500','sox','kospi200night','kosdaq150night','vxn'].includes(ref.id)?' soft-green-summary-cell':'');
+    cell.className='summary-cell'+(ref.id==='kospi200night'||ref.id==='kosdaq150night'?' night-futures-summary-cell':'')+(ref.no===6?' m7-summary-cell':'')+(ref.id==='skhy'?' skhy-reversed-summary-cell':'')+(ref.id==='vix'?' vix-summary-cell':'')+(['nasdaq','sp500','sox','kospi200night','kosdaq150night','vxn'].includes(ref.id)?' soft-green-summary-cell':'');
     const targetId=ref.chartId||ref.id;
     const link=ref.url?`<a class="summary-chart-link" href="${ref.url}" target="_blank" rel="noopener noreferrer">차트</a>`:`<a class="summary-chart-link internal-chart-link" href="#chart-card-${targetId}" data-chart-target="chart-card-${targetId}">차트</a>`;
     const ticker=ref.ticker||all.find(item=>item.id===ref.id)?.ticker;
-    const displayName=`${ref.no!==''&&ref.no!==null&&ref.no!==undefined?`${ref.no}. `:''}${ref.name}${ticker?` [${ticker}]`:''}`;
+    const displayName=`${ref.no!==''&&ref.no!==null&&ref.no!==undefined?`${ref.no}. `:''}${ref.id==='vix'?'VIX':ref.name}${ticker?` [${ticker}]`:''}`;
     const blankOnly=!!ref.blankOnly||!!all.find(item=>item.id===ref.id)?.blankSummary;
     cell.innerHTML=`<div class="summary-titleline"><div class="summary-label">${displayName}</div>${link}</div>${blankOnly?'':`<div class="summary-price-line"><div class="summary-quote-values"><div class="summary-price">${blank}</div><div class="summary-change neutral">${blank} · ${blank}</div>${all.find(item=>item.id===ref.id)?.unit==='stock'?`<div class="summary-session-box"><div class="summary-session-item"><span class="summary-session-label">프리마켓</span><span class="summary-session-value summary-pre-price">${blank}</span><span class="summary-session-delta summary-pre-delta neutral">${blank}</span><span class="summary-session-pct summary-pre-pct neutral">${blank}</span></div><div class="summary-session-item"><span class="summary-session-label">정규장</span><span class="summary-session-value summary-regular-price">${blank}</span><span class="summary-session-delta summary-regular-delta neutral">${blank}</span><span class="summary-session-pct summary-regular-pct neutral">${blank}</span></div><div class="summary-session-item"><span class="summary-session-label">애프터마켓</span><span class="summary-session-value summary-post-price">${blank}</span><span class="summary-session-delta summary-post-delta neutral">${blank}</span><span class="summary-session-pct summary-post-pct neutral">${blank}</span></div></div>`:''}</div></div>`}`;
     cell.dataset.summaryId=ref.id;
@@ -414,23 +414,37 @@ if(item.unit==='stock'){
         bars.push({date:`${parts.year}-${parts.month}-${parts.day}`,minute,value:v,time:times[i]});
       }
       if(bars.length){
-        const latestDate=bars[bars.length-1].date;
-        const dayBars=bars.filter(b=>b.date===latestDate);
+        const nowParts=Object.fromEntries(formatter.formatToParts(new Date()).map(p=>[p.type,p.value]));
+        const today=`${nowParts.year}-${nowParts.month}-${nowParts.day}`;
+        const minute=Number(nowParts.hour)*60+Number(nowParts.minute);
+        const dayBars=bars.filter(b=>b.date===today);
+        const priorDates=[...new Set(bars.filter(b=>b.date<today).map(b=>b.date))].sort();
+        const priorDate=priorDates[priorDates.length-1];
+        const priorBars=priorDate?bars.filter(b=>b.date===priorDate):[];
         const lastOf=list=>list.length?list[list.length-1].value:null;
-        const pre=dayBars.filter(b=>b.minute>=240&&b.minute<570);
-        const regular=dayBars.filter(b=>b.minute>=570&&b.minute<960);
-        const post=dayBars.filter(b=>b.minute>=960&&b.minute<1200);
-        const priorClose=values.length>1?values[values.length-2].value:null;
-        const regularPrice=lastOf(regular)??numOrNull(meta.regularMarketPrice);
-        const prePrice=lastOf(pre)??numOrNull(meta.preMarketPrice);
-        const postPrice=lastOf(post)??numOrNull(meta.postMarketPrice);
+        const preToday=dayBars.filter(b=>b.minute>=240&&b.minute<570);
+        const regularToday=dayBars.filter(b=>b.minute>=570&&b.minute<960);
+        const postToday=dayBars.filter(b=>b.minute>=960&&b.minute<1200);
+        const prePrior=priorBars.filter(b=>b.minute>=240&&b.minute<570);
+        const regularPrior=priorBars.filter(b=>b.minute>=570&&b.minute<960);
+        const postPrior=priorBars.filter(b=>b.minute>=960&&b.minute<1200);
+        const priorClose=values.length>1?values[values.length-2].value:values[values.length-1]?.value??null;
+        const currentRegular=lastOf(regularToday)??numOrNull(meta.regularMarketPrice);
+        const currentPre=lastOf(preToday)??numOrNull(meta.preMarketPrice);
+        const currentPost=lastOf(postToday)??numOrNull(meta.postMarketPrice);
+        const preClose=lastOf(preToday)??lastOf(prePrior)??numOrNull(meta.preMarketPrice);
+        const regularClose=lastOf(regularToday)??(minute>=960?numOrNull(meta.regularMarketPrice):null)??priorClose;
+        const postClose=lastOf(postToday)??lastOf(postPrior)??numOrNull(meta.postMarketPrice);
+        const prePrice=minute<240?lastOf(prePrior):minute<570?(currentPre??lastOf(prePrior)):preClose;
+        const regularPrice=minute<570?priorClose:minute<960?(currentRegular??priorClose):regularClose;
+        const postPrice=minute<240?null:minute<960?null:minute<1200?(currentPost??null):postClose;
         const change=(price,base)=>price!==null&&base!==null&&base>0?price-base:null;
         const pct=(delta,base)=>delta!==null&&base>0?delta/base*100:null;
-        const preDelta=change(prePrice,priorClose), regularDelta=change(regularPrice,priorClose), postDelta=change(postPrice,regularPrice??priorClose);
+        const preDelta=change(prePrice,priorClose), regularDelta=change(regularPrice,priorClose), postDelta=change(postPrice,regularClose??priorClose);
         sessionQuotes={
           preMarketPrice:prePrice,preMarketChange:preDelta,preMarketChangePercent:pct(preDelta,priorClose),
           regularMarketPrice:regularPrice,regularMarketChange:regularDelta,regularMarketChangePercent:pct(regularDelta,priorClose),
-          postMarketPrice:postPrice,postMarketChange:postDelta,postMarketChangePercent:pct(postDelta,regularPrice??priorClose)
+          postMarketPrice:postPrice,postMarketChange:postDelta,postMarketChangePercent:pct(postDelta,regularClose??priorClose)
         };
       }
     }

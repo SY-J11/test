@@ -384,3 +384,6 @@
 .expected-move-range span{display:flex;justify-content:space-between;gap:4px;white-space:nowrap}
 .expected-move-range b{font-size:10px;color:#34445b}
 @media(max-width:520px){.summary-row.expected-move-group-row{grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}.expected-move-group-row .expected-move-cell{padding:7px 6px}.expected-move-cell .expected-move-value{font-size:11px}.expected-move-note,.expected-move-range{font-size:8px}.expected-move-range b{font-size:9px}}
+
+/* VIX 첫 번째 요약칸을 VXN 요약칸과 같은 어두운 배경으로 표시 */
+.summary-cell.vix-summary-cell{background-color:#eef1f5!important;border-color:#e2e7ee!important}
