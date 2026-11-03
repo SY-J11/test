@@ -531,7 +531,17 @@ if(item.unit==='stock'){
     const currentPre=(quotePrePrice!==null&&(quotePreTimestamp===today||quotePreTimestamp===null)?quotePrePrice:null)??
       (metaPrePrice!==null&&(metaPreTimestamp===today||metaPreTimestamp===null)?metaPrePrice:null)??lastOf(preToday);
     const currentRegular=positive(quoteToday('regularMarketPrice','regularMarketTime'))??positive(metaToday('regularMarketPrice','regularMarketTime'))??lastOf(regularToday);
-    const currentPost=positive(quoteToday('postMarketPrice','postMarketTime'))??positive(metaToday('postMarketPrice','postMarketTime'))??lastOf(postToday);
+    // 애프터마켓 quote는 오늘 날짜의 데이터만 사용합니다.
+    // Yahoo가 postMarketTime을 생략하는 경우에는 유효한 가격을 허용하고,
+    // 시간이 다른 날짜로 확인되면 오래된 가격을 제외한 뒤 1분봉으로 보완합니다.
+    const quotePostTimestamp=dateAt(quote.postMarketTime);
+    const metaPostTimestamp=dateAt(sessionMeta.postMarketTime)??dateAt(meta.postMarketTime);
+    const quotePostPrice=positive(numOrNull(quote.postMarketPrice));
+    const metaPostPrice=positive(numOrNull(sessionMeta.postMarketPrice))??positive(numOrNull(meta.postMarketPrice));
+    const currentPost=
+      (quotePostPrice!==null&&(quotePostTimestamp===today||quotePostTimestamp===null)?quotePostPrice:null)??
+      (metaPostPrice!==null&&(metaPostTimestamp===today||metaPostTimestamp===null)?metaPostPrice:null)??
+      lastOf(postToday);
 
     // 프리마켓 종가는 당일 프리마켓 분봉의 마지막 체결가를 우선하고,
     // 분봉이 없으면 오늘 날짜로 확인된 Yahoo preMarketPrice를 사용합니다.
@@ -578,8 +588,10 @@ if(item.unit==='stock'){
     const preDelta=change(prePrice,priorRegularClose);
     const regularDelta=numOrNull(meta.regularMarketChange)??(quoteRegularMatches?numOrNull(quote.regularMarketChange):null)??change(regularPrice,regularReferenceClose);
     const regularPct=numOrNull(meta.regularMarketChangePercent)??(quoteRegularMatches?numOrNull(quote.regularMarketChangePercent):null)??pct(regularDelta,regularReferenceClose);
-    const postReference=regularClose??currentRegular??priorRegularClose;
-    const postDelta=beforePremarket?0:(postPrice===null?null:numOrNull(quote.postMarketChange)??change(postPrice,postReference));
+    const postReference=regularClose??regularPrice??currentRegular??priorRegularClose;
+    const quotePostChangeValid=quotePostPrice!==null&&(quotePostTimestamp===today||quotePostTimestamp===null);
+    const postQuoteDelta=quotePostChangeValid?numOrNull(quote.postMarketChange):null;
+    const postDelta=beforePremarket?0:(postPrice===null?null:postQuoteDelta??change(postPrice,postReference));
     sessionQuotes={
       preMarketPrice:prePrice,preMarketChange:preDelta,preMarketChangePercent:pct(preDelta,priorRegularClose),
       regularMarketPrice:regularPrice,regularMarketChange:regularDelta,regularMarketChangePercent:regularPct,
