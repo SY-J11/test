@@ -541,13 +541,22 @@ if(item.unit==='stock'){
     // 정규장 칸은 상단 현재가와 동일한 Yahoo 정규장 quote 필드를 우선 사용합니다.
     // 장 시작 전에는 직전 거래일 정규장 종가, 장중에는 당일 최근 체결가,
     // 장 종료 후에는 당일 정규장 종가가 regularMarketPrice로 제공됩니다.
+    // Yahoo 일봉 chart의 meta.regularMarketPrice는 상단 정규장 현재가와 같은 기준값입니다.
+    // regularMarketTime 날짜를 검사해 버리면 장전/장후에 직전 종가가 누락될 수 있으므로
+    // 가격 필드 자체를 우선 사용하고, 없을 때만 quote 및 세션 데이터로 보완합니다.
+    const regularMetaPrice=positive(numOrNull(meta.regularMarketPrice))??positive(numOrNull(sessionMeta.regularMarketPrice));
     const quoteRegularPrice=positive(numOrNull(quote.regularMarketPrice));
-    let regularPrice=quoteRegularPrice;
+    let regularPrice=regularMetaPrice??quoteRegularPrice;
     if(regularPrice===null){
       if(beforePremarket||minute<570)regularPrice=priorRegularClose;
       else if(minute<960)regularPrice=currentRegular;
       else regularPrice=regularClose;
     }
+    const regularReferenceClose=
+      positive(numOrNull(meta.chartPreviousClose))??
+      positive(numOrNull(meta.previousClose))??
+      priorRegularClose;
+    const quoteRegularMatches=quoteRegularPrice!==null&&regularPrice!==null&&Math.abs(quoteRegularPrice-regularPrice)<0.000001;
 
     let postPrice=null;
     if(beforePremarket)postPrice=priorRegularClose;
@@ -559,8 +568,8 @@ if(item.unit==='stock'){
     const pct=(delta,base)=>delta!==null&&positive(base)!==null?delta/base*100:null;
     const preDelta=beforePremarket?change(prePrice,priorRegularClose):
       (minute<570?numOrNull(quote.preMarketChange)??change(prePrice,priorRegularClose):change(prePrice,priorRegularClose));
-    const regularDelta=numOrNull(quote.regularMarketChange)??change(regularPrice,priorRegularClose);
-    const regularPct=numOrNull(quote.regularMarketChangePercent)??pct(regularDelta,priorRegularClose);
+    const regularDelta=numOrNull(meta.regularMarketChange)??(quoteRegularMatches?numOrNull(quote.regularMarketChange):null)??change(regularPrice,regularReferenceClose);
+    const regularPct=numOrNull(meta.regularMarketChangePercent)??(quoteRegularMatches?numOrNull(quote.regularMarketChangePercent):null)??pct(regularDelta,regularReferenceClose);
     const postReference=regularClose??currentRegular??priorRegularClose;
     const postDelta=beforePremarket?0:(postPrice===null?null:numOrNull(quote.postMarketChange)??change(postPrice,postReference));
     sessionQuotes={
