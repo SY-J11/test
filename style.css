@@ -387,3 +387,10 @@
 
 /* VIX 첫 번째 요약칸을 VXN 요약칸과 같은 어두운 배경으로 표시 */
 .summary-cell.vix-summary-cell{background-color:#eef1f5!important;border-color:#e2e7ee!important}
+
+/* 8번 하이퍼스케일러: PC 4열, 모바일 2열 */
+.summary-row.hyperscaler-summary-row{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;}
+.hyperscaler-chart-grid{margin-top:7px;}
+@media(max-width:760px){
+  .summary-row.hyperscaler-summary-row{grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;}
+}
