@@ -538,10 +538,16 @@ if(item.unit==='stock'){
     else if(minute<570)prePrice=currentPre??priorPreClose??priorRegularClose;
     else prePrice=preClose??priorPreClose??priorRegularClose;
 
-    let regularPrice;
-    if(beforePremarket||minute<570)regularPrice=priorRegularClose;
-    else if(minute<960)regularPrice=currentRegular;
-    else regularPrice=regularClose;
+    // 정규장 칸은 상단 현재가와 동일한 Yahoo 정규장 quote 필드를 우선 사용합니다.
+    // 장 시작 전에는 직전 거래일 정규장 종가, 장중에는 당일 최근 체결가,
+    // 장 종료 후에는 당일 정규장 종가가 regularMarketPrice로 제공됩니다.
+    const quoteRegularPrice=positive(numOrNull(quote.regularMarketPrice));
+    let regularPrice=quoteRegularPrice;
+    if(regularPrice===null){
+      if(beforePremarket||minute<570)regularPrice=priorRegularClose;
+      else if(minute<960)regularPrice=currentRegular;
+      else regularPrice=regularClose;
+    }
 
     let postPrice=null;
     if(beforePremarket)postPrice=priorRegularClose;
@@ -553,13 +559,13 @@ if(item.unit==='stock'){
     const pct=(delta,base)=>delta!==null&&positive(base)!==null?delta/base*100:null;
     const preDelta=beforePremarket?change(prePrice,priorRegularClose):
       (minute<570?numOrNull(quote.preMarketChange)??change(prePrice,priorRegularClose):change(prePrice,priorRegularClose));
-    const regularDelta=(beforePremarket||minute<570)?0:
-      (minute<960?numOrNull(quote.regularMarketChange)??change(regularPrice,priorRegularClose):change(regularPrice,priorRegularClose));
+    const regularDelta=numOrNull(quote.regularMarketChange)??change(regularPrice,priorRegularClose);
+    const regularPct=numOrNull(quote.regularMarketChangePercent)??pct(regularDelta,priorRegularClose);
     const postReference=regularClose??currentRegular??priorRegularClose;
     const postDelta=beforePremarket?0:(postPrice===null?null:numOrNull(quote.postMarketChange)??change(postPrice,postReference));
     sessionQuotes={
       preMarketPrice:prePrice,preMarketChange:preDelta,preMarketChangePercent:pct(preDelta,priorRegularClose),
-      regularMarketPrice:regularPrice,regularMarketChange:regularDelta,regularMarketChangePercent:pct(regularDelta,priorRegularClose),
+      regularMarketPrice:regularPrice,regularMarketChange:regularDelta,regularMarketChangePercent:regularPct,
       postMarketPrice:postPrice,postMarketChange:postDelta,postMarketChangePercent:pct(postDelta,postReference)
     };
   }catch(sessionError){console.warn(`${item.ticker} 확장거래 시세 조회 실패`,sessionError);}
