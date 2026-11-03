@@ -522,11 +522,19 @@ if(item.unit==='stock'){
     const priorRegularClose=positive(numOrNull(quote.regularMarketPreviousClose))??lastOf(priorRegularBars)??dailyPriorClose;
     const priorPreClose=lastOf(priorPreBars);
 
-    const currentPre=positive(quoteToday('preMarketPrice','preMarketTime'))??positive(metaToday('preMarketPrice','preMarketTime'))??lastOf(preToday);
+    // 프리마켓 quote는 오늘 날짜의 값인지 확인하되, Yahoo가 시간 필드를 생략한 경우
+    // 가격 자체가 유효하면 사용합니다. 다른 날짜의 오래된 프리마켓 값은 사용하지 않습니다.
+    const quotePreTimestamp=dateAt(quote.preMarketTime);
+    const metaPreTimestamp=dateAt(sessionMeta.preMarketTime)??dateAt(meta.preMarketTime);
+    const quotePrePrice=positive(numOrNull(quote.preMarketPrice));
+    const metaPrePrice=positive(numOrNull(sessionMeta.preMarketPrice))??positive(numOrNull(meta.preMarketPrice));
+    const currentPre=(quotePrePrice!==null&&(quotePreTimestamp===today||quotePreTimestamp===null)?quotePrePrice:null)??
+      (metaPrePrice!==null&&(metaPreTimestamp===today||metaPreTimestamp===null)?metaPrePrice:null)??lastOf(preToday);
     const currentRegular=positive(quoteToday('regularMarketPrice','regularMarketTime'))??positive(metaToday('regularMarketPrice','regularMarketTime'))??lastOf(regularToday);
     const currentPost=positive(quoteToday('postMarketPrice','postMarketTime'))??positive(metaToday('postMarketPrice','postMarketTime'))??lastOf(postToday);
 
-    // 세션 종가는 해당 날짜의 분봉 마지막 값 또는 당일 quote 값으로 확정합니다.
+    // 프리마켓 종가는 당일 프리마켓 분봉의 마지막 체결가를 우선하고,
+    // 분봉이 없으면 오늘 날짜로 확인된 Yahoo preMarketPrice를 사용합니다.
     const preClose=lastOf(preToday)??currentPre;
     const regularClose=lastOf(regularToday)??currentRegular;
     const postClose=lastOf(postToday)??currentPost;
@@ -535,8 +543,8 @@ if(item.unit==='stock'){
     const beforePremarket=isWeekend||minute<240;
     let prePrice;
     if(beforePremarket)prePrice=priorPreClose??priorRegularClose;
-    else if(minute<570)prePrice=currentPre??priorPreClose??priorRegularClose;
-    else prePrice=preClose??priorPreClose??priorRegularClose;
+    else if(minute<570)prePrice=currentPre??lastOf(preToday)??priorPreClose??priorRegularClose;
+    else prePrice=preClose??currentPre??priorPreClose??priorRegularClose;
 
     // 정규장 칸은 상단 현재가와 동일한 Yahoo 정규장 quote 필드를 우선 사용합니다.
     // 장 시작 전에는 직전 거래일 정규장 종가, 장중에는 당일 최근 체결가,
@@ -566,8 +574,8 @@ if(item.unit==='stock'){
 
     const change=(price,base)=>positive(price)!==null&&positive(base)!==null?price-base:null;
     const pct=(delta,base)=>delta!==null&&positive(base)!==null?delta/base*100:null;
-    const preDelta=beforePremarket?change(prePrice,priorRegularClose):
-      (minute<570?numOrNull(quote.preMarketChange)??change(prePrice,priorRegularClose):change(prePrice,priorRegularClose));
+    // 프리마켓 등락과 등락률은 모든 시간대에서 직전 정규장 종가를 기준으로 일관되게 계산합니다.
+    const preDelta=change(prePrice,priorRegularClose);
     const regularDelta=numOrNull(meta.regularMarketChange)??(quoteRegularMatches?numOrNull(quote.regularMarketChange):null)??change(regularPrice,regularReferenceClose);
     const regularPct=numOrNull(meta.regularMarketChangePercent)??(quoteRegularMatches?numOrNull(quote.regularMarketChangePercent):null)??pct(regularDelta,regularReferenceClose);
     const postReference=regularClose??currentRegular??priorRegularClose;
