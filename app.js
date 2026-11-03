@@ -611,8 +611,15 @@ if(item.unit==='stock'){
 
     const change=(price,base)=>positive(price)!==null&&positive(base)!==null?price-base:null;
     const pct=(delta,base)=>delta!==null&&positive(base)!==null?delta/base*100:null;
-    // 프리마켓 등락과 등락률은 직전 거래일 정규장 종가를 기준으로 계산합니다.
-    const preReferenceClose=regularReferenceClose??priorRegularClose;
+    // 프리마켓 기준가는 미국 거래소 시간대(ET) 기준으로 가장 최근에 완료된 정규장 종가를 사용합니다.
+    // 한국 날짜나 일봉 배열의 단순 직전 항목(values[-2])에 의존하지 않습니다.
+    const dailyPriorCloseByExchangeDate=[...values]
+      .filter(point=>{const sessionDate=dateAt(point.time);return sessionDate&&sessionDate<today&&positive(point.value)!==null;})
+      .at(-1)?.value??null;
+    const preReferenceClose=
+      positive(numOrNull(quote.regularMarketPreviousClose))??
+      positive(lastOf(priorRegularBars))??
+      positive(dailyPriorCloseByExchangeDate);
     const preDelta=change(prePrice,preReferenceClose);
     const regularDelta=change(regularPrice,regularReferenceClose);
     const regularPct=pct(regularDelta,regularReferenceClose);
