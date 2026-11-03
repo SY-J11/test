@@ -611,15 +611,16 @@ if(item.unit==='stock'){
 
     const change=(price,base)=>positive(price)!==null&&positive(base)!==null?price-base:null;
     const pct=(delta,base)=>delta!==null&&positive(base)!==null?delta/base*100:null;
-    // 프리마켓 기준가는 미국 거래소 시간대(ET) 기준으로 가장 최근에 완료된 정규장 종가를 사용합니다.
-    // 한국 날짜나 일봉 배열의 단순 직전 항목(values[-2])에 의존하지 않습니다.
+    // 프리마켓 기준가는 미국 거래소 시간대(ET) 기준 직전 정규장 일봉 종가를 우선 사용합니다.
+    // 일봉 종가가 없을 때만 Yahoo 전일 종가, 마지막으로 정규장 1분봉 종가를 대체값으로 사용합니다.
+    // 한국 날짜나 일봉 배열의 단순 직전 항목(values[-2])에는 의존하지 않습니다.
     const dailyPriorCloseByExchangeDate=[...values]
       .filter(point=>{const sessionDate=dateAt(point.time);return sessionDate&&sessionDate<today&&positive(point.value)!==null;})
       .at(-1)?.value??null;
     const preReferenceClose=
+      positive(dailyPriorCloseByExchangeDate)??
       positive(numOrNull(quote.regularMarketPreviousClose))??
-      positive(lastOf(priorRegularBars))??
-      positive(dailyPriorCloseByExchangeDate);
+      positive(lastOf(priorRegularBars));
     const preDelta=change(prePrice,preReferenceClose);
     const regularDelta=change(regularPrice,regularReferenceClose);
     const regularPct=pct(regularDelta,regularReferenceClose);
