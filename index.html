@@ -20,7 +20,7 @@ main{padding:10px}.topline{display:flex;align-items:center;justify-content:space
 .card-title{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px}.card-title b{font-size:13px}.sub{font-size:10px;color:var(--muted)}
 .summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.sum{background:#f7f8fa;border-radius:9px;padding:9px 8px;min-width:0}.sum span{display:block;color:var(--muted);font-size:10px;margin-bottom:5px}.sum b{font-size:14px;letter-spacing:-.3px;white-space:nowrap}
 .index-main{display:flex;align-items:baseline;gap:8px;margin:2px 0 7px}.index-value{font-size:26px;font-weight:850;letter-spacing:-1px}.index-change{font-size:12px;font-weight:800}.red{color:var(--red)!important}.blue{color:var(--blue)!important}.green{color:var(--green)!important}.muted{color:var(--muted)!important}
-.chart{height:190px;position:relative}.chart canvas{width:100%;height:100%;display:block}.chart.tall{height:215px}.price-chart{height:330px!important}.ma-legend{display:flex;gap:9px;flex-wrap:wrap;margin:2px 0 8px;font-size:10px;color:#687487}.ma-legend span{white-space:nowrap}.ma-legend i{display:inline-block;width:8px;height:3px;border-radius:2px;vertical-align:middle;margin-right:3px}
+.chart{height:190px;position:relative}.chart canvas{width:100%;height:100%;display:block}.chart.tall{height:215px}.price-chart{height:330px!important}.ma-legend{display:flex;gap:9px;flex-wrap:wrap;margin:2px 0 8px;font-size:10px;color:#687487}.ma-legend span{white-space:nowrap}.ma-legend i{opacity:.5;display:inline-block;width:8px;height:3px;border-radius:2px;vertical-align:middle;margin-right:3px}
 .table-scroll{overflow-x:auto;margin:0 -2px}table{width:100%;border-collapse:collapse;white-space:nowrap;font-size:11px}th,td{padding:9px 7px;border-bottom:1px solid #edf0f4;text-align:right}th{font-size:10px;color:#8792a2;background:#f8f9fb;font-weight:750}th:first-child,td:first-child{text-align:left}tbody tr:last-child td{border-bottom:0}.empty{text-align:center!important;color:var(--muted);padding:20px 8px!important;white-space:normal}
 .note{padding:9px 10px;border-radius:9px;background:#f4f7fa;color:#718094;font-size:10px;line-height:1.55;margin-top:8px}.note.warn{background:#fff5ed;color:#a86b32}.note.error{background:#fff0f0;color:#b64b55}
 .legend{display:flex;gap:13px;flex-wrap:wrap;font-size:10px;color:#748094;margin-top:6px}.legend i{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:4px}
@@ -42,6 +42,7 @@ table.fit th:nth-child(1){width:15%}table.fit th:nth-child(2){width:15%}table.fi
 .index-main .seg{margin-left:auto;align-self:center}.index-main .seg button{padding:5px 11px;font-size:11px}
 #cum-days{width:100%}#cum-days button{flex:1;min-width:0;padding:7px 0;white-space:nowrap;letter-spacing:-.4px}.cum-tabs button{white-space:nowrap}
 .cmp-days{display:grid;grid-template-columns:1fr 1fr;gap:8px}.cmp-card{border:1px solid var(--line);border-radius:10px;padding:8px 6px 4px;min-width:0;background:#fff}.cmp-card h4{margin:0 0 4px 3px;font-size:11px;font-weight:800;color:var(--text)}.cmp-card table{font-size:10px;table-layout:auto}.cmp-card th,.cmp-card td{padding:5px 3px}.cmp-card th:first-child,.cmp-card td:first-child{text-align:left;color:#58667b}.cmp-card td{font-weight:700}
+table th,table th:first-child,.cmp-card th,.cmp-card th:first-child{text-align:center!important;vertical-align:middle}
 </style>
 </head>
 <body>
@@ -75,7 +76,7 @@ table.fit th:nth-child(1){width:15%}table.fit th:nth-child(2){width:15%}table.fi
 <div class="chart"><canvas id="kospi-cum-chart"></canvas></div>
 <div class="legend"><span><i style="background:#e34b55"></i>개인</span><span><i style="background:#3478d4"></i>외국인</span><span><i style="background:#159b76"></i>기관</span></div>
 <div class="note" id="kospi-cum-note"></div>
-<div class="sub-h">일별 투자자 수급 (최근 10일)</div><div class="table-scroll"><table class="ctr fit"><thead><tr><th>일자</th><th>지수</th><th>전일<br>대비</th><th>등락률</th><th>개인</th><th>외국인</th><th>기관</th></tr></thead><tbody id="kospi-flow-table"><tr><td colspan="7" class="empty">데이터 요청 중</td></tr></tbody></table></div><div class="more-box" id="kospi-flow-more"></div></div>
+<div class="sub-h">일별 투자자 수급</div><div class="table-scroll"><table class="ctr fit"><thead><tr><th>일자</th><th>지수</th><th>전일<br>대비</th><th>등락률</th><th>개인</th><th>외국인</th><th>기관</th></tr></thead><tbody id="kospi-flow-table"><tr><td colspan="7" class="empty">데이터 요청 중</td></tr></tbody></table></div><div class="more-box" id="kospi-flow-more"></div></div>
 <div class="card"><div class="card-title"><b>프로그램 매매</b><span class="sub">단위: 억원 · 순매수</span></div>
 <div class="sub-h">당일 시간별 프로그램 순매수<small id="kospi-prog-date"></small></div>
 <div class="chart"><canvas id="kospi-prog-chart"></canvas></div>
@@ -85,7 +86,7 @@ table.fit th:nth-child(1){width:15%}table.fit th:nth-child(2){width:15%}table.fi
 <div class="chart"><canvas id="kospi-pcum-chart"></canvas></div>
 <div class="legend"><span><i style="background:#e08a1e"></i>차익</span><span><i style="background:#3478d4"></i>비차익</span><span><i style="background:#159b76"></i>합계</span></div>
 <div class="note" id="kospi-pcum-note"></div>
-<div class="sub-h">일별 프로그램 매매 (최근 10일)</div><div class="table-scroll"><table class="ctr"><thead><tr><th>일자</th><th>차익</th><th>비차익</th><th>합계</th></tr></thead><tbody id="kospi-program"><tr><td colspan="4" class="empty">데이터 요청 중</td></tr></tbody></table></div><div class="more-box" id="kospi-program-more"></div></div>
+<div class="sub-h">일별 프로그램 매매</div><div class="table-scroll"><table class="ctr"><thead><tr><th>일자</th><th>차익</th><th>비차익</th><th>합계</th></tr></thead><tbody id="kospi-program"><tr><td colspan="4" class="empty">데이터 요청 중</td></tr></tbody></table></div><div class="more-box" id="kospi-program-more"></div></div>
 </section>
 
 <section class="panel" id="panel-kosdaq">
@@ -106,7 +107,7 @@ table.fit th:nth-child(1){width:15%}table.fit th:nth-child(2){width:15%}table.fi
 <div class="chart"><canvas id="kosdaq-cum-chart"></canvas></div>
 <div class="legend"><span><i style="background:#e34b55"></i>개인</span><span><i style="background:#3478d4"></i>외국인</span><span><i style="background:#159b76"></i>기관</span></div>
 <div class="note" id="kosdaq-cum-note"></div>
-<div class="sub-h">일별 투자자 수급 (최근 10일)</div><div class="table-scroll"><table class="ctr fit"><thead><tr><th>일자</th><th>지수</th><th>전일<br>대비</th><th>등락률</th><th>개인</th><th>외국인</th><th>기관</th></tr></thead><tbody id="kosdaq-flow-table"><tr><td colspan="7" class="empty">데이터 요청 중</td></tr></tbody></table></div><div class="more-box" id="kosdaq-flow-more"></div></div>
+<div class="sub-h">일별 투자자 수급</div><div class="table-scroll"><table class="ctr fit"><thead><tr><th>일자</th><th>지수</th><th>전일<br>대비</th><th>등락률</th><th>개인</th><th>외국인</th><th>기관</th></tr></thead><tbody id="kosdaq-flow-table"><tr><td colspan="7" class="empty">데이터 요청 중</td></tr></tbody></table></div><div class="more-box" id="kosdaq-flow-more"></div></div>
 <div class="card"><div class="card-title"><b>프로그램 매매</b><span class="sub">단위: 억원 · 순매수</span></div>
 <div class="sub-h">당일 시간별 프로그램 순매수<small id="kosdaq-prog-date"></small></div>
 <div class="chart"><canvas id="kosdaq-prog-chart"></canvas></div>
@@ -116,7 +117,7 @@ table.fit th:nth-child(1){width:15%}table.fit th:nth-child(2){width:15%}table.fi
 <div class="chart"><canvas id="kosdaq-pcum-chart"></canvas></div>
 <div class="legend"><span><i style="background:#e08a1e"></i>차익</span><span><i style="background:#3478d4"></i>비차익</span><span><i style="background:#159b76"></i>합계</span></div>
 <div class="note" id="kosdaq-pcum-note"></div>
-<div class="sub-h">일별 프로그램 매매 (최근 10일)</div><div class="table-scroll"><table class="ctr"><thead><tr><th>일자</th><th>차익</th><th>비차익</th><th>합계</th></tr></thead><tbody id="kosdaq-program"><tr><td colspan="4" class="empty">데이터 요청 중</td></tr></tbody></table></div><div class="more-box" id="kosdaq-program-more"></div></div>
+<div class="sub-h">일별 프로그램 매매</div><div class="table-scroll"><table class="ctr"><thead><tr><th>일자</th><th>차익</th><th>비차익</th><th>합계</th></tr></thead><tbody id="kosdaq-program"><tr><td colspan="4" class="empty">데이터 요청 중</td></tr></tbody></table></div><div class="more-box" id="kosdaq-program-more"></div></div>
 </section>
 
 <section class="panel" id="panel-futures">
@@ -261,7 +262,7 @@ function drawCandleChart(id,rows,cnt=120,period='day'){
  let lastEnd=-1e9;ctx.font='9px sans-serif';ctx.textAlign='left';
  months.forEach((m,i)=>{const x=p.l+step*m.start,labelX=x+2,tw=ctx.measureText(m.label).width,showLab=labelX>=lastEnd;if(i>0&&(period!=='year'||showLab)){ctx.strokeStyle='#e2e7ee';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x,p.t);ctx.lineTo(x,volTop+volH);ctx.stroke()}if(showLab){ctx.fillStyle='#929dad';ctx.fillText(m.label,labelX,h-3);lastEnd=labelX+tw+6}});
  const allMA=[5,10,20,40,60,120].map(n=>({n,values:movingAverage(rows,n).slice(-cnt)}));
- for(const ma of allMA){ctx.strokeStyle=MA_COLORS[ma.n];ctx.lineWidth=1.25;ctx.beginPath();let started=false;ma.values.slice(-cnt).forEach((v,i)=>{if(v===null)return;const x=p.l+step*(i+.5),yy=y(v);if(!started){ctx.moveTo(x,yy);started=true}else ctx.lineTo(x,yy)});if(started)ctx.stroke()}
+ ctx.globalAlpha=.38;for(const ma of allMA){ctx.strokeStyle=MA_COLORS[ma.n];ctx.lineWidth=1;ctx.beginPath();let started=false;ma.values.slice(-cnt).forEach((v,i)=>{if(v===null)return;const x=p.l+step*(i+.5),yy=y(v);if(!started){ctx.moveTo(x,yy);started=true}else ctx.lineTo(x,yy)});if(started)ctx.stroke()}ctx.globalAlpha=1;
  data.forEach((r,i)=>{if(r.open===null||r.high===null||r.low===null)return;const x=p.l+step*(i+.5),up=r.close>=r.open,col=up?'#e34b55':'#3478d4';ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x,y(r.high));ctx.lineTo(x,y(r.low));ctx.stroke();const top=y(Math.max(r.open,r.close)),bottom=y(Math.min(r.open,r.close));ctx.fillRect(x-candleW/2,top,candleW,Math.max(1,bottom-top));if(r.volume!==null){const vh=(r.volume/maxVol)*(volH-5);ctx.globalAlpha=.55;ctx.fillRect(x-candleW/2,volTop+volH-vh,candleW,vh);ctx.globalAlpha=1}});
  ctx.strokeStyle='#e6eaf1';ctx.beginPath();ctx.moveTo(p.l,volTop);ctx.lineTo(w-p.r,volTop);ctx.stroke();ctx.fillStyle='#929dad';ctx.textAlign='left';ctx.fillText('거래량',p.l,volTop+10);
 }
