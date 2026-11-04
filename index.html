@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#f4f6fa"><title>STOCK INSIGHT PRO</title><link rel="stylesheet" href="style.css?v=104">
+<meta name="theme-color" content="#f4f6fa"><title>STOCK INSIGHT PRO</title><link rel="stylesheet" href="style.css?v=105">
   <link rel="apple-touch-icon" href="./Stock.png">
 </head>
 <body><div class="app">
@@ -24,7 +24,7 @@
 </div></details>
 </section><p id="status" class="status">네이버 증권 데이터 연결 중…</p></section>
 <section class="card quote"><div class="name"><div><span id="name">종목을 검색하세요</span><small id="code"></small></div><button id="fav">☆</button></div><div class="price" id="price">— <span id="change">종목을 선택하면 시세가 표시됩니다.</span></div></section>
-<section class="card daily-chart-card"><div class="daily-chart-heading"><b id="dailyChartTitle">일봉 차트</b><span id="dailyChartRange">최근 거래일</span></div><div class="daily-chart-tabs" role="tablist" aria-label="차트 기간"><button type="button" class="active" data-period="day" role="tab" aria-selected="true">일</button><button type="button" data-period="week" role="tab" aria-selected="false">주</button><button type="button" data-period="month" role="tab" aria-selected="false">월</button><button type="button" data-period="year" role="tab" aria-selected="false">년</button></div><div id="dailyChart" class="daily-chart"><div class="chart-empty">종목을 검색하면 일봉 차트가 표시됩니다.</div></div></section>
+<section class="card daily-chart-card"><div class="daily-chart-heading"><b id="dailyChartTitle">120일봉 차트</b><span id="dailyChartRange">최근 거래일</span></div><div class="daily-chart-tabs" role="tablist" aria-label="차트 기간"><button type="button" class="active" data-period="day" role="tab" aria-selected="true">일</button><button type="button" data-period="week" role="tab" aria-selected="false">주</button><button type="button" data-period="month" role="tab" aria-selected="false">월</button><button type="button" data-period="year" role="tab" aria-selected="false">년</button></div><div id="dailyRangeTabs" class="daily-range-tabs" aria-label="조회 기간"></div><div id="dailyChart" class="daily-chart"><div class="chart-empty">종목을 검색하면 일봉 차트가 표시됩니다.</div></div></section>
 <section class="grid g4"><div class="metric"><label>PER</label><b id="per">—</b></div><div class="metric"><label>PBR</label><b id="pbr">—</b></div><div class="metric"><label>EPS</label><b id="eps">—</b></div><div class="metric"><label>시가총액</label><b id="cap">—</b></div></section>
 <section class="grid g3"><div class="metric"><label>지난해 영업이익</label><b id="annualOp">—</b></div><div class="metric"><label>최근 4Q 영업이익</label><b id="ttmOp">—</b></div><div class="metric"><label>최근 4Q 순이익 (순이익률)</label><b id="ttmNet">—</b></div></section>
 <section class="card eps"><label>최근 6분기 EPS</label><div class="epsrow" id="epsRows"></div></section>
@@ -36,4 +36,4 @@
 <section class="grid g3 fair-prices"><div class="metric"><label>추정 적정 주가 · 지난해</label><b id="fairAnnual">—</b></div><div class="metric"><label>추정 적정 주가 · 최근 4Q</label><b id="fairTtm">—</b></div><div class="metric"><label>추정 적정 주가(E) · 최근 4Q</label><b id="fairEstTtm">—</b></div></section>
 <section class="card chartcard"><div class="charttitle"><b>최근 6분기 영업이익</b><span>영업이익(영업이익률%)</span></div><div class="cons"><b>컨센서스</b><span>목표주가 평균 <strong id="target">—</strong></span><span>평균 투자의견 <strong id="opinion">—</strong></span></div><div class="chart-scroll"><div class="chart" id="chart"><div class="chart-empty">데이터 조회 중…</div></div><div class="labels" id="labels"></div></div></section>
 <p class="disclaimer">공개 API 응답에 포함된 데이터만 표시합니다. 단위가 확인되지 않은 값은 계산에 사용하지 않습니다.</p><footer>STOCK INSIGHT PRO · 수치 확인용 참고 정보</footer>
-</main></div><script src="app.js?v=107"></script></body></html>
+</main></div><script src="app.js?v=108"></script></body></html>

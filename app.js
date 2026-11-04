@@ -7,6 +7,10 @@ const FLOW_DATE_KEYS=['tradeDate','date','localDate','localTradedAt','bizdate','
 let current={name:'',code:''},timer=null,seq=0;
 let dailyChartPeriod='day',dailyChartCache=new Map(),dailyChartRequest=0;
 const dailyChartForeignDone=new Set(),dailyChartForeignInFlight=new Set();
+const chartRanges={day:[5,10,20,40,60,100,120,200,240],week:[4,8,16,24,32,64,128,256,512],month:[6,12,18,24,30,36,42,48,54],year:[10,15,20,25,30,35,40,45,50]};
+const chartRangeDefault={day:120,week:64,month:24,year:20},chartUnit={day:'일',week:'주',month:'월',year:'년'};
+let chartRangeSel={...chartRangeDefault};
+const dailyRowsStore=new Map(),foreignStore=new Map();
 const jsonMemoryCache=new Map(),jsonInFlight=new Map(),textMemoryCache=new Map(),textInFlight=new Map();
 const FAVORITES_KEY='stockInsightProFavorites';
 function getFavorites(){try{const v=JSON.parse(localStorage.getItem(FAVORITES_KEY)||'[]');return Array.isArray(v)?v.filter(x=>x&&/^\d{6}$/.test(String(x.code||''))).map(x=>({code:String(x.code),name:String(x.name||x.code)})):[]}catch{return []}}
@@ -444,7 +448,7 @@ function renderDailyChart(raw,period=dailyChartPeriod){
   const foreignRate=num(x.foreignRetentionRate??x.foreignerHoldRatio??x.foreignRate??x.foreignOwnershipRate??x.foreignRatio??x.foreignHoldRatio??x.foreignerRetentionRate??x.frgnrHoldRatio??x.frgnHoldRatio); return {date,open,high,low,close,volume,foreignRate};
  }).filter(x=>x.date&&x.close!==null&&x.open!==null&&x.high!==null&&x.low!==null);
  const byDate=new Map();for(const x of list)byDate.set(x.date,x);
- const data=[...byDate.values()].sort((a,b)=>a.date.localeCompare(b.date)).slice(-200);
+ const all=[...byDate.values()].sort((a,b)=>a.date.localeCompare(b.date));const rangeLimit=chartRangeSel[period]||120,startIdx=Math.max(0,all.length-rangeLimit),data=all.slice(startIdx);
  if(!data.length){host.innerHTML=`<div class="chart-empty">${({day:'일봉',week:'주봉',month:'월봉',year:'년봉'}[period]||'차트')} 데이터를 불러오지 못했습니다.</div>`;return;}
  const W=700,left=8,right=54,top=8;
  // 캔들 영역만 확대하고 거래량·외국인 보유율 영역은 기존 높이를 유지한 채 아래로 이동한다.
@@ -454,11 +458,11 @@ function renderDailyChart(raw,period=dailyChartPeriod){
  const priceBottom=160+candleExtra,volumeTop=174+candleExtra,volumeBottom=218+candleExtra,foreignTop=235+candleExtra,foreignBottom=286+candleExtra;
  const H=foreignBottom+(isMobileChart?7:22),plotW=W-left-right,plotH=priceBottom-top;
  let min=Math.min(...data.map(x=>x.low)),max=Math.max(...data.map(x=>x.high));if(min===max){min*=.99;max*=1.01}const pad=(max-min)*.06;min-=pad;max+=pad;
- const y=v=>top+(max-v)/(max-min)*plotH,step=plotW/data.length,cw=Math.max(2,Math.min(7,step*.58));
+ const y=v=>top+(max-v)/(max-min)*plotH,step=plotW/data.length,cw=Math.max(1,Math.min(data.length<=40?16:7,step*.58));
  const grid=[0,.25,.5,.75,1].map(t=>{const val=max-(max-min)*t,yy=top+plotH*t;return `<line class="daily-grid-line" x1="${left}" y1="${yy}" x2="${W-right}" y2="${yy}"/><text class="daily-axis-text" x="${W-right+5}" y="${yy+3}" text-anchor="start">${Math.round(val).toLocaleString('ko-KR')}</text>`}).join('');
  const maPeriods=period==='day'?[5,10,20,40,60,120]:period==='week'?[5,10,20,40,60,120]:period==='month'?[5,10,20,40,60]:[3,5,10,20];
  const maColors={5:'#e53935',10:'#fb8c00',20:'#fdd835',40:'#43a047',60:'#00acc1',120:'#8e24aa'};
- const movingAverages=maPeriods.map(period=>{if(data.length<period)return '';const points=[];let sum=0;for(let i=0;i<data.length;i++){sum+=data[i].close;if(i>=period)sum-=data[i-period].close;if(i>=period-1){const avg=sum/period;points.push(`${(left+(i+.5)*step).toFixed(2)},${y(avg).toFixed(2)}`)}}return `<polyline points="${points.join(' ')}" fill="none" stroke="${maColors[period]}" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>`}).join('');
+ const movingAverages='<g clip-path="url(#dailyClip)">'+maPeriods.map(mp=>{if(all.length<mp)return '';const points=[];let sum=0;for(let i=0;i<all.length;i++){sum+=all[i].close;if(i>=mp)sum-=all[i-mp].close;if(i>=mp-1&&i>=startIdx){points.push(`${(left+(i-startIdx+.5)*step).toFixed(2)},${y(sum/mp).toFixed(2)}`)}}return points.length>1?`<polyline points="${points.join(' ')}" fill="none" stroke="${maColors[mp]}" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>`:''}).join('')+'</g>';
  const candles=data.map((d,i)=>{const x=left+(i+.5)*step,up=d.close>=d.open,color=up?'#df5967':'#3979d8',bodyY=Math.min(y(d.open),y(d.close)),bodyH=Math.max(1,Math.abs(y(d.open)-y(d.close)));return `<line x1="${x}" y1="${y(d.high)}" x2="${x}" y2="${y(d.low)}" stroke="${color}" stroke-width="1"/><rect x="${x-cw/2}" y="${bodyY}" width="${cw}" height="${bodyH}" fill="${color}"/>`}).join('');
  const maxVolume=Math.max(1,...data.map(d=>d.volume||0));
   const foreignRows=data.filter(d=>d.foreignRate!==null&&d.foreignRate!==undefined&&Number.isFinite(d.foreignRate));
@@ -472,17 +476,18 @@ function renderDailyChart(raw,period=dailyChartPeriod){
 
  const volumes=data.map((d,i)=>{const x=left+(i+.5)*step,h=Math.max(d.volume>0?1:0,(d.volume||0)/maxVolume*(volumeBottom-volumeTop)),color=d.close>=d.open?'#df5967':'#3979d8';return h?`<rect x="${x-cw/2}" y="${volumeBottom-h}" width="${cw}" height="${h}" fill="${color}" opacity=".78"/>`:''}).join('');
  // 탭(일/주/월/년)별 세부 날짜 눈금: 일·주=월(1월·첫 눈금은 연도 포함), 월=연도, 년=연도(간격 자동 조정)
- const tickKey=d=>period==='month'||period==='year'?d.date.slice(0,4):d.date.slice(0,6);
- const tickText=(key,idx)=>{if(period==='month'||period==='year')return key;const mm=key.slice(4,6);return (idx===0||mm==='01')?`${key.slice(2,4)}.${mm}`:`${mm}.`};
+ const fine=period==='day'&&data.length<=45,fineM=period==='month'&&data.length<=30;
+ const tickKey=d=>fine?d.date:period==='year'?d.date.slice(0,4):period==='month'?(fineM?d.date.slice(0,6):d.date.slice(0,4)):d.date.slice(0,6);
+ const tickText=(key,idx)=>{if(fine)return `${key.slice(4,6)}.${key.slice(6,8)}`;if(period==='year')return key;if(period==='month')return fineM?`${key.slice(2,4)}.${key.slice(4,6)}`:key;const mm=key.slice(4,6);return (idx===0||mm==='01')?`${key.slice(2,4)}.${mm}`:`${mm}.`};
  let ticks=[];{let last='';for(let i=0;i<data.length;i++){const k=tickKey(data[i]);if(k!==last){ticks.push({i,key:k});last=k}}}
- const minGap=(period==='month'||period==='year')?38:(isMobileChart?24:26);
+ const minGap=(period==='year'||(period==='month'&&!fineM))?38:(fine||fineM)?(isMobileChart?26:30):(isMobileChart?24:26);
  {const kept=[];let lastX=-1e9;for(const t of ticks){const x=left+(t.i+.5)*step;if(x-lastX>=minGap||!kept.length){kept.push(t);lastX=x}}ticks=kept}
  const monthLines=ticks.map(({i})=>{const x=left+(i+.5)*step;return `<line class="daily-month-separator" x1="${x}" y1="${top}" x2="${x}" y2="${foreignBottom}"/>`}).join('');
  const monthLabels=ticks.map(({i,key},n)=>{const x=left+(i+.5)*step;return `<text class="daily-axis-text daily-month-label-desktop" x="${x}" y="${foreignBottom+7}" text-anchor="middle">${tickText(key,n===0?0:1)}</text>`}).join('');
  const mobileMonthDates=ticks.map(({i,key},n)=>{const position=((i+.5)/data.length)*100;return `<span style="left:${position.toFixed(3)}%">${tickText(key,n===0?0:1)}</span>`}).join('');
  const fmtDate=d=>{const y=d.date.slice(0,4),m=d.date.slice(4,6),dd=d.date.slice(6,8);if(period==='year')return `${y}년`;if(period==='month')return `${y}.${m}`;if(period==='week'){const dt=new Date(Number(y),Number(m)-1,Number(dd));const off=(new Date(dt.getFullYear(),dt.getMonth(),1).getDay()+6)%7;return `${y}.${m} ${Math.ceil((dt.getDate()+off)/7)}주차`}return `${y}.${m}.${dd}`};
  const detailHtml=i=>{const d=data[i],prev=i>0?data[i-1].close:null,chg=prev?(d.close-prev)/prev*100:null,col=chg===null?'':chg>0?'#df5967':chg<0?'#3979d8':'';const f=n=>Math.round(n).toLocaleString('ko-KR');return `<b>${fmtDate(d)}</b><span>시 ${f(d.open)}</span><span>고 ${f(d.high)}</span><span>저 ${f(d.low)}</span><span style="color:${col};font-weight:700">종 ${f(d.close)}${chg===null?'':` (${chg>0?'+':''}${chg.toFixed(2)}%)`}</span><span>거래량 ${f(d.volume||0)}</span>${Number.isFinite(d.foreignRate)?`<span style="color:#e0a33a">외국인 ${d.foreignRate.toFixed(2)}%</span>`:''}`};
- host.innerHTML=`<div class="daily-ma-legend">${maPeriods.map(p=>`<span style="color:${maColors[p]}"><i style="display:inline-block;width:13px;border-top:1px solid ${maColors[p]};vertical-align:middle;margin-right:3px"></i>${p}${period==='day'?'일':period==='week'?'주':period==='month'?'월':'년'}</span>`).join('')}<span class="daily-volume-legend">거래량</span><span style="color:#e0a33a">외국인 보유율 ━</span></div><div class="daily-detail" id="dailyDetail">${detailHtml(data.length-1)}</div><svg class="daily-candle-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${({day:'일봉',week:'주봉',month:'월봉',year:'년봉'}[period]||'주가')} 캔들, 이동평균선 및 거래량 차트">${grid}${monthLines}<line class="daily-grid-line" x1="${left}" y1="${volumeTop}" x2="${W-right}" y2="${volumeTop}"/>${candles}${movingAverages}${volumes}<line class="daily-grid-line" x1="${left}" y1="${foreignTop-7}" x2="${W-right}" y2="${foreignTop-7}"/>${foreignGrid}${foreignLine}${monthLabels}<line id="dailyCursor" class="daily-cursor" x1="0" y1="${top}" x2="0" y2="${foreignBottom}" style="display:none"/></svg><div class="daily-month-date-row">${mobileMonthDates}</div>`;
+ host.innerHTML=`<div class="daily-ma-legend">${maPeriods.map(p=>`<span style="color:${maColors[p]}"><i style="display:inline-block;width:13px;border-top:1px solid ${maColors[p]};vertical-align:middle;margin-right:3px"></i>${p}${period==='day'?'일':period==='week'?'주':period==='month'?'월':'년'}</span>`).join('')}<span class="daily-volume-legend">거래량</span><span style="color:#e0a33a">외국인 보유율 ━</span></div><div class="daily-detail" id="dailyDetail">${detailHtml(data.length-1)}</div><svg class="daily-candle-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${({day:'일봉',week:'주봉',month:'월봉',year:'년봉'}[period]||'주가')} 캔들, 이동평균선 및 거래량 차트"><defs><clipPath id="dailyClip"><rect x="${left}" y="${top}" width="${plotW}" height="${priceBottom-top}"/></clipPath></defs>${grid}${monthLines}<line class="daily-grid-line" x1="${left}" y1="${volumeTop}" x2="${W-right}" y2="${volumeTop}"/>${candles}${movingAverages}${volumes}<line class="daily-grid-line" x1="${left}" y1="${foreignTop-7}" x2="${W-right}" y2="${foreignTop-7}"/>${foreignGrid}${foreignLine}${monthLabels}<line id="dailyCursor" class="daily-cursor" x1="0" y1="${top}" x2="0" y2="${foreignBottom}" style="display:none"/></svg><div class="daily-month-date-row">${mobileMonthDates}</div>`;
  {const svg=host.querySelector('.daily-candle-svg'),box=$('dailyDetail'),cur=$('dailyCursor'),last=data.length-1;
   const pick=e=>{const r=svg.getBoundingClientRect();if(!r.width)return;const vx=(e.clientX-r.left)/r.width*W;const i=Math.max(0,Math.min(last,Math.floor((vx-left)/step)));const x=left+(i+.5)*step;cur.setAttribute('x1',x);cur.setAttribute('x2',x);cur.style.display='';box.innerHTML=detailHtml(i)};
   const reset=()=>{cur.style.display='none';box.innerHTML=detailHtml(last)};
@@ -505,9 +510,9 @@ function normalizeCandleRows(raw){
  const byDate=new Map();for(const x of list)byDate.set(x.date,x);return [...byDate.values()].sort((a,b)=>a.date.localeCompare(b.date));
 }
 function aggregateCandles(rows,period){
- if(period==='day')return rows.slice(-120);
+ if(period==='day')return rows.map(r=>({...r}));
  const buckets=new Map();for(const d of rows){let key=period==='year'?d.date.slice(0,4):period==='month'?d.date.slice(0,6):(()=>{const dt=new Date(Number(d.date.slice(0,4)),Number(d.date.slice(4,6))-1,Number(d.date.slice(6,8)));const start=new Date(dt);start.setDate(start.getDate()-((start.getDay()+6)%7));return start.getFullYear()+String(start.getMonth()+1).padStart(2,'0')+String(start.getDate()).padStart(2,'0')})();if(!buckets.has(key))buckets.set(key,{date:d.date,open:d.open,high:d.high,low:d.low,close:d.close,volume:d.volume||0});else{const b=buckets.get(key);b.high=Math.max(b.high,d.high);b.low=Math.min(b.low,d.low);b.close=d.close;b.date=d.date;b.volume=(b.volume||0)+(d.volume||0)}}
- return [...buckets.values()].sort((a,b)=>a.date.localeCompare(b.date)).slice(-(period==='week'?120:period==='month'?120:80));
+ return [...buckets.values()].sort((a,b)=>a.date.localeCompare(b.date));
 }
 async function loadListedSharesFromCompany(code){
  const keys=['listedShares','listedShareCount','totalListedShares','sharesOutstanding','issuedShares','listingShareCount','totalShares','상장주식수','발행주식수','총발행주식수'];
@@ -517,110 +522,108 @@ async function loadListedSharesFromCompany(code){
  for(const url of pages){try{const html=await getText(url);const doc=new DOMParser().parseFromString(html,'text/html');const clean=x=>(x?.innerText||x?.textContent||'').replace(/\s+/g,' ').trim();for(const row of doc.querySelectorAll('tr,li,dl,.info-row,.table-row')){const text=clean(row);if(!/(발행주식수|상장주식수|총발행주식수)/.test(text))continue;const cells=[...row.querySelectorAll('th,td,dt,dd,span,strong,b')].map(clean).filter(Boolean);for(let i=cells.length-1;i>=0;i--){const n=parse(cells[i]);if(n)return n}const tail=text.replace(/.*?(발행주식수|상장주식수|총발행주식수)/,'');const n=parse(tail);if(n)return n}const plain=clean(doc.body);const m=plain.match(/(?:발행주식수|상장주식수|총발행주식수)[^0-9]{0,160}([0-9,]{7,})/);if(m){const n=parse(m[1]);if(n)return n}}catch{}}
  return null;
 }
+function neededDays(p,n){return p==='day'?n+130:p==='week'?(n+130)*5:p==='month'?(n+60)*21:(n+20)*252}
+function renderRangeTabs(period){const box=$('dailyRangeTabs');if(!box)return;box.innerHTML=chartRanges[period].map(n=>`<button type="button" data-range="${n}" class="${n===chartRangeSel[period]?'on':''}">${n}${chartUnit[period]}</button>`).join('')}
+async function fetchDailyRows(code,days){
+ const old=dailyRowsStore.get(code)||{rows:[],exhausted:false};
+ const byDate=new Map(old.rows.map(r=>[r.date,r]));
+ const maxPages=Math.min(320,Math.ceil(days/60)+1);let exhausted=false,page=Math.max(1,Math.floor(old.rows.length/60));
+ while(page<=maxPages){
+  const nums=Array.from({length:Math.min(10,maxPages-page+1)},(_,i)=>page+i);
+  const res=await Promise.all(nums.map(n=>first([`${API}/api/stock/${code}/price?pageSize=60&page=${n}`]).catch(()=>null)));
+  if(!res.some(Boolean))break;
+  let added=0;for(const r of res){if(!r)continue;for(const c of normalizeCandleRows(r)){if(!byDate.has(c.date)){byDate.set(c.date,c);added++}}}
+  if(!added){exhausted=true;break}
+  page+=10;
+ }
+ const rows=[...byDate.values()].sort((a,b)=>a.date.localeCompare(b.date));
+ if(!rows.length)throw Error('일봉 가격 API 응답이 비어 있습니다');
+ const st={rows,exhausted};dailyRowsStore.set(code,st);return st;
+}
+async function fetchForeignRange(code,from,to,isDay,count){
+ const chartUrl=(a,b)=>`https://api.stock.naver.com/chart/domestic/item/${code}?periodType=dayCandle&startDateTime=${a}&endDateTime=${b}`;
+ const parse=raw=>{
+  const list=Array.isArray(raw?.priceInfos)?raw.priceInfos:objects(raw);
+  const dateKeys=['localDate','localTradedAt','tradeDate','date','bizdate','trdDt','yyyymmdd','basDt'];
+  const rateKeys=['foreignRetentionRate','foreignerHoldRatio','foreignRate','foreignOwnershipRate','foreignRatio','foreignHoldRatio','foreignerRetentionRate','frgnrHoldRatio','frgnHoldRatio'];
+  const map=new Map();
+  for(const row of list){
+   const date=String(dateKeys.map(k=>row?.[k]).find(v=>v!==undefined&&v!==null)||'').replace(/\D/g,'').slice(0,8);
+   let rate=null;for(const key of rateKeys){rate=num(row?.[key]);if(rate!==null)break}
+   if(rate===null){for(const [key,value] of Object.entries(row||{})){if(/foreign.*(rate|ratio|hold)|frgn.*(rate|ratio|hold)/i.test(key)){rate=num(value);if(rate!==null)break}}}
+   if(date&&rate!==null)map.set(date,rate);
+  }
+  return map;
+ };
+ const out=new Map();
+ try{for(const [d,r] of parse(await first([chartUrl(from,to)])))out.set(d,r)}catch{}
+ const earliest=out.size?Math.min(...[...out.keys()].map(Number)):0;
+ if(!out.size||earliest>Number(from)){
+  const toDate=d=>`${d.getUTCFullYear()}${String(d.getUTCMonth()+1).padStart(2,'0')}${String(d.getUTCDate()).padStart(2,'0')}`;
+  const mk=t=>new Date(Date.UTC(+String(t).slice(0,4),+String(t).slice(4,6)-1,+String(t).slice(6,8)));
+  const start=mk(from),endMissing=out.size?mk(earliest):mk(to);
+  let chunks=[];let cursor=new Date(start);
+  while(cursor<endMissing){const chunkEnd=new Date(cursor);chunkEnd.setUTCDate(chunkEnd.getUTCDate()+119);if(chunkEnd>=endMissing)chunkEnd.setTime(endMissing.getTime()-86400000);if(chunkEnd<cursor)break;chunks.push([toDate(cursor),toDate(chunkEnd)]);cursor=new Date(chunkEnd);cursor.setUTCDate(cursor.getUTCDate()+1)}
+  chunks=chunks.slice(-40);
+  for(let i=0;i<chunks.length;i+=5){const batch=await Promise.all(chunks.slice(i,i+5).map(([a,b])=>first([chartUrl(a,b)]).then(parse).catch(()=>new Map())));for(const part of batch)for(const [d,r] of part)out.set(d,r)}
+ }
+ if(isDay&&out.size<count){
+  const parsePage=async page=>{
+   const html=await getText(`https://finance.naver.com/item/frgn.naver?code=${code}&page=${page}`);
+   const doc=new DOMParser().parseFromString(html,'text/html');const m=new Map();
+   for(const table of doc.querySelectorAll('table')){
+    const rows=[...table.querySelectorAll('tr')];let dateCol=-1,rateCol=-1;
+    for(const row of rows){const heads=[...row.querySelectorAll('th')].map(x=>(x.textContent||'').replace(/\s+/g,'').trim());if(heads.length){dateCol=heads.findIndex(x=>x.includes('날짜'));rateCol=heads.findIndex(x=>x.includes('외국인')&&(x.includes('비율')||x.includes('보유율')));if(rateCol>=0)break}}
+    if(rateCol<0)continue;
+    for(const row of rows){const cells=[...row.querySelectorAll('td')].map(x=>(x.textContent||'').replace(/\s+/g,' ').trim());if(!cells.length)continue;const date=(cells[dateCol>=0?dateCol:0]||'').replace(/\D/g,'').slice(0,8);const rate=num(cells[rateCol]);if(/^\d{8}$/.test(date)&&rate!==null)m.set(date,rate)}
+    if(m.size)break;
+   }
+   return m;
+  };
+  for(let page=1;page<=12;page+=4){
+   const batch=await Promise.all(Array.from({length:Math.min(4,13-page)},(_,i)=>parsePage(page+i).catch(()=>new Map())));
+   for(const part of batch)for(const [d,r] of part)if(!out.has(d))out.set(d,r);
+   if([...out.keys()].some(d=>d<=from))break;
+  }
+ }
+ return out;
+}
+async function ensureForeign(code,startDate,endDate,isDay,count){
+ let st=foreignStore.get(code);if(!st){st={map:new Map(),from:null,to:null};foreignStore.set(code,st)}
+ const ranges=[];
+ if(st.from===null)ranges.push([startDate,endDate]);else{if(startDate<st.from)ranges.push([startDate,st.from]);if(endDate>st.to)ranges.push([st.to,endDate])}
+ if(!ranges.length)return false;
+ let changed=false;
+ for(const [a,b] of ranges){const part=await fetchForeignRange(code,a,b,isDay,count);for(const [d,r] of part){st.map.set(d,r);changed=true}}
+ st.from=st.from===null||startDate<st.from?startDate:st.from;st.to=st.to===null||endDate>st.to?endDate:st.to;
+ return changed;
+}
 async function loadChartPeriod(period){
  if(!current.code)return;
- dailyChartPeriod=period;const code=current.code,request=++dailyChartRequest,host=$('dailyChart');
+ dailyChartPeriod=period;const code=current.code,request=++dailyChartRequest,host=$('dailyChart'),limit=chartRangeSel[period];
  document.querySelectorAll('.daily-chart-tabs button').forEach(b=>{const active=b.dataset.period===period;b.classList.toggle('active',active);b.setAttribute('aria-selected',String(active))});
- const titles={day:'일봉 차트',week:'주봉 차트',month:'월봉 차트',year:'년봉 차트'};$('dailyChartTitle').textContent=titles[period];
- if(dailyChartCache.has(code+'-'+period)&& (period!=='day'||dailyChartForeignDone.has(code))){renderDailyChart(dailyChartCache.get(code+'-'+period),period);return}
- if(period==='day'&&dailyChartForeignInFlight.has(code))return
- host.innerHTML='<div class="chart-empty">차트 데이터를 불러오는 중…</div>';$('dailyChartRange').textContent='조회 중…';
+ $('dailyChartTitle').textContent=`${limit}${chartUnit[period]}봉 차트`;renderRangeTabs(period);
+ const stale=()=>request!==dailyChartRequest||code!==current.code;
+ const build=()=>{const st=dailyRowsStore.get(code);if(!st||!st.rows.length)return [];let c=aggregateCandles(st.rows,period);if(!st.exhausted&&period!=='day'&&c.length>1)c=c.slice(1);const f=foreignStore.get(code);if(f)for(const x of c){const r=f.map.get(x.date);if(r!==undefined)x.foreignRate=r}return c};
  try{
-  let raw;
-  if(period==='day'){raw=dailyChartCache.get(code+'-day')||await loadDailyPrices120(code);dailyChartForeignInFlight.add(code)}
-  else{
-   // 네이버 가격 API에서 periodType/timeframe/interval 파라미터는 지원되지 않을 수 있다.
-   // 이미 정상 작동하는 pageSize=60&page=N 방식으로 필요한 일봉 이력을 탭을 눌렀을 때만 조회하고 집계한다.
-   const pageCounts={week:10,month:48,year:120};
-   const pageNumbers=Array.from({length:pageCounts[period]||10},(_,i)=>i+1);
-   const pageResults=await Promise.all(pageNumbers.map(page=>first([`${API}/api/stock/${code}/price?pageSize=60&page=${page}`]).catch(()=>null)));
-   const mergedByDate=new Map();
-   for(const pageData of pageResults){if(!pageData)continue;for(const candle of normalizeCandleRows(pageData))mergedByDate.set(candle.date,candle)}
-   const rows=[...mergedByDate.values()].sort((a,b)=>a.date.localeCompare(b.date));
-   if(!rows.length)throw Error('일봉 가격 API 응답이 비어 있습니다');
-   raw=aggregateCandles(rows,period);
+  let st=dailyRowsStore.get(code);
+  if(!st||(st.rows.length<neededDays(period,limit)&&!st.exhausted)){
+   if(!host.querySelector('svg'))host.innerHTML='<div class="chart-empty">차트 데이터를 불러오는 중…</div>';
+   $('dailyChartRange').textContent='조회 중…';
+   await fetchDailyRows(code,neededDays(period,limit));
+   if(stale())return;
   }
-  const candles=period==='day'?normalizeCandleRows(raw).slice(-120):aggregateCandles(normalizeCandleRows(raw),period);
-  if(!candles.length)throw Error('가격 데이터 없음');
-  dailyChartCache.set(code+'-'+period,candles);
-  if(request===dailyChartRequest&&code===current.code)renderDailyChart(candles,period);
-   try{
-    // 기본 차트 API 응답은 최근 약 110거래일만 반환될 수 있으므로, 표시 중인 가격 차트의 전체 날짜 범위를 명시한다.
-    // 전체 범위 요청 후에도 시작 구간이 비어 있으면 과거 구간을 나눠 보충한다.
-    const chartUrl=(from,to)=>`https://api.stock.naver.com/chart/domestic/item/${code}?periodType=dayCandle&startDateTime=${from}&endDateTime=${to}`;
-    const parseForeignRows=raw=>{
-     const list=Array.isArray(raw?.priceInfos)?raw.priceInfos:objects(raw);
-     const dateKeys=['localDate','localTradedAt','tradeDate','date','bizdate','trdDt','yyyymmdd','basDt'];
-     const rateKeys=['foreignRetentionRate','foreignerHoldRatio','foreignRate','foreignOwnershipRate','foreignRatio','foreignHoldRatio','foreignerRetentionRate','frgnrHoldRatio','frgnHoldRatio'];
-     const map=new Map();
-     for(const row of list){
-      const date=String(dateKeys.map(k=>row?.[k]).find(v=>v!==undefined&&v!==null)||'').replace(/\D/g,'').slice(0,8);
-      let rate=null;for(const key of rateKeys){rate=num(row?.[key]);if(rate!==null)break}
-      if(rate===null){for(const [key,value] of Object.entries(row||{})){if(/foreign.*(rate|ratio|hold)|frgn.*(rate|ratio|hold)/i.test(key)){rate=num(value);if(rate!==null)break}}}
-      if(date&&rate!==null)map.set(date,rate);
-     }
-     return map;
-    };
-    const startDate=candles[0].date,endDate=candles[candles.length-1].date;
-    let rateMap=parseForeignRows(await first([chartUrl(startDate,endDate)]));
-    const earliest=rateMap.size?Math.min(...[...rateMap.keys()].map(Number)):0;
-    if(!rateMap.size||earliest>Number(startDate)){
-     const toDate=d=>`${d.getUTCFullYear()}${String(d.getUTCMonth()+1).padStart(2,'0')}${String(d.getUTCDate()).padStart(2,'0')}`;
-     const start=new Date(Date.UTC(+startDate.slice(0,4),+startDate.slice(4,6)-1,+startDate.slice(6,8)));
-     const endMissing=rateMap.size?new Date(Date.UTC(Math.floor(earliest/10000),Math.floor((earliest%10000)/100)-1,earliest%100)):new Date(Date.UTC(+endDate.slice(0,4),+endDate.slice(4,6)-1,+endDate.slice(6,8)));
-     const chunks=[];let cursor=new Date(start);
-     while(cursor<endMissing){const chunkEnd=new Date(cursor);chunkEnd.setUTCDate(chunkEnd.getUTCDate()+119);if(chunkEnd>=endMissing)chunkEnd.setTime(endMissing.getTime()-86400000);if(chunkEnd<cursor)break;chunks.push([toDate(cursor),toDate(chunkEnd)]);cursor=new Date(chunkEnd);cursor.setUTCDate(cursor.getUTCDate()+1)}
-     for(let i=0;i<chunks.length;i+=5){const batch=await Promise.all(chunks.slice(i,i+5).map(([from,to])=>first([chartUrl(from,to)]).then(parseForeignRows).catch(()=>new Map())));for(const part of batch)for(const [date,rate] of part)rateMap.set(date,rate)}
-    }
-    // 차트 API가 최근 구간만 외국인 보유율을 반환하는 경우를 대비해
-    // 네이버 금융의 종목별 외국인/기관 페이지에서 과거 120거래일을 보충한다.
-    if(rateMap.size<candles.length){
-     const parseNaverForeignPage=async page=>{
-      const url=`https://finance.naver.com/item/frgn.naver?code=${code}&page=${page}`;
-      const html=await getText(url);
-      const doc=new DOMParser().parseFromString(html,'text/html');
-      const out=new Map();
-      for(const table of doc.querySelectorAll('table')){
-       const rows=[...table.querySelectorAll('tr')];
-       let dateCol=-1,rateCol=-1;
-       for(const row of rows){
-        const heads=[...row.querySelectorAll('th')].map(x=>(x.textContent||'').replace(/\\s+/g,'').trim());
-        if(heads.length){
-         dateCol=heads.findIndex(x=>x.includes('날짜'));
-         rateCol=heads.findIndex(x=>x.includes('외국인')&&(x.includes('비율')||x.includes('보유율')));
-         if(rateCol>=0)break;
-        }
-       }
-       if(rateCol<0)continue;
-       for(const row of rows){
-        const cells=[...row.querySelectorAll('td')].map(x=>(x.textContent||'').replace(/\\s+/g,' ').trim());
-        if(!cells.length)continue;
-        const dateText=cells[dateCol>=0?dateCol:0]||'';
-        const date=dateText.replace(/\\D/g,'').slice(0,8);
-        const rate=num(cells[rateCol]);
-        if(/^\\d{8}$/.test(date)&&rate!==null)out.set(date,rate);
-       }
-       if(out.size)break;
-      }
-      return out;
-     };
-     for(let page=1;page<=12;page+=4){
-      const batch=await Promise.all(Array.from({length:Math.min(4,13-page)},(_,i)=>parseNaverForeignPage(page+i).catch(()=>new Map())));
-      for(const part of batch)for(const [date,rate] of part)if(!rateMap.has(date))rateMap.set(date,rate);
-      if([...rateMap.keys()].some(d=>d<=startDate))break;
-     }
-    }
-    for(const c of candles){const rate=rateMap.get(c.date);if(rate!==undefined)c.foreignRate=rate}
-   }catch(e){console.warn('외국인 보유 데이터 조회 실패',e)}
-  if(period==='day'){dailyChartForeignDone.add(code);dailyChartForeignInFlight.delete(code)}
-  dailyChartCache.set(code+'-'+period,candles);if(request===dailyChartRequest&&code===current.code)renderDailyChart(candles,period);
- }catch(e){if(period==='day')dailyChartForeignInFlight.delete(code);if(request===dailyChartRequest){host.innerHTML=`<div class="chart-empty">${titles[period]} 데이터를 불러오지 못했습니다. 다시 탭을 눌러 시도해 주세요.</div>`;$('dailyChartRange').textContent='조회 실패'}}
+  const candles=build();if(!candles.length)throw Error('가격 데이터 없음');
+  renderDailyChart(candles,period);
+  const vis=candles.slice(-limit);
+  try{if(await ensureForeign(code,vis[0].date,vis[vis.length-1].date,period==='day',vis.length)&&!stale())renderDailyChart(build(),period)}catch(e){console.warn('외국인 보유 데이터 조회 실패',e)}
+ }catch(e){if(!stale()){host.innerHTML=`<div class="chart-empty">${limit}${chartUnit[period]}봉 데이터를 불러오지 못했습니다. 다시 탭을 눌러 시도해 주세요.</div>`;$('dailyChartRange').textContent='조회 실패'}}
 }
-function render(s){current={...current,...s};updateFavoriteButton();renderFavorites();$('name').textContent=s.name||'종목명';$('code').textContent=s.code||'';$('price').childNodes[0].textContent=(s.price||blank)+' ';$('change').textContent=s.change||'시세 정보 없음';for(const k of ['per','pbr','eps','cap','annualOp','ttmOp','ttmNet','roe','debt','foreignFloat','annualMultiple','ttmMultiple','estTtmMultiple','target','opinion'])if($(k)){const value=s[k]||blank;$(k).textContent=value;const text=String(value).trim();const negative=/^\s*[-−]/.test(text)||/\(\s*[-−]\s*\d/.test(text);$(k).style.color=negative?'#3979d8':''}const fairPrice=(multiple)=>{const price=num(s.price),m=num(multiple);return price!==null&&m!==null&&m>0?`${Math.round(price*10/m).toLocaleString('ko-KR')}원`:blank};for(const [id,multiple] of [['fairAnnual',s.annualMultiple],['fairTtm',s.ttmMultiple],['fairEstTtm',s.estTtmMultiple]]){if($(id)){const fair=fairPrice(multiple);$(id).textContent=fair;const fairNum=num(fair),currentPrice=num(s.price);$(id).style.color=fairNum!==null&&currentPrice!==null?(fairNum<currentPrice?'#3979d8':fairNum>currentPrice?'#df5967':'') : ''}}const debtText=String(s.debt??'').replace(/,/g,'');const debtMatch=debtText.match(/[-+]?\d+(?:\.\d+)?/);const debtValue=debtMatch?Number(debtMatch[0]):null;if($('debt'))$('debt').style.color=debtValue!==null&&debtValue>200?'#3979d8':debtValue!==null&&debtValue>100?'#f39a28':'';$('epsRows').innerHTML=(s.epsRows||[]).map(r=>{const v=String(r[1]??'');const negative=/^\s*[-−]/.test(v);return `<div>${escapeHtml(r[0])}<b style="color:${negative?'#3979d8':'var(--text)'}">${escapeHtml(v)}</b></div>`}).join('')||'<div>분기 EPS 자료 없음</div>';const ch=s.change||'';$('change').style.color=/▲|\+/.test(ch)?'#df5967':/▼/.test(ch)?'#3979d8':'';$('price').style.color=$('change').style.color||'var(--text)';renderChart(s.quarters||[]);if(dailyChartPeriod==='day'){if(s.dailyPrices)renderDailyChart(s.dailyPrices,'day');else renderDailyChart([], 'day')}}
+function render(s){current={...current,...s};updateFavoriteButton();renderFavorites();$('name').textContent=s.name||'종목명';$('code').textContent=s.code||'';$('price').childNodes[0].textContent=(s.price||blank)+' ';$('change').textContent=s.change||'시세 정보 없음';for(const k of ['per','pbr','eps','cap','annualOp','ttmOp','ttmNet','roe','debt','foreignFloat','annualMultiple','ttmMultiple','estTtmMultiple','target','opinion'])if($(k)){const value=s[k]||blank;$(k).textContent=value;const text=String(value).trim();const negative=/^\s*[-−]/.test(text)||/\(\s*[-−]\s*\d/.test(text);$(k).style.color=negative?'#3979d8':''}const fairPrice=(multiple)=>{const price=num(s.price),m=num(multiple);return price!==null&&m!==null&&m>0?`${Math.round(price*10/m).toLocaleString('ko-KR')}원`:blank};for(const [id,multiple] of [['fairAnnual',s.annualMultiple],['fairTtm',s.ttmMultiple],['fairEstTtm',s.estTtmMultiple]]){if($(id)){const fair=fairPrice(multiple);$(id).textContent=fair;const fairNum=num(fair),currentPrice=num(s.price);$(id).style.color=fairNum!==null&&currentPrice!==null?(fairNum<currentPrice?'#3979d8':fairNum>currentPrice?'#df5967':'') : ''}}const debtText=String(s.debt??'').replace(/,/g,'');const debtMatch=debtText.match(/[-+]?\d+(?:\.\d+)?/);const debtValue=debtMatch?Number(debtMatch[0]):null;if($('debt'))$('debt').style.color=debtValue!==null&&debtValue>200?'#3979d8':debtValue!==null&&debtValue>100?'#f39a28':'';$('epsRows').innerHTML=(s.epsRows||[]).map(r=>{const v=String(r[1]??'');const negative=/^\s*[-−]/.test(v);return `<div>${escapeHtml(r[0])}<b style="color:${negative?'#3979d8':'var(--text)'}">${escapeHtml(v)}</b></div>`}).join('')||'<div>분기 EPS 자료 없음</div>';const ch=s.change||'';$('change').style.color=/▲|\+/.test(ch)?'#df5967':/▼/.test(ch)?'#3979d8':'';$('price').style.color=$('change').style.color||'var(--text)';renderChart(s.quarters||[]);if(dailyChartPeriod==='day'&&!dailyRowsStore.has(current.code)){if(s.dailyPrices)renderDailyChart(s.dailyPrices,'day');else renderDailyChart([], 'day')}}
 function normalize(item){const code=String(item.code||item.itemCode||item.stockCode||item.reutersCode||'').replace(/\D/g,'');return code?{name:item.name||item.stockName||item.itemName||code,code:code.padStart(6,'0')}:null}
 async function search(q){if(/^\d{6}$/.test(q))return[{name:seed.find(x=>x.code===q)?.name||q,code:q}];const d=await first([`${API}/front-api/search/autoComplete?query=${encodeURIComponent(q)}&target=stock,index,marketindicator,coin,ipo`]);const a=d?.result?.items||d?.items||d?.result||[];return(Array.isArray(a)?a:[]).map(normalize).filter(Boolean).slice(0,12)}
 function showResults(items,q,msg=''){const box=$('results');box.hidden=!q;if(msg){box.innerHTML=`<div class="result">${escapeHtml(msg)}</div>`;return}if(!items.length){box.innerHTML='<div class="result">검색 결과가 없습니다.</div>';return}box.innerHTML=items.map(x=>`<button class="result" data-code="${x.code}" data-name="${escapeHtml(x.name)}">${escapeHtml(x.name)}<small>${x.code}</small> ›</button>`).join('');box.querySelectorAll('[data-code]').forEach(b=>b.onclick=()=>load(b.dataset.code,b.dataset.name))}
-async function load(code,name=''){dailyChartPeriod='day';dailyChartCache.clear();dailyChartForeignDone.clear();dailyChartForeignInFlight.clear();document.querySelectorAll('.daily-chart-tabs button').forEach(b=>{b.classList.toggle('active',b.dataset.period==='day');b.setAttribute('aria-selected',String(b.dataset.period==='day'))});const id=++seq,known=seed.find(x=>x.code===code);current={code,name:name||known?.name||code};updateFavoriteButton();$('name').textContent=current.name;$('code').textContent=code;$('change').textContent='데이터 조회 중…';$('status').textContent='네이버 증권 데이터 조회 중…';$('query').value=current.name;$('results').hidden=true;$('chart').innerHTML='<div class="chart-empty">분기 재무 데이터 조회 중…</div>';try{const flowKrxPromise=Promise.race([fetchFlowHistory(code,'KRX'),new Promise(resolve=>setTimeout(()=>resolve(null),2800))]);const flowNxtPromise=Promise.race([fetchFlowHistory(code,'NXT'),new Promise(resolve=>setTimeout(()=>resolve(null),2800))]);const floatSharesPromise=Promise.race([loadFloatingSharesFromCompany(code).catch(()=>null),new Promise(resolve=>setTimeout(()=>resolve(null),2200))]);const pricePromise=loadDailyPrices120(code,raw=>{if(id!==seq)return;renderDailyChart(raw,'day')});pricePromise.then(raw=>{if(id!==seq)return;dailyChartCache.set(code+'-day',raw);renderDailyChart(raw,'day');loadChartPeriod('day')}).catch(()=>{});const results=await Promise.allSettled([
+async function load(code,name=''){dailyChartPeriod='day';chartRangeSel={...chartRangeDefault};dailyRowsStore.delete(code);foreignStore.delete(code);renderRangeTabs('day');$('dailyChartTitle').textContent='120일봉 차트';dailyChartCache.clear();dailyChartForeignDone.clear();dailyChartForeignInFlight.clear();document.querySelectorAll('.daily-chart-tabs button').forEach(b=>{b.classList.toggle('active',b.dataset.period==='day');b.setAttribute('aria-selected',String(b.dataset.period==='day'))});const id=++seq,known=seed.find(x=>x.code===code);current={code,name:name||known?.name||code};updateFavoriteButton();$('name').textContent=current.name;$('code').textContent=code;$('change').textContent='데이터 조회 중…';$('status').textContent='네이버 증권 데이터 조회 중…';$('query').value=current.name;$('results').hidden=true;$('chart').innerHTML='<div class="chart-empty">분기 재무 데이터 조회 중…</div>';try{const flowKrxPromise=Promise.race([fetchFlowHistory(code,'KRX'),new Promise(resolve=>setTimeout(()=>resolve(null),2800))]);const flowNxtPromise=Promise.race([fetchFlowHistory(code,'NXT'),new Promise(resolve=>setTimeout(()=>resolve(null),2800))]);const floatSharesPromise=Promise.race([loadFloatingSharesFromCompany(code).catch(()=>null),new Promise(resolve=>setTimeout(()=>resolve(null),2200))]);const pricePromise=loadDailyPrices120(code,raw=>{if(id!==seq)return;renderDailyChart(raw,'day')});pricePromise.then(raw=>{if(id!==seq)return;dailyChartCache.set(code+'-day',raw);renderDailyChart(raw,'day');loadChartPeriod('day')}).catch(()=>{});const results=await Promise.allSettled([
 first([`${API}/api/stock/${code}/basic`]),
 first([`${API}/api/stock/${code}/integration`]),
 first([`${API}/api/stock/${code}/finance/quarter`]),
@@ -752,3 +755,4 @@ async function loadQuickRanking(config){
 }
 function loadQuickRankings(){QUICK_RANKINGS.forEach(config=>loadQuickRanking(config))}
 loadQuickRankings();$('name').textContent='종목을 검색하세요';$('code').textContent='';$('price').innerHTML='— <span id="change">종목을 선택하면 시세가 표시됩니다.</span>';$('status').textContent='';$('query').value='';$('refresh').onclick=()=>{if(current.code)load(current.code,current.name)};
+$('dailyRangeTabs')?.addEventListener('click',e=>{const b=e.target.closest('button[data-range]');if(!b)return;chartRangeSel[dailyChartPeriod]=Number(b.dataset.range);loadChartPeriod(dailyChartPeriod)});renderRangeTabs('day');
