@@ -7,7 +7,7 @@ const FLOW_DATE_KEYS=['tradeDate','date','localDate','localTradedAt','bizdate','
 let current={name:'',code:''},timer=null,seq=0;
 let dailyChartPeriod='day',dailyChartCache=new Map(),dailyChartRequest=0;
 const dailyChartForeignDone=new Set(),dailyChartForeignInFlight=new Set();
-const chartRanges={day:[5,10,20,40,60,100,120,200,240],week:[4,8,16,24,32,64,128,256,512],month:[6,12,18,24,30,36,42,48,54],year:[10,15,20,25,30,35,40,45,50]};
+const chartRanges={day:[5,10,20,40,60,100,120,200,240],week:[4,8,16,24,32,64,128,256,512],month:[6,12,18,24,30,36,42,48,60],year:[10,15,20,25,30,35,40,45,50]};
 const chartRangeDefault={day:120,week:64,month:24,year:20},chartUnit={day:'일',week:'주',month:'월',year:'년'};
 let chartRangeSel={...chartRangeDefault};
 const dailyRowsStore=new Map(),foreignStore=new Map();
@@ -525,20 +525,36 @@ async function loadListedSharesFromCompany(code){
 function neededDays(p,n){return p==='day'?n+130:p==='week'?(n+130)*5:p==='month'?(n+60)*21:(n+20)*252}
 function renderRangeTabs(period){const box=$('dailyRangeTabs');if(!box)return;box.innerHTML=chartRanges[period].map(n=>`<button type="button" data-range="${n}" class="${n===chartRangeSel[period]?'on':''}">${n}${chartUnit[period]}</button>`).join('')}
 async function fetchDailyRows(code,days){
- const old=dailyRowsStore.get(code)||{rows:[],exhausted:false};
+ const old=dailyRowsStore.get(code)||{rows:[],exhausted:false,priceEnded:false,deepEnded:false};
  const byDate=new Map(old.rows.map(r=>[r.date,r]));
- const maxPages=Math.min(320,Math.ceil(days/60)+1);let exhausted=false,page=Math.max(1,Math.floor(old.rows.length/60));
- while(page<=maxPages){
+ const maxPages=Math.min(320,Math.ceil(days/60)+1);let page=Math.max(1,Math.floor(old.rows.length/60)),priceEnded=!!old.priceEnded,deepEnded=!!old.deepEnded;
+ // 1단계: 모바일 가격 API(pageSize=60)를 페이지 순서로 조회. 이 API는 약 2003년 이전 이력을 주지 않을 수 있다.
+ while(!priceEnded&&page<=maxPages){
   const nums=Array.from({length:Math.min(10,maxPages-page+1)},(_,i)=>page+i);
   const res=await Promise.all(nums.map(n=>first([`${API}/api/stock/${code}/price?pageSize=60&page=${n}`]).catch(()=>null)));
-  if(!res.some(Boolean))break;
+  if(!res.some(Boolean)){priceEnded=true;break}
   let added=0;for(const r of res){if(!r)continue;for(const c of normalizeCandleRows(r)){if(!byDate.has(c.date)){byDate.set(c.date,c);added++}}}
-  if(!added){exhausted=true;break}
+  if(!added){priceEnded=true;break}
   page+=10;
+ }
+ // 2단계: 가격 API가 끝났는데도 필요한 과거 이력이 모자라면 차트 API(startDateTime~endDateTime)로 120일씩 거슬러 올라가며 보충한다.
+ if(priceEnded&&byDate.size<days&&!deepEnded&&byDate.size){
+  const dayMs=86400000,fmt=d=>`${d.getUTCFullYear()}${String(d.getUTCMonth()+1).padStart(2,'0')}${String(d.getUTCDate()).padStart(2,'0')}`;
+  const earliest=[...byDate.keys()].sort()[0];
+  let cursorEnd=Date.UTC(+earliest.slice(0,4),+earliest.slice(4,6)-1,+earliest.slice(6,8));const floor=Date.UTC(1980,0,1);let anyOk=false;
+  while(cursorEnd>floor&&byDate.size<days){
+   const chunks=[];for(let k=0;k<10&&cursorEnd>floor;k++){const e=cursorEnd,st0=e-119*dayMs;chunks.push([fmt(new Date(st0)),fmt(new Date(e))]);cursorEnd=st0-dayMs}
+   const res=await Promise.all(chunks.map(([a,b])=>first([`https://api.stock.naver.com/chart/domestic/item/${code}?periodType=dayCandle&startDateTime=${a}&endDateTime=${b}`]).catch(()=>null)));
+   if(res.some(Boolean))anyOk=true;
+   let added=0;
+   for(const r of res){if(!r)continue;const list=Array.isArray(r?.priceInfos)?r.priceInfos:objects(r);for(const c of normalizeCandleRows(list.filter(x=>x&&typeof x==='object').map(x=>({...x,localTradedAt:x.localTradedAt??x.localDate})))){if(!byDate.has(c.date)){byDate.set(c.date,c);added++}}}
+   if(!added){deepEnded=anyOk;break}
+  }
+  if(cursorEnd<=floor)deepEnded=true;
  }
  const rows=[...byDate.values()].sort((a,b)=>a.date.localeCompare(b.date));
  if(!rows.length)throw Error('일봉 가격 API 응답이 비어 있습니다');
- const st={rows,exhausted};dailyRowsStore.set(code,st);return st;
+ const st={rows,exhausted:deepEnded,priceEnded,deepEnded};dailyRowsStore.set(code,st);return st;
 }
 async function fetchForeignRange(code,from,to,isDay,count){
  const chartUrl=(a,b)=>`https://api.stock.naver.com/chart/domestic/item/${code}?periodType=dayCandle&startDateTime=${a}&endDateTime=${b}`;
