@@ -7,7 +7,7 @@ const FLOW_DATE_KEYS=['tradeDate','date','localDate','localTradedAt','bizdate','
 let current={name:'',code:''},timer=null,seq=0;
 let dailyChartPeriod='day',dailyChartCache=new Map(),dailyChartRequest=0;
 const dailyChartForeignDone=new Set(),dailyChartForeignInFlight=new Set();
-const chartRanges={day:[5,10,20,40,60,100,120,200,240],week:[4,8,16,24,32,64,128,256,512],month:[6,12,18,24,30,36,42,48,60],year:[10,15,20,25,30,35,40,45,50]};
+const chartRanges={day:[5,10,20,40,60,100,120,200,240],week:[4,8,16,24,32,64,128,256,512],month:[6,12,18,24,30,36,42,48,60],year:[10,15,20,25]};
 const chartRangeDefault={day:120,week:64,month:24,year:20},chartUnit={day:'일',week:'주',month:'월',year:'년'};
 let chartRangeSel={...chartRangeDefault};
 const dailyRowsStore=new Map(),foreignStore=new Map();
@@ -556,6 +556,62 @@ async function fetchDailyRows(code,days){
  if(!rows.length)throw Error('일봉 가격 API 응답이 비어 있습니다');
  const st={rows,exhausted:deepEnded,priceEnded,deepEnded};dailyRowsStore.set(code,st);return st;
 }
+const trendVariant={name:null};
+function parseForeignTrend(raw){
+ const out=new Map();
+ const explicit=['foreignerHoldRatio','foreignHoldRatio','foreignRetentionRate','foreignerRetentionRate','foreignRate','foreignOwnershipRate','foreignerOwnershipRatio','foreignOwnRatio','frgnrHoldRatio','frgnHoldRatio'];
+ const rateOf=o=>{for(const k of explicit){const v=num(o?.[k]);if(v!==null&&v>=0&&v<=100)return v}for(const [k,val] of Object.entries(o||{})){if(val&&typeof val==='object')continue;if(/(foreign|frgn)/i.test(k)&&/(hold|retention|owner|own)/i.test(k)&&!/(net|buy|sell|volume|quant|shares?)/i.test(k)){const v=num(val);if(v!==null&&v>=0&&v<=100)return v}}return null};
+ const walk=(node,depth)=>{
+  if(!node||typeof node!=='object'||depth>6)return;
+  if(Array.isArray(node)){for(const it of node)walk(it,depth+1);return}
+  const date=String(node.localTradedAt??node.bizdate??node.localDate??node.tradeDate??node.date??node.baseDate??'').replace(/\D/g,'').slice(0,8);
+  if(/^\d{8}$/.test(date)){let rate=rateOf(node);if(rate===null){for(const v of Object.values(node)){if(v&&typeof v==='object'&&!Array.isArray(v)){rate=rateOf(v);if(rate!==null)break}}}if(rate!==null)out.set(date,rate);return}
+  for(const v of Object.values(node))if(v&&typeof v==='object')walk(v,depth+1);
+ };
+ walk(raw,0);return out;
+}
+function trendNextCursor(raw){const r=raw?.result??raw;return String(r?.cursor??r?.nextCursor??raw?.cursor??raw?.nextCursor??'')}
+// 종목 투자자 동향(stock.naver.com tradingTrend)의 외국인 보유율을 과거로 페이지를 넘기며 가져온다.
+async function fetchTrendRates(code,fromDate){
+ const size=100,out=new Map();let ended=false;
+ const dUrl=q=>`${DESKTOP}/api/domestic/detail/${code}/trend?tradeType=KRX&${q}`;
+ const variants=[
+  {name:'idx',kind:'page',url:(n,step)=>dUrl(`startIdx=${n*step}&pageSize=${size}`)},
+  {name:'page',kind:'page',url:n=>dUrl(`page=${n+1}&pageSize=${size}`)},
+  {name:'cursor',kind:'cursor',url:c=>dUrl(`pageSize=${size}${c?`&cursor=${encodeURIComponent(c)}`:''}`)},
+  {name:'mcursor',kind:'cursor',url:c=>`${API}/front-api/stock/domestic/trend?code=${code}&exchangeType=KRX&size=50${c?`&cursor=${encodeURIComponent(c)}`:''}`}
+ ];
+ const get=async u=>{try{return await getJson(u)}catch{return null}};
+ const minKey=()=>out.size?[...out.keys()].reduce((a,b)=>a<b?a:b):'99999999';
+ const addAll=m=>{let n=0;for(const [d,r] of m)if(!out.has(d)){out.set(d,r);n++}return n};
+ const order=trendVariant.name?[...variants.filter(v=>v.name===trendVariant.name),...variants.filter(v=>v.name!==trendVariant.name)]:variants;
+ for(const v of order){
+  const p0=await get(v.kind==='cursor'?v.url(''):v.url(0,size));const m0=parseForeignTrend(p0);
+  if(!m0.size)continue;
+  const step=m0.size;
+  if(v.kind==='cursor'){
+   let cursor=trendNextCursor(p0);if(!cursor){addAll(m0);continue}
+   const p1=await get(v.url(cursor));const m1=parseForeignTrend(p1);
+   if(![...m1.keys()].some(d=>!m0.has(d))){addAll(m0);continue}
+   trendVariant.name=v.name;addAll(m0);addAll(m1);cursor=trendNextCursor(p1);
+   const seen=new Set([cursor]);
+   for(let i=0;i<150&&cursor&&minKey()>fromDate;i++){const p=await get(v.url(cursor));const added=addAll(parseForeignTrend(p));const next=trendNextCursor(p);if(!added||!next||seen.has(next)){ended=true;break}seen.add(next);cursor=next}
+   if(!cursor)ended=true;
+   return {map:out,ended};
+  }
+  const p1=await get(v.url(1,step));const m1=parseForeignTrend(p1);
+  if(![...m1.keys()].some(d=>!m0.has(d))){addAll(m0);continue}
+  trendVariant.name=v.name;addAll(m0);addAll(m1);
+  let n=2;
+  for(let guard=0;guard<80&&minKey()>fromDate;guard++){
+   const batch=await Promise.all(Array.from({length:8},(_,i)=>get(v.url(n+i,step))));n+=8;
+   let added=0;for(const b of batch)added+=addAll(parseForeignTrend(b));
+   if(!added){ended=true;break}
+  }
+  return {map:out,ended};
+ }
+ return {map:out,ended:false};
+}
 async function fetchForeignRange(code,from,to,isDay,count){
  const chartUrl=(a,b)=>`https://api.stock.naver.com/chart/domestic/item/${code}?periodType=dayCandle&startDateTime=${a}&endDateTime=${b}`;
  const parse=raw=>{
@@ -572,7 +628,8 @@ async function fetchForeignRange(code,from,to,isDay,count){
   return map;
  };
  const out=new Map();
- try{for(const [d,r] of parse(await first([chartUrl(from,to)])))out.set(d,r)}catch{}
+ try{const t=await fetchTrendRates(code,from);for(const [d,r] of t.map)out.set(d,r);const e=out.size?[...out.keys()].reduce((a,b)=>a<b?a:b):'';if(out.size&&(e<=from||t.ended))return out}catch(e){console.warn('투자자 동향 외국인 보유율 조회 실패',e)}
+ try{for(const [d,r] of parse(await first([chartUrl(from,to)]))){if(!out.has(d))out.set(d,r)}}catch{}
  const earliest=out.size?Math.min(...[...out.keys()].map(Number)):0;
  if(!out.size||earliest>Number(from)){
   const toDate=d=>`${d.getUTCFullYear()}${String(d.getUTCMonth()+1).padStart(2,'0')}${String(d.getUTCDate()).padStart(2,'0')}`;
