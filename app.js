@@ -7,12 +7,12 @@ const kinds={
  marketSum:{title:'시가총액 상위 50',desc:'시가총액 순',metric:'시가총액',order:'marketSum'},
  popular:{title:'인기 종목 50',desc:'네이버 증권 인기 종목 순',metric:'인기 지수',order:'popular'},
  up:{title:'상승 상위 50',desc:'당일 등락률 높은 순',metric:'등락률',order:'up'},
- flat:{title:'보합 종목',desc:'등락 없는 종목 · 거래대금 순 (거래대금 상위 종목 기준 계산)',metric:'거래대금',derived:true},
+ flat:{title:'보합 종목',desc:'등락 없는 종목 · 거래대금 순',metric:'거래대금',derived:true},
  down:{title:'하락 상위 50',desc:'당일 등락률 낮은 순',metric:'등락률',order:'down'},
- volSurge:{title:'거래량 급증 50',desc:'전일 대비 거래량 증가율 높은 순 (거래대금 상위 종목 기준 계산)',metric:'거래량 증감',derived:true},
- volDrop:{title:'거래량 급감 50',desc:'전일 대비 거래량 감소율 큰 순 (거래대금 상위 종목 기준 계산)',metric:'거래량 증감',derived:true},
- high52:{title:'52주 최고 종목',desc:'당일 52주 최고가 기록 · 거래대금 순 (거래대금 상위 종목 기준 계산)',metric:'52주 최고',derived:true},
- low52:{title:'52주 최저 종목',desc:'당일 52주 최저가 기록 · 거래대금 순 (거래대금 상위 종목 기준 계산)',metric:'52주 최저',derived:true}
+ volSurge:{title:'거래량 급증 50',desc:'전일 대비 거래량 증가율 높은 순',metric:'거래량 증감',derived:true},
+ volDrop:{title:'거래량 급감 50',desc:'전일 대비 거래량 감소율 큰 순',metric:'거래량 증감',derived:true},
+ high52:{title:'52주 최고 종목',desc:'당일 52주 최고가 기록 · 거래대금 순',metric:'52주 최고',derived:true},
+ low52:{title:'52주 최저 종목',desc:'당일 52주 최저가 기록 · 거래대금 순',metric:'52주 최저',derived:true}
 };
 let active='priceTop',market='ALL',cache={};
 // 종목코드 우선 분류. 회사명 키워드 추정보다 정확한 코드 매핑을 먼저 적용합니다.
@@ -170,7 +170,7 @@ function getRows(root){
   const cap=num(first(o,['marketValue','marketCap','marketSum','marketCapitalization','marketCapital']));
   const hit=num(first(o,['hitCount','searchCount','count','rankingValue']));
   const endType=String(first(o,['stockEndType','endType','stockType','type'])||'')+(o.etfType||o.nav?' etf':'');const [sector,detail,src]=classify({code,name,endType});
-  const mv=first(o,['marketType','market','stockExchangeType','exchangeType']);return {code,name,price,rate,diff,prev,basis,unsure,value,volume,cap,hit,qr:num(o.quantDiffRate),w52h:num(o.week52HighPrice),w52l:num(o.week52LowPrice),hi:num(o.highPrice),lo:num(o.lowPrice),sector,detail,src,endType,market:String(mv&&typeof mv==='object'?(mv.name||mv.code||''):(mv||(o.sosok==='0'?'KOSPI':o.sosok==='1'?'KOSDAQ':''))).toUpperCase()};
+  const mv=first(o,['marketType','market','stockExchangeType','exchangeType']);return {code,name,price,rate,diff,prev,basis,unsure,value,volume,cap,hit,qr:num(o.quantDiffRate),w52h:num(o.week52HighPrice),w52l:num(o.week52LowPrice),hi:num(o.highPrice),lo:num(o.lowPrice),halt:String(o.tradeStopYn||'')==='Y',sector,detail,src,endType,market:String(mv&&typeof mv==='object'?(mv.name||mv.code||''):(mv||(o.sosok==='0'?'KOSPI':o.sosok==='1'?'KOSDAQ':''))).toUpperCase()};
  }
  function walk(node,depth=0){
   if(!node||typeof node!=='object'||depth>9)return [];
@@ -202,31 +202,40 @@ async function load(kind=active,force=false){
   if(!force&&cache[kind])data=cache[kind];
   else if(cfg.derived&&!ORD[kind]){data=derive(kind,await loadUniverse());cache[kind]=data}
   else{
-   const U=o=>`${DESKTOP}/api/domestic/market/stock/default?tradeType=KRX&marketType=${market}&orderType=${o}&startIdx=0&pageSize=100`;
+   const U=o=>ordUrl(o,market);
    const mn=ORD[kind]?1:10;
    const urls=ORD[kind]?[U(ORD[kind])]:kind==='popular'?[U('top'),`${DESKTOP}/api/domestic/market/searchTop?nationType=KOR&startIdx=0&pageSize=50`]:[U(cfg.order)];
-   let lastErr;data=[];
-   for(const u of urls){try{const d=getRows(await fetchJson(u));if(d.length>=mn){data=d;dbg.src[kind]=ORD[kind]?'저장된 이름 '+ORD[kind]:u.includes('searchTop')?'searchTop':'stocklist';break}}catch(e){lastErr=e}}
-   if(data.length<mn&&lastErr)throw lastErr;
+   let lastErr;const errs=[];data=[];
+   for(const u of urls){try{const d=getRows(await fetchJson(u));if(d.length>=mn){data=d;dbg.src[kind]=ORD[kind]?'저장된 이름 '+ORD[kind]:u.includes('searchTop')?'searchTop':'stocklist';break}}catch(e){lastErr=e;errs.push((u.match(/orderType=(\w+)/)||u.match(/listingType=(\w+)/)||u.match(/market\/([\w\/]+)/)||[0,'?'])[1]+' '+String(e.message).replace(/\D+/g,' ').trim())}}
+   if(data.length<mn&&lastErr){if(kind==='popular'&&!ORD.popular&&shouldProbe('popular')){$('rows').innerHTML='<div class="empty">인기 종목 주소를 자동으로 찾는 중입니다…</div>';const f=await probeKind('popular');if(f){ORD.popular=f;svLS('order_map_v1',ORD);return load(kind,true)}}throw new Error('데이터 요청 오류 ('+errs.join(', ')+')')}
    if(data.length<mn)throw new Error(`응답에서 종목 ${data.length}개만 확인했습니다. 원본 API 구조가 변경됐을 수 있습니다.`);
    cache[kind]=data;
   }
   render(data);
+  if(cfg.derived&&!ORD[kind]&&shouldProbe(kind))probeKind(kind).then(f=>{if(f){ORD[kind]=f;svLS('order_map_v1',ORD);cache[kind]=null;if(active===kind)load(kind,true)}}).catch(()=>{});
   $('updated').textContent='조회 '+new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
- }catch(e){$('rows').innerHTML=`<div class="error">${escapeHtml(e.message)}<br><small>Worker를 최신 파일로 다시 배포했는지 확인하고, 화면 맨 아래 '데이터 점검'에서 '정렬 이름 자동 찾기'를 실행해 보세요.</small></div>`;$('updated').textContent='조회 실패'}
+ }catch(e){$('rows').innerHTML=`<div class="error">${escapeHtml(e.message)}<br><small>403이면 Worker를 최신 파일로 다시 배포해야 하고, 404면 네이버 주소가 다른 것입니다. 맨 아래 '데이터 점검'의 '자동 찾기'를 실행해 보세요.</small></div>`;$('updated').textContent='조회 실패'}
 }
 let UNI=null,UNIAT=0;
 async function loadUniverse(){
- if(UNI&&Date.now()-UNIAT<55000)return UNI;let last;
- for(const n of [500,300,100]){try{const d=getRows(await fetchJson(`${DESKTOP}/api/domestic/market/stock/default?tradeType=KRX&marketType=ALL&orderType=priceTop&startIdx=0&pageSize=${n}`));if(d.length>=10){UNI=d;UNIAT=Date.now();dbg.src.uni=n+'요청→'+d.length+'종목';return d}}catch(e){last=e}}
- throw last||new Error('전체 종목 목록을 불러오지 못했습니다.');
+ if(UNI&&Date.now()-UNIAT<110000)return UNI;
+ const U=(i,ps)=>`${DESKTOP}/api/domestic/market/stock/default?tradeType=KRX&marketType=ALL&orderType=marketSum&startIdx=${i}&pageSize=${ps}`;
+ let first=[];for(const n of [500,100]){try{first=getRows(await fetchJson(U(0,n)));if(first.length>=10)break}catch(e){}}
+ if(first.length<10)throw new Error('전체 종목 목록을 불러오지 못했습니다.');
+ const ps=first.length,all=[...first],seen=new Set(first.map(x=>x.code));let stop=ps<50;
+ for(let i=1;i<80&&!stop;i+=6){
+  const rs=await Promise.all([0,1,2,3,4,5].map(async k=>{try{return getRows(await fetchJson(U((i+k)*ps,ps)))}catch(e){return []}}));
+  let add=0;for(const r of rs)for(const x of r)if(!seen.has(x.code)){seen.add(x.code);all.push(x);add++}
+  if(!add)stop=true;
+ }
+ UNI=all;UNIAT=Date.now();dbg.src.uni=all.length+'종목 (페이지당 '+ps+')';return all;
 }
 function derive(kind,uni){
- const L=uni.filter(x=>!isEtf(x)),byV=(a,b)=>(b.value||0)-(a.value||0);
+ const L=uni.filter(x=>!isEtf(x)&&!x.halt&&x.volume>0&&x.price>0),byV=(a,b)=>(b.value||0)-(a.value||0);
  if(kind==='flat')return L.filter(x=>x.rate===0).sort(byV);
- if(kind==='volSurge')return L.filter(x=>x.qr!=null&&x.volume>0).sort((a,b)=>b.qr-a.qr);
- if(kind==='volDrop')return L.filter(x=>x.qr!=null&&x.volume>0).sort((a,b)=>a.qr-b.qr);
- if(kind==='high52')return L.filter(x=>x.w52h>0&&x.hi>=x.w52h).sort(byV);
+ if(kind==='volSurge')return L.filter(x=>x.qr!=null&&x.value>=1e9&&x.qr>0).sort((a,b)=>b.qr-a.qr);
+ if(kind==='volDrop')return L.filter(x=>x.qr!=null&&x.value>=1e9&&x.qr<0).sort((a,b)=>a.qr-b.qr);
+ if(kind==='high52')return L.filter(x=>x.w52h>0&&x.hi>0&&x.hi>=x.w52h).sort(byV);
  if(kind==='low52')return L.filter(x=>x.w52l>0&&x.lo>0&&x.lo<=x.w52l).sort(byV);
  return L;
 }
@@ -246,6 +255,7 @@ const cls2=v=>v>0?'up':v<0?'down':'';
 let sortBy='rank',secF=null,secOpen=false;
 const cls3=v=>v>0?'up':v<0?'down':'flat';
 function render(data){
+ if(kinds[active].derived)$('list-desc').textContent=kinds[active].desc+(ORD[active]?' · 네이버 목록':UNI?' · 전체 '+UNI.length+'종목 기준 계산'+(active==='volSurge'||active==='volDrop'?' · 거래대금 10억 미만 제외':''):'');
  data.forEach(x=>{const e=EXT[x.code];if(!e)return;if(x.value==null&&e.value!=null)x.value=e.value;if(x.unsure&&e.prev>0&&x.price!=null){x.prev=e.prev;x.diff=x.price-e.prev;x.rate=x.diff/e.prev*100;x.basis='전일종가(상세조회)';x.unsure=false}});
  data.forEach(x=>{[x.sector,x.detail,x.src]=classify(x)});
  const rows=(market==='ALL'?data:data.filter(x=>!x.market||x.market.includes(market))).filter(x=>!isEtf(x));
@@ -296,7 +306,7 @@ document.addEventListener('click',e=>{
 });
 setInterval(()=>{if(!document.hidden)load(active,true)},60000);
 
-(function(){const b=document.createElement('p');b.className='dbgbar';b.innerHTML='<a href="#" id="dbgL">데이터 점검 · 분류 백업 (V11)</a>';document.body.appendChild(b)})();
+(function(){const b=document.createElement('p');b.className='dbgbar';b.innerHTML='<a href="#" id="dbgL">데이터 점검 · 분류 백업 (V12)</a>';document.body.appendChild(b)})();
 document.addEventListener('click',e=>{
  if(e.target.id==='dbgL'){e.preventDefault();let p=document.getElementById('dbgP');if(!p){p=document.createElement('div');p.id='dbgP';p.className='dbgp';document.body.appendChild(p)}
   const x=cur.slice(0,3).map(y=>({name:y.name,price:y.price,prev:y.prev,diff:y.diff,rate:y.rate&&+y.rate.toFixed(2),basis:y.basis}));
@@ -311,33 +321,45 @@ async function syncPull(){try{const r=await fetch(WORKER+'/?sectors=1',{cache:'n
 document.addEventListener('click',e=>{if(e.target.id==='secMore'){secOpen=!secOpen;render(cache[active]||[])}});
 syncPull();
 
+function ordUrl(o,mk='ALL'){
+ const D=DESKTOP+'/api/';
+ if(o.startsWith('lt:'))return `${D}stockSecurity/individual-stocks/v3/domestic?listingType=${o.slice(3)}&exchangeType=KRX&index=0&size=100`;
+ if(o.startsWith('path:'))return `${D}domestic/market/${o.slice(5)}?nationType=KOR&tradeType=KRX&marketType=${mk}&startIdx=0&pageSize=100`;
+ return `${D}domestic/market/stock/default?tradeType=KRX&marketType=${mk}&orderType=${o}&startIdx=0&pageSize=100`;
+}
 const CAND={
- popular:['top','popular','searchTop','hit','hot','interest','searchRank','search','view','viewTop','trend','favorite','attention','focus','mostViewed','rank'],
- flat:['steady','unchanged','flat','even','same','noChange','zero','hold','stay','fix','steadyPrice','unchangedPrice'],
- volSurge:['quantSurge','quantUp','quantHigh','volumeSurge','quantRise','quantRiseRate','quantIncrease','surgeQuant','quantDiffRateUp','quantDiffUp','quantJump','quantSoar','volumeUp','quantPlus','quantDiffRate','quantRateUp','quantUpRate','quantGrowth'],
- volDrop:['quantPlunge','quantDown','quantLow','volumeDrop','quantFall','quantFallRate','quantDecrease','dropQuant','quantDiffRateDown','quantDiffDown','quantSlump','volumeDown','quantMinus','quantRateDown','quantDownRate','quantDecline'],
- high52:['high52','week52High','high52Week','highPrice52','new52High','yearHigh','highest','high','week52HighPrice','highPrice','newHigh','high1Year','highYear','top52','upper52','week52Up'],
- low52:['low52','week52Low','low52Week','lowPrice52','new52Low','yearLow','lowest','low','week52LowPrice','lowPrice','newLow','low1Year','lowYear','bottom52','lower52','week52Down']};
+ popular:['top','searchTop','popular','path:searchTop','path:stock/searchTop','path:popular','lt:popular','lt:searchTop','lt:popularDesc','hit','hot','interest','search','view'],
+ flat:['steady','unchanged','lt:unchanged','lt:steady','lt:flat','flat','noChange','lt:noChange','even','same'],
+ volSurge:['quantSurge','lt:tradingVolumeSurge','lt:volumeSurge','lt:tradingVolumeRateDesc','lt:tradingVolumeIncreaseRateDesc','lt:tradingVolumeChangeRateDesc','quantUp','quantHigh','volumeSurge','quantRiseRate','quantDiffRateUp','quantIncrease'],
+ volDrop:['quantPlunge','lt:tradingVolumePlunge','lt:volumeDrop','lt:tradingVolumeRateAsc','lt:tradingVolumeDecreaseRateDesc','lt:tradingVolumeChangeRateAsc','quantDown','quantLow','volumeDrop','quantFallRate','quantDiffRateDown','quantDecrease'],
+ high52:['high52','lt:high52Week','lt:week52High','lt:highestPrice52Weeks','lt:newHigh52Week','week52High','high52Week','new52High','yearHigh','lt:yearHigh','highest','newHigh'],
+ low52:['low52','lt:low52Week','lt:week52Low','lt:lowestPrice52Weeks','lt:newLow52Week','week52Low','low52Week','new52Low','yearLow','lt:yearLow','lowest','newLow']};
+const sig=a=>a.slice(0,10).map(x=>x.code).join();
+let BASEP=null;
+function getBase(){return BASEP||(BASEP=(async()=>{const b=[];for(const o of ['priceTop','quantTop','marketSum','up','down','lt:tradingValueDesc']){try{b.push(sig(getRows(await fetchJson(ordUrl(o)))))}catch(e){}}return b})())}
+function shouldProbe(k){try{return Date.now()-(+localStorage.getItem('probe_t_'+k)||0)>864e5}catch(e){return false}}
+const okf={popular:a=>true,flat:a=>a.slice(0,5).every(x=>x.rate===0||x.rate===null),volSurge:a=>a.length<5||a[0].qr==null||a[0].qr>=a[4].qr,volDrop:a=>a.length<5||a[0].qr==null||a[0].qr<=a[4].qr,high52:a=>a.slice(0,5).filter(x=>x.hi==null||x.hi>=x.w52h).length>=3,low52:a=>a.slice(0,5).filter(x=>x.lo==null||(x.lo>0&&x.lo<=x.w52l)).length>=3};
+async function probeKind(k,log=()=>{}){
+ try{localStorage.setItem('probe_t_'+k,String(Date.now()))}catch(e){}
+ const base=await getBase(),cs=CAND[k];
+ for(let i=0;i<cs.length;i+=4){
+  const rs=await Promise.all(cs.slice(i,i+4).map(async c=>{try{return {c,a:getRows(await fetchJson(ordUrl(c)))}}catch(e){return {c,err:String(e.message).replace(/\D+/g,' ').trim()}}}));
+  let found=null;
+  for(const r of rs){
+   if(r.err){log(`${k} ✗ ${r.c} (${r.err})`);continue}
+   const same=base.includes(sig(r.a)),good=r.a.length>=1&&!same&&okf[k](r.a);
+   log(`${k} ${good?'✓':'△'} ${r.c} · ${r.a.length}종목${same?' · 기존 탭과 같은 목록':''}${r.a.length?' · '+r.a.slice(0,3).map(x=>x.name).join(','):''}`);
+   if(good&&!found)found=r.c}
+  if(found)return found;
+ }
+ return null;
+}
 async function probe(){
  const out=document.getElementById('probeOut'),log=t=>{out.textContent+=t+'\n'};out.textContent='검색 중입니다. 화면을 닫지 마세요…\n';
- const U=o=>`${DESKTOP}/api/domestic/market/stock/default?tradeType=KRX&marketType=ALL&orderType=${o}&startIdx=0&pageSize=100`,sig=a=>a.slice(0,10).map(x=>x.code).join();
- const base=[];for(const o of ['priceTop','quantTop','marketSum','up','down']){try{base.push(sig(getRows(await fetchJson(U(o)))))}catch(e){}}
- const okf={popular:a=>true,flat:a=>a.slice(0,5).every(x=>x.rate===0),volSurge:a=>a.length>4&&a[0].qr!=null&&a[0].qr>=a[4].qr,volDrop:a=>a.length>4&&a[0].qr!=null&&a[0].qr<=a[4].qr,high52:a=>a.slice(0,5).filter(x=>x.hi>=x.w52h).length>=3,low52:a=>a.slice(0,5).filter(x=>x.lo>0&&x.lo<=x.w52l).length>=3};
- for(const [k,cs] of Object.entries(CAND)){
-  let found=null;
-  for(let i=0;i<cs.length&&!found;i+=4){
-   const rs=await Promise.all(cs.slice(i,i+4).map(async c=>{try{const a=getRows(await fetchJson(U(c)));return {c,a}}catch(e){return {c,err:String(e.message).replace(/\D+/g,' ').trim()}}}));
-   for(const r of rs){
-    if(r.err){log(`${k} ✗ ${r.c} (${r.err})`);continue}
-    const same=base.includes(sig(r.a)),good=r.a.length>=1&&!same&&okf[k](r.a);
-    log(`${k} ${good?'✓':'△'} ${r.c} · ${r.a.length}종목${same?' · 기존 탭과 같은 목록':''}${r.a.length?' · '+r.a.slice(0,3).map(x=>x.name).join(','):''}`);
-    if(good&&!found)found=r.c}
-  }
-  if(found){ORD[k]=found;log(`→ ${k}: ${found} 저장`)}else log(`→ ${k}: 못 찾음 (앱 계산 방식 유지)`)
- }
- svLS('order_map_v1',ORD);cache={};log('완료. 위 내용을 복사해 보내 주셔도 됩니다. 탭을 눌러 확인해 보세요.');
+ for(const k of Object.keys(CAND)){const f=await probeKind(k,log);if(f){ORD[k]=f;log(`→ ${k}: ${f} 저장`)}else log(`→ ${k}: 못 찾음 (앱 계산 방식 유지)`)}
+ svLS('order_map_v1',ORD);cache={};log(`전체 종목 수집: ${dbg.src.uni||'-'}\n완료. 위 내용을 복사해 보내 주셔도 됩니다. 탭을 눌러 확인해 보세요.`);
 }
 document.addEventListener('click',e=>{
  if(e.target.id==='probeB'){probe();return}
- if(e.target.id==='ordClr'){ORD={};svLS('order_map_v1',ORD);cache={};document.getElementById('probeOut').textContent='{}';alert('지웠습니다')}
+ if(e.target.id==='ordClr'){ORD={};svLS('order_map_v1',ORD);cache={};['popular','flat','volSurge','volDrop','high52','low52'].forEach(k=>{try{localStorage.removeItem('probe_t_'+k)}catch(e){}});document.getElementById('probeOut').textContent='{}';alert('지웠습니다')}
 });
