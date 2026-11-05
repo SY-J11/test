@@ -73,7 +73,7 @@ const nameRules=[
  [/로봇|자동화|스마트팩토리|공장자동화/,'로봇·자동화','산업용 로봇·공장 자동화'],
  [/지주|홀딩스|홀딩|그룹/,'지주·투자','계열사 지배·투자 및 사업 포트폴리오']
 ];
-const dbg={raw:[],ind:''};
+const dbg={raw:[],ind:''},EXT={};
 const LSK={ovr:'sector_override_v1',ind:'sector_naver_v1'};
 const ldLS=k=>{try{return JSON.parse(localStorage.getItem(k)||'{}')}catch(e){return {}}};
 const svLS=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
@@ -113,14 +113,19 @@ function findInd(o,d=0){
  for(const [k,v] of Object.entries(o))if(typeof v==='string'&&/industry(Name|GroupKor|Kor)|upjong|sectorName/i.test(k)&&/[가-힣]/.test(v))return v;
  for(const v of Object.values(o)){const r=findInd(v,d+1);if(r)return r}return null;
 }
+function moneyKR(s){let t=0,f=false;for(const m of String(s).replace(/,/g,'').matchAll(/([\d.]+)\s*(조|억|백만|천만|만)?/g)){f=true;t+=parseFloat(m[1])*({'조':1e12,'억':1e8,'백만':1e6,'천만':1e7,'만':1e4}[m[2]]||1)}return f?t:null}
+function parseTI(j){const t=(j&&j.totalInfos)||[],f=(cs,ks)=>t.find(i=>cs.includes(i.code)||ks.includes(i.key)),p=f(['lastClosePrice'],['전일']),v=f(['accumulatedTradingValue'],['대금','거래대금']);return {prev:p?num(p.value):null,value:v?moneyKR(v.value):null,at:Date.now()}}
+function scan(o,re,pred,d=0){if(!o||typeof o!=='object'||d>3)return null;for(const [k,v] of Object.entries(o))if(re.test(k)){const n=num(v);if(n!==null&&(!pred||pred(n)))return n}for(const v of Object.values(o))if(v&&typeof v==='object'){const r=scan(v,re,pred,d+1);if(r!==null)return r}return null}
 async function enrich(list){
- const t=list.filter(x=>(x.src==='unknown'||x.src==='rule')&&!indC[x.code]&&!tried.has(x.code));
- if(!t.length)return;let hit=0;
+ const now=Date.now(),t=list.filter(x=>((x.src==='unknown'||x.src==='rule')&&!indC[x.code]&&!tried.has(x.code))||(x.unsure&&!EXT[x.code])||(x.value==null&&(!EXT[x.code]||now-EXT[x.code].at>120000)));
+ if(!t.length)return;let ch=false;
  for(let i=0;i<t.length;i+=6){
   await Promise.all(t.slice(i,i+6).map(async x=>{tried.add(x.code);
-   try{const j=await fetchJson(`https://m.stock.naver.com/api/stock/${x.code}/integration`);const v=findInd(j);if(v){indC[x.code]=v;hit++}else if(!dbg.ind)dbg.ind=x.name+' '+JSON.stringify(j)}catch(e){}}));
+   try{const j=await fetchJson(`https://m.stock.naver.com/api/stock/${x.code}/integration`),v=findInd(j);
+    if(v&&!indC[x.code]){indC[x.code]=v;svLS(LSK.ind,indC)}else if(!v&&!dbg.ind)dbg.ind=x.name+' '+JSON.stringify(j).slice(0,2000);
+    EXT[x.code]=parseTI(j);ch=true}catch(e){EXT[x.code]={prev:null,value:null,at:Date.now()}}}));
  }
- if(hit){svLS(LSK.ind,indC);render(cache[active]||[])}
+ if(ch)render(cache[active]||[]);
 }
 function num(v){if(v===null||v===undefined||v==='')return null;if(typeof v==='object')v=v.value??v.formattedValue??v.text??v.price??v.amount??v.closePrice;const s=String(v).replace(/,/g,'').replace(/[원주%]/g,'').trim();const n=Number(s);return Number.isFinite(n)?n:null}
 function first(o,keys){for(const k of keys){if(o&&o[k]!==undefined&&o[k]!==null&&o[k]!=='')return o[k]}return null}
@@ -138,19 +143,28 @@ function getRows(root){
   if(dbg.raw.length<2)dbg.raw.push(o);
   const K=o.price&&typeof o.price==='object'&&o.price.krx&&typeof o.price.krx==='object'?o.price.krx:null;
   const g=ks=>{const v=K?num(first(K,ks)):null;return v!==null?v:num(first(o,ks))};
-  const price=g(['closePrice','currentPrice','nowPrice','tradePrice','priceValue']),apiRate=g(['fluctuationsRatio','changeRate','compareToPreviousCloseRate','changeRateValue']);
-  const vc=g(['previousClosePrice','prevClosePrice','previousPrice','basePrice','yesterdayClosePrice','prevPrice','preClosePrice']),rawDiff=g(['compareToPreviousClosePrice','compareToPreviousPrice','changePrice','prevChangePrice']);
+  const price=g(['closePrice','currentPrice','nowPrice','tradePrice','priceValue']);const sc=(re,pred)=>{const r=K?scan(K,re,pred):null;return r!==null?r:scan(o,re,pred)};
+  const apiRate=g(['fluctuationsRatio','changeRate','compareToPreviousCloseRate','changeRateValue'])??sc(/(fluct|chang|compar|prev|diff|rise|updown)\w*(rat|pct|percent)|^(rate|ratio)$/i,n=>Math.abs(n)<=31);
+  const vc=g(['previousClosePrice','prevClosePrice','previousPrice','basePrice','yesterdayClosePrice','prevPrice','preClosePrice'])??sc(/^(prev(ious)?|last|before|yesterday|base)\w*(close|price)$/i),rawDiff=g(['compareToPreviousClosePrice','compareToPreviousPrice','changePrice','prevChangePrice']);
   const dirOf=v=>{const s=v&&typeof v==='object'?String(v.name||'')+' '+String(v.text||''):String(v||'');return /UPPER|RIS|상승|상한/i.test(s)?1:/LOWER|FALL|하락|하한/i.test(s)?-1:/UNCHANG|EVEN|보합/i.test(s)?0:null};
   const dir=dirOf((K&&first(K,['compareToPreviousPrice','fluctuationType']))??first(o,['compareToPreviousPrice','compareToPreviousPriceType','fluctuationType','priceChangeType']));
-  let diff,rate,prev,basis;
+  let diff,rate,prev,basis,unsure=false;
   if(price!==null&&vc>0){prev=vc;diff=price-vc;rate=diff/vc*100;basis='전일종가 계산'}
-  else{rate=apiRate;diff=rawDiff!==null?Math.abs(rawDiff):(price!==null&&rate!==null?Math.abs(price-price/(1+rate/100)):null);if(diff!==null&&rate<0)diff=-diff;if(dir!==null){if(rate!==null)rate=dir===0?0:Math.abs(rate)*dir;if(diff!==null)diff=dir===0?0:Math.abs(diff)*dir}prev=(price!==null&&diff!==null)?price-diff:null;basis='API 값'}
-  const value=num(first(o,['accumulatedTradingValue','tradingValue','accAmount','priceTop','tradeValue','totalTradingValue']));
+  else{
+   rate=apiRate;let dd=rawDiff!==null?rawDiff:(price!==null&&rate!==null?price-price/(1+rate/100):null);
+   let sg=dir!==null?dir:(rate!==null&&rate!==0?Math.sign(rate):(rawDiff!==null&&rawDiff<0?-1:null));
+   if(sg===null&&dd===0)sg=0;
+   if(dd!==null&&sg!==null)dd=sg===0?0:Math.abs(dd)*sg;
+   unsure=dd!==null&&sg===null;diff=dd;
+   if(rate!==null&&sg!==null)rate=sg===0?0:Math.abs(rate)*sg;
+   else if(rate===null&&dd!==null&&sg!==null&&price!==null&&price-dd>0)rate=dd/(price-dd)*100;
+   prev=(price!==null&&diff!==null&&!unsure)?price-diff:null;basis='API 값'}
+  const value=num(first(o,['accumulatedTradingValue','tradingValue','accAmount','priceTop','tradeValue','totalTradingValue']))??sc(/(trad(ing|e)|acc)\w*(value|amount|money)|turnover/i);
   const volume=num(first(o,['accumulatedTradingVolume','tradingVolume','accQuant','quantTop','volume','totalTradingVolume']));
   const cap=num(first(o,['marketValue','marketCap','marketSum','marketCapitalization','marketCapital']));
   const hit=num(first(o,['hitCount','searchCount','count','rankingValue']));
   const endType=String(first(o,['stockEndType','endType','stockType'])||'');const [sector,detail,src]=classify({code,name,endType});
-  const mv=first(o,['marketType','market','stockExchangeType','exchangeType']);return {code,name,price,rate,diff,prev,basis,value,volume,cap,hit,sector,detail,src,endType,market:String(mv&&typeof mv==='object'?(mv.name||mv.code||''):(mv||'')).toUpperCase()};
+  const mv=first(o,['marketType','market','stockExchangeType','exchangeType']);return {code,name,price,rate,diff,prev,basis,unsure,value,volume,cap,hit,sector,detail,src,endType,market:String(mv&&typeof mv==='object'?(mv.name||mv.code||''):(mv||'')).toUpperCase()};
  }
  function walk(node,depth=0){
   if(!node||typeof node!=='object'||depth>9)return [];
@@ -200,6 +214,7 @@ const cls2=v=>v>0?'up':v<0?'down':'';
 let sortBy='rank',secF=null,secOpen=false;
 const cls3=v=>v>0?'up':v<0?'down':'flat';
 function render(data){
+ data.forEach(x=>{const e=EXT[x.code];if(!e)return;if(x.value==null&&e.value!=null)x.value=e.value;if(x.unsure&&e.prev>0&&x.price!=null){x.prev=e.prev;x.diff=x.price-e.prev;x.rate=x.diff/e.prev*100;x.basis='전일종가(상세조회)';x.unsure=false}});
  data.forEach(x=>{[x.sector,x.detail,x.src]=classify(x)});
  const rows=(market==='ALL'||active==='popular'?data:data.filter(x=>!x.market||x.market.includes(market))).filter(x=>!isEtf(x));
  const base=rows.slice(0,50);base.forEach((x,i)=>x.rk=i+1);cur=base;
@@ -214,7 +229,7 @@ function render(data){
  $('rows').innerHTML=list.map(x=>{
   const c=cls3(x.rate),metric=active==='priceTop'?money(x.value):active==='quantTop'?fmt(x.volume):active==='marketSum'?money(x.cap):active==='popular'?fmt(x.hit):'';
   const sh=tot>0&&x.value?` · 비중 ${(x.value/tot*100).toFixed(1)}%`:'';
-  const rs=x.rate===null||x.rate===undefined?'—':(x.rate>0?'+':x.rate<0?'-':'')+Math.abs(x.rate).toFixed(2)+'%';const d=x.diff===null||x.diff===undefined?'—':(x.diff>0?'▲':x.diff<0?'▼':'')+fmt(Math.abs(x.diff));
+  const rs=x.rate===null||x.rate===undefined?'—':(x.rate>0?'+':x.rate<0?'-':'')+Math.abs(x.rate).toFixed(2)+'%';const d=x.diff===null||x.diff===undefined?'—':x.unsure?fmt(Math.abs(x.diff)):(x.diff>0?'▲':x.diff<0?'▼':'')+fmt(Math.abs(x.diff));
   const bd=x.rate>=29.5?'<i class="bd u">상한가</i>':x.rate>=10?'<i class="bd u">급등</i>':x.rate<=-10?'<i class="bd d">급락</i>':'';
   const mk=x.market.includes('KOSDAQ')?'코스닥':x.market.includes('KOSPI')?'코스피':'';
   return `<div class="it"><div class="r1"><span class="rk">${x.rk}</span><div class="nm"><b>${escapeHtml(x.name)}${bd}</b><small>${x.code}${mk?' · '+mk:''}${x.prev?' · 전일 '+fmt(x.prev):''}</small></div><div class="px ${c}"><b>${fmt(x.price)}</b><small>${d} (${rs})</small></div></div><div class="r2"><span class="chip ed" data-code="${x.code}">${escapeHtml(x.sector)}</span><small class="dt">${escapeHtml(x.detail)}</small>${metric?`<span class="vl">${active==='priceTop'?'대금 ':''}${metric}${sh}</span>`:''}</div></div>`;
