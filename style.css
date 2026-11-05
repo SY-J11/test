@@ -19,3 +19,14 @@ td.ed{cursor:pointer}#etfToggle{margin-left:6px}@media(max-width:560px){.stat6{g
 .dbgbar{text-align:center;font-size:10px;margin:0 0 18px}.dbgbar a{color:#6d87a6}.dbgp{margin:0 12px 24px;padding:12px;background:#fff;border:1px solid var(--line);border-radius:12px;font-size:11px}.dbgp pre{white-space:pre-wrap;word-break:break-all;background:#f6f8fc;padding:8px;border-radius:8px;max-height:220px;overflow:auto}.dbgp textarea{width:100%}
 
 .more{display:block;width:100%;margin-top:10px;padding:10px;border:1px solid var(--line);background:#f6f8fc;border-radius:10px;color:#234d7d;font-weight:700;font-size:12px}
+
+/* 섹터 분석: 모바일/PC 레이아웃 고정 */
+.sector-list{display:block!important;overflow:hidden}
+.sec-t{width:100%!important;min-width:0!important;table-layout:fixed}
+.sec-t th:nth-child(1),.sec-t td:nth-child(1){width:38%;text-align:left!important}
+.sec-t th:nth-child(2),.sec-t td:nth-child(2){width:14%;text-align:center!important}
+.sec-t th:nth-child(3),.sec-t td:nth-child(3){width:30%;text-align:left!important}
+.sec-t th:nth-child(4),.sec-t td:nth-child(4){width:18%;text-align:right!important}
+.sec-t th,.sec-t td{padding:8px 4px!important;white-space:normal;word-break:keep-all;font-size:12px}
+.sec-t td b{font-size:12px}.sec-t small{font-size:10px;color:var(--muted)}
+.sector-list .more{position:static!important;box-sizing:border-box;width:100%;margin:10px 0 0}
