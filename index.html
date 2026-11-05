@@ -43,6 +43,12 @@ table.fit th:nth-child(1){width:15%}table.fit th:nth-child(2){width:15%}table.fi
 #cum-days{width:100%}#cum-days button{flex:1;min-width:0;padding:7px 0;white-space:nowrap;letter-spacing:-.4px}.cum-tabs button{white-space:nowrap}
 .cmp-days{display:grid;grid-template-columns:1fr 1fr;gap:8px}.cmp-card{border:1px solid var(--line);border-radius:10px;padding:8px 6px 4px;min-width:0;background:#fff}.cmp-card h4{margin:0 0 4px 3px;font-size:11px;font-weight:800;color:var(--text)}.cmp-card table{font-size:10px;table-layout:auto}.cmp-card th,.cmp-card td{padding:5px 3px}.cmp-card th:first-child,.cmp-card td:first-child{text-align:left;color:#58667b}.cmp-card td{font-weight:700}
 table th,table th:first-child,.cmp-card th,.cmp-card th:first-child{text-align:center!important;vertical-align:middle}
+table td:first-child,.cmp-card td:first-child{text-align:center!important}
+.board th{font-size:12px;padding:10px 6px;background:#eef2f7;color:#4b596d;font-weight:800}
+.board td{font-size:16px;font-weight:800;padding:14px 6px;letter-spacing:-.3px;font-variant-numeric:tabular-nums}
+.board td.mk{font-size:15px;color:var(--text);box-shadow:inset 4px 0 0 var(--mk,#3478d4)}
+.board .mk-kospi{--mk:#3478d4}.board .mk-kosdaq{--mk:#159b76}.board .mk-fut{--mk:#e3a33e}
+.board tbody tr:nth-child(odd){background:#fafbfd}
 </style>
 </head>
 <body>
@@ -143,7 +149,7 @@ table th,table th:first-child,.cmp-card th,.cmp-card th:first-child{text-align:c
 </section>
 
 <section class="panel" id="panel-compare">
-<div class="card"><div class="card-title"><b>시장별 투자자 수급 비교</b><span class="sub">최근 거래일</span></div><div class="table-scroll"><table><thead><tr><th>시장</th><th>개인</th><th>외국인</th><th>기관</th></tr></thead><tbody id="compare-table"><tr><td colspan="4" class="empty">데이터 요청 중</td></tr></tbody></table></div></div>
+<div class="card"><div class="card-title"><b>시장별 투자자 수급 비교</b><span class="sub">최근 거래일</span></div><div class="table-scroll"><table class="board"><thead><tr><th>시장</th><th>개인</th><th>외국인</th><th>기관</th></tr></thead><tbody id="compare-table"><tr><td colspan="4" class="empty">데이터 요청 중</td></tr></tbody></table></div></div>
 <div class="card"><div class="card-title"><b>외국인 순매수 비교</b><span class="sub">KOSPI · KOSDAQ · FUT</span></div><div class="chart tall"><canvas id="compare-chart"></canvas></div><div class="legend"><span><i style="background:#3478d4"></i>코스피</span><span><i style="background:#159b76"></i>코스닥</span><span><i style="background:#e3a33e"></i>선물</span></div></div>
 <div class="card"><div class="card-title"><b>기관 순매수 비교</b><span class="sub">KOSPI · KOSDAQ · FUT</span></div><div class="chart tall"><canvas id="compare-chart-inst"></canvas></div><div class="legend"><span><i style="background:#3478d4"></i>코스피</span><span><i style="background:#159b76"></i>코스닥</span><span><i style="background:#e3a33e"></i>선물</span></div></div>
 <div class="card"><div class="card-title"><b>일별 수급 내역</b><span class="sub" id="compare-days-sub"></span></div><div id="compare-days" class="cmp-days"></div><div class="more-box" id="compare-days-more"></div></div>
@@ -635,7 +641,7 @@ const cmpCell=v=>`<td class="${cmpClass(v)}">${v===null||v===undefined?'—':fmt
 function renderCompare(){
  const markets=[['KOSPI','코스피'],['KOSDAQ','코스닥'],['FUT','선물']],data=markets.map(([m])=>marketRows(m));
  // 1) 최근 거래일 표 (+는 빨강, -는 파랑, 0은 검정)
- {const el=$('compare-table');if(el)el.innerHTML=markets.map(([m,name],i)=>{const r=data[i][0]||{};return `<tr><td>${name}</td>${cmpCell(r.individual??null)}${cmpCell(r.foreign??null)}${cmpCell(r.institution??null)}</tr>`}).join('')}
+ {const el=$('compare-table');if(el)el.innerHTML=markets.map(([m,name],i)=>{const r=data[i][0]||{};return `<tr><td class="mk mk-${m.toLowerCase()}">${name}</td>${cmpCell(r.individual??null)}${cmpCell(r.foreign??null)}${cmpCell(r.institution??null)}</tr>`}).join('')}
  // 2) 외국인 / 기관 순매수 비교 그래프
  const colors=['#3478d4','#159b76','#e3a33e'];
  for(const [id,key] of [['compare-chart','foreign'],['compare-chart-inst','institution']])
