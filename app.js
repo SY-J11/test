@@ -110,7 +110,7 @@ function classify(x){
 }
 function findInd(o,d=0){
  if(!o||typeof o!=='object'||d>6)return null;
- for(const [k,v] of Object.entries(o))if(typeof v==='string'&&/industry(Name|GroupKor|Kor)|upjong|sectorName/i.test(k)&&/[가-힣]/.test(v))return v;
+ for(const [k,v] of Object.entries(o))if(typeof v==='string'&&/industry|upjong|sector/i.test(k)&&/[가-힣]/.test(v))return v;
  for(const v of Object.values(o)){const r=findInd(v,d+1);if(r)return r}return null;
 }
 function moneyKR(s){let t=0,f=false;for(const m of String(s).replace(/,/g,'').matchAll(/([\d.]+)\s*(조|억|백만|천만|만)?/g)){f=true;t+=parseFloat(m[1])*({'조':1e12,'억':1e8,'백만':1e6,'천만':1e7,'만':1e4}[m[2]]||1)}return f?t:null}
@@ -122,7 +122,7 @@ async function enrich(list){
  for(let i=0;i<t.length;i+=6){
   await Promise.all(t.slice(i,i+6).map(async x=>{tried.add(x.code);
    try{const j=await fetchJson(`https://m.stock.naver.com/api/stock/${x.code}/integration`),v=findInd(j);
-    if(v&&!indC[x.code]){indC[x.code]=v;svLS(LSK.ind,indC)}else if(!v&&!dbg.ind)dbg.ind=x.name+' '+JSON.stringify(j).slice(0,2000);
+    if(v&&!indC[x.code]){indC[x.code]=v;svLS(LSK.ind,indC)}else if(!v&&!dbg.ind)dbg.ind=x.name+' keys:'+Object.keys(j||{}).join(',')+' '+JSON.stringify(Object.fromEntries(Object.entries(j||{}).filter(([k])=>k!=='totalInfos'&&k!=='dealTrendInfos'))).slice(0,3500);
     EXT[x.code]=parseTI(j);ch=true}catch(e){EXT[x.code]={prev:null,value:null,at:Date.now()}}}));
  }
  if(ch)render(cache[active]||[]);
@@ -144,10 +144,11 @@ function getRows(root){
   const K=o.price&&typeof o.price==='object'&&o.price.krx&&typeof o.price.krx==='object'?o.price.krx:null;
   const g=ks=>{const v=K?num(first(K,ks)):null;return v!==null?v:num(first(o,ks))};
   const price=g(['closePrice','currentPrice','nowPrice','tradePrice','priceValue']);const sc=(re,pred)=>{const r=K?scan(K,re,pred):null;return r!==null?r:scan(o,re,pred)};
-  const apiRate=g(['fluctuationsRatio','changeRate','compareToPreviousCloseRate','changeRateValue'])??sc(/(fluct|chang|compar|prev|diff|rise|updown)\w*(rat|pct|percent)|^(rate|ratio)$/i,n=>Math.abs(n)<=31);
-  const vc=g(['previousClosePrice','prevClosePrice','previousPrice','basePrice','yesterdayClosePrice','prevPrice','preClosePrice'])??sc(/^(prev(ious)?|last|before|yesterday|base)\w*(close|price)$/i),rawDiff=g(['compareToPreviousClosePrice','compareToPreviousPrice','changePrice','prevChangePrice']);
+  const apiRate=g(['prevChangeRate','fluctuationsRatio','changeRate','compareToPreviousCloseRate','changeRateValue'])??sc(/(fluct|chang|compar|prev|diff|rise|updown)\w*(rat|pct|percent)|^(rate|ratio)$/i,n=>Math.abs(n)<=31);
+  const vc=g(['previousClosePrice','prevClosePrice','previousPrice','basePrice','yesterdayClosePrice','prevPrice','preClosePrice'])??sc(/^(prev(ious)?|last|yesterday|before)(day)?close(price)?$|^(base|prev(ious)?)price$/i,n=>n>0&&price!==null&&Math.abs(price-n)/n<=0.31),rawDiff=g(['prevChangePrice','compareToPreviousClosePrice','compareToPreviousPrice','changePrice']);
   const dirOf=v=>{const s=v&&typeof v==='object'?String(v.name||'')+' '+String(v.text||''):String(v||'');return /UPPER|RIS|상승|상한/i.test(s)?1:/LOWER|FALL|하락|하한/i.test(s)?-1:/UNCHANG|EVEN|보합/i.test(s)?0:null};
-  const dir=dirOf((K&&first(K,['compareToPreviousPrice','fluctuationType']))??first(o,['compareToPreviousPrice','compareToPreviousPriceType','fluctuationType','priceChangeType']));
+  const udm={'1':1,'2':1,'3':0,'4':-1,'5':-1},ug=udm[String(first(o,['upDownGb'])??'')];
+  const dir=ug!==undefined?ug:dirOf((K&&first(K,['compareToPreviousPrice','fluctuationType']))??first(o,['compareToPreviousPrice','compareToPreviousPriceType','fluctuationType','priceChangeType']));
   let diff,rate,prev,basis,unsure=false;
   if(price!==null&&vc>0){prev=vc;diff=price-vc;rate=diff/vc*100;basis='전일종가 계산'}
   else{
@@ -159,12 +160,12 @@ function getRows(root){
    if(rate!==null&&sg!==null)rate=sg===0?0:Math.abs(rate)*sg;
    else if(rate===null&&dd!==null&&sg!==null&&price!==null&&price-dd>0)rate=dd/(price-dd)*100;
    prev=(price!==null&&diff!==null&&!unsure)?price-diff:null;basis='API 값'}
-  const value=num(first(o,['accumulatedTradingValue','tradingValue','accAmount','priceTop','tradeValue','totalTradingValue']))??sc(/(trad(ing|e)|acc)\w*(value|amount|money)|turnover/i);
-  const volume=num(first(o,['accumulatedTradingVolume','tradingVolume','accQuant','quantTop','volume','totalTradingVolume']));
+  const value=num(first(o,['tradeAmount','accumulatedTradingValue','tradingValue','accAmount','priceTop','tradeValue','totalTradingValue']))??sc(/(trad(ing|e)|acc)\w*(value|amount|money)|turnover/i);
+  const volume=num(first(o,['tradeVolume','accumulatedTradingVolume','tradingVolume','accQuant','quantTop','volume','totalTradingVolume']));
   const cap=num(first(o,['marketValue','marketCap','marketSum','marketCapitalization','marketCapital']));
   const hit=num(first(o,['hitCount','searchCount','count','rankingValue']));
-  const endType=String(first(o,['stockEndType','endType','stockType'])||'');const [sector,detail,src]=classify({code,name,endType});
-  const mv=first(o,['marketType','market','stockExchangeType','exchangeType']);return {code,name,price,rate,diff,prev,basis,unsure,value,volume,cap,hit,sector,detail,src,endType,market:String(mv&&typeof mv==='object'?(mv.name||mv.code||''):(mv||'')).toUpperCase()};
+  const endType=String(first(o,['stockEndType','endType','stockType','type'])||'')+(o.etfType||o.nav?' etf':'');const [sector,detail,src]=classify({code,name,endType});
+  const mv=first(o,['marketType','market','stockExchangeType','exchangeType']);return {code,name,price,rate,diff,prev,basis,unsure,value,volume,cap,hit,sector,detail,src,endType,market:String(mv&&typeof mv==='object'?(mv.name||mv.code||''):(mv||(o.sosok==='0'?'KOSPI':o.sosok==='1'?'KOSDAQ':''))).toUpperCase()};
  }
  function walk(node,depth=0){
   if(!node||typeof node!=='object'||depth>9)return [];
@@ -264,11 +265,11 @@ document.addEventListener('click',e=>{
 });
 setInterval(()=>{if(!document.hidden)load(active,true)},60000);
 
-(function(){const b=document.createElement('p');b.className='dbgbar';b.innerHTML='<a href="#" id="dbgL">데이터 점검 · 분류 백업</a>';document.body.appendChild(b)})();
+(function(){const b=document.createElement('p');b.className='dbgbar';b.innerHTML='<a href="#" id="dbgL">데이터 점검 · 분류 백업 (V8)</a>';document.body.appendChild(b)})();
 document.addEventListener('click',e=>{
  if(e.target.id==='dbgL'){e.preventDefault();let p=document.getElementById('dbgP');if(!p){p=document.createElement('div');p.id='dbgP';p.className='dbgp';document.body.appendChild(p)}
   const x=cur.slice(0,3).map(y=>({name:y.name,price:y.price,prev:y.prev,diff:y.diff,rate:y.rate&&+y.rate.toFixed(2),basis:y.basis}));
-  p.innerHTML=`<b>계산값</b><pre>${escapeHtml(JSON.stringify(x,null,1))}</pre><b>원본 응답(상위 2종목)</b><pre>${escapeHtml(JSON.stringify(dbg.raw,null,1).slice(0,3500))}</pre><b>업종 조회 응답(실패 시)</b><pre>${escapeHtml(dbg.ind.slice(0,2000)||'없음')}</pre><b>섹터 직접 지정 백업</b><textarea id="bk" rows="4">${escapeHtml(JSON.stringify(ovr))}</textarea><button id="bkL">가져오기</button>`;p.scrollIntoView();return}
+  p.innerHTML=`<b>계산값</b><pre>${escapeHtml(JSON.stringify(x,null,1))}</pre><b>원본 응답(상위 2종목)</b><pre>${escapeHtml(JSON.stringify(dbg.raw,null,1).slice(0,3500))}</pre><b>업종 조회 응답(실패 시)</b><pre>${escapeHtml(dbg.ind.slice(0,3600)||'없음')}</pre><b>섹터 직접 지정 백업</b><textarea id="bk" rows="4">${escapeHtml(JSON.stringify(ovr))}</textarea><button id="bkL">가져오기</button>`;p.scrollIntoView();return}
  if(e.target.id==='bkL'){try{Object.assign(ovr,JSON.parse($('bk').value));svLS(LSK.ovr,ovr);syncPush();render(cache[active]||[]);alert('가져왔습니다')}catch(err){alert('형식이 올바르지 않습니다')}}
 });
 
