@@ -76,7 +76,7 @@ const nameRules=[
 const LSK={ovr:'sector_override_v1',ind:'sector_naver_v1'};
 const ldLS=k=>{try{return JSON.parse(localStorage.getItem(k)||'{}')}catch(e){return {}}};
 const svLS=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
-let ovr=ldLS(LSK.ovr),indC=ldLS(LSK.ind),noEtf=false,cur=[];const tried=new Set();
+let ovr=ldLS(LSK.ovr),indC=ldLS(LSK.ind),cur=[];const tried=new Set();
 [[/소프트|시스템|정보통신|데이터|클라우드|인공지능|솔루션/,'IT·소프트웨어','소프트웨어·IT서비스·AI'],
  [/의료|메디|헬스|덴탈|임플란트/,'의료기기·헬스케어','의료기기·진단·헬스케어'],
  [/디스플레이|OLED|LED|광학|카메라|센서|이노텍|전자/,'전자부품·디스플레이','전자부품·디스플레이·센서'],
@@ -144,7 +144,7 @@ function getRows(root){
   const endType=String(first(o,['stockEndType','endType','stockType'])||'');const [sector,detail,src]=classify({code,name,endType});
   const rawDiff=num(first(o,['compareToPreviousClosePrice','compareToPreviousPrice','changePrice','prevChangePrice'])??first(priceObj,['compareToPreviousClosePrice','compareToPreviousPrice']));
   let diff=rawDiff!==null?Math.abs(rawDiff):(price!==null&&rate!==null?Math.abs(price-price/(1+rate/100)):null);if(diff!==null&&rate<0)diff=-diff;
-  const mv=first(o,['marketType','market','stockExchangeType','exchangeType']);return {code,name,price,rate,diff,value,volume,cap,hit,sector,detail,src,endType,market:String(mv&&typeof mv==='object'?(mv.name||mv.code||''):(mv||'')).toUpperCase()};
+  const mv=first(o,['marketType','market','stockExchangeType','exchangeType']);const prev=(price!==null&&diff!==null)?price-diff:null;const rate2=(prev>0&&rawDiff!==null)?diff/prev*100:rate;return {code,name,price,rate:rate2,diff,prev,value,volume,cap,hit,sector,detail,src,endType,market:String(mv&&typeof mv==='object'?(mv.name||mv.code||''):(mv||'')).toUpperCase()};
  }
  function walk(node,depth=0){
   if(!node||typeof node!=='object'||depth>9)return [];
@@ -169,7 +169,7 @@ async function load(kind=active,force=false){
  active=kind;
  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('active',b.dataset.kind===kind));
  const cfg=kinds[kind];$('summary-title').textContent=cfg.title;$('list-title').textContent=cfg.title;$('list-desc').textContent=cfg.desc;$('metric-head').textContent=cfg.metric;
- $('rows').innerHTML='<tr><td colspan="7" class="empty">순위를 불러오는 중입니다…</td></tr>';
+ if(!cache[kind])$('rows').innerHTML='<div class="empty">순위를 불러오는 중입니다…</div>';
  try{
   let data;
   if(!force&&cache[kind])data=cache[kind];
@@ -183,7 +183,7 @@ async function load(kind=active,force=false){
   }
   render(data);
   $('updated').textContent='조회 '+new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
- }catch(e){$('rows').innerHTML=`<tr><td colspan="7" class="error">${escapeHtml(e.message)}<br><small>Cloudflare Worker 주소와 배포 상태를 확인해 주세요.</small></td></tr>`;$('updated').textContent='조회 실패'}
+ }catch(e){$('rows').innerHTML=`<div class="error">${escapeHtml(e.message)}<br><small>Cloudflare Worker 주소와 배포 상태를 확인해 주세요.</small></div>`;$('updated').textContent='조회 실패'}
 }
 function agg(list){
  const tot=list.reduce((s,x)=>s+(x.value||0),0),w=x=>tot>0?(x.value||0):1,W=list.reduce((s,x)=>s+w(x),0)||1,g={};
@@ -191,37 +191,42 @@ function agg(list){
  return {tot,W,avg:list.reduce((s,x)=>s+(x.rate||0)*w(x),0)/W,arr:Object.entries(g).map(([s,a])=>({s,n:a.n,share:a.w/W*100,avg:a.w?a.rw/a.w:0,top:a.top.name})).sort((a,b)=>b.share-a.share||b.n-a.n)};
 }
 const cls2=v=>v>0?'up':v<0?'down':'';
+let sortBy='rank',secF=null;
+const cls3=v=>v>0?'up':v<0?'down':'flat';
 function render(data){
  data.forEach(x=>{[x.sector,x.detail,x.src]=classify(x)});
- let rows=market==='ALL'||active==='popular'?data:data.filter(x=>!x.market||x.market.includes(market));
- if(noEtf)rows=rows.filter(x=>x.sector!=='ETF·ETN');
- const list=rows.slice(0,50);cur=list;
- const up=list.filter(x=>(x.rate||0)>0).length,down=list.filter(x=>(x.rate||0)<0).length,flat=list.length-up-down;
- $('summary-count').textContent=list.length+'개';
- $('summary-breadth').innerHTML=`<span class="up">${up}</span> / <span class="down">${down}</span>`;
- $('rows').innerHTML=list.map((x,i)=>{
-  const metric=active==='priceTop'?money(x.value):active==='quantTop'?fmt(x.volume):active==='marketSum'?money(x.cap):active==='popular'?fmt(x.hit):pct(x.rate);
+ const rows=(market==='ALL'||active==='popular'?data:data.filter(x=>!x.market||x.market.includes(market))).filter(x=>!isEtf(x));
+ const base=rows.slice(0,50);base.forEach((x,i)=>x.rk=i+1);cur=base;
+ if(secF&&!base.some(x=>x.sector===secF))secF=null;
+ const up=base.filter(x=>(x.rate||0)>0).length,down=base.filter(x=>(x.rate||0)<0).length,flat=base.length-up-down;
+ $('summary-count').textContent=base.length+'개';
+ $('summary-breadth').innerHTML=`<span class="up">${up}</span> / <span class="flat">${flat}</span> / <span class="down">${down}</span>`;
+ const {tot,avg,arr}=agg(base),vs=f=>base.filter(f).reduce((s,x)=>s+(x.value||0),0);
+ let list=secF?base.filter(x=>x.sector===secF):base.slice();
+ if(sortBy==='rate')list.sort((a,b)=>(b.rate||0)-(a.rate||0));
+ $('sec-filter').hidden=!secF;$('sec-filter').innerHTML=secF?`섹터 필터: <b>${escapeHtml(secF)}</b> (${list.length}종목) <a href="#" id="clr">해제 ✕</a>`:'';
+ $('rows').innerHTML=list.map(x=>{
+  const c=cls3(x.rate),metric=active==='priceTop'?money(x.value):active==='quantTop'?fmt(x.volume):active==='marketSum'?money(x.cap):active==='popular'?fmt(x.hit):'';
+  const sh=tot>0&&x.value?` · 비중 ${(x.value/tot*100).toFixed(1)}%`:'';
   const d=x.diff===null||x.diff===undefined?'—':(x.diff>0?'▲':x.diff<0?'▼':'')+fmt(Math.abs(x.diff));
-  return `<tr><td class="rank">${i+1}</td><td class="stock"><b>${escapeHtml(x.name)}</b><small>${x.code}${x.market?' · '+(x.market.includes('KOSDAQ')?'코스닥':x.market.includes('KOSPI')?'코스피':''):''}</small></td><td class="num">${fmt(x.price)}</td><td class="num ${cls2(x.rate)}">${d}</td><td class="rate ${cls2(x.rate)}">${pct(x.rate)}</td><td class="num metric">${metric}</td><td class="sector ed" data-code="${x.code}" title="탭하여 섹터 수정"><b>${escapeHtml(x.sector)}</b><small>${escapeHtml(x.detail)}</small></td></tr>`;
- }).join('')||'<tr><td colspan="7" class="empty">해당 시장의 종목이 없습니다.</td></tr>';
- const {tot,avg,arr}=agg(list),top5=list.slice(0,5).reduce((s,x)=>s+(x.value||0),0);
- const mk=m=>list.filter(x=>x.market.includes(m)).reduce((s,x)=>s+(x.value||0),0),etf=list.filter(x=>x.sector==='ETF·ETN').reduce((s,x)=>s+(x.value||0),0);
- const st=[['총 거래대금',tot>0?money(tot):'—'],['가중 평균 등락률',`<span class="${cls2(avg)}">${pct(avg)}</span>`],['상승/보합/하락',`<span class="up">${up}</span>/${flat}/<span class="down">${down}</span>`],['상위5 집중도',tot>0?(top5/tot*100).toFixed(0)+'%':'—'],['코스피:코스닥',tot>0&&mk('KOSPI')+mk('KOSDAQ')>0?Math.round(mk('KOSPI')/tot*100)+':'+Math.round(mk('KOSDAQ')/tot*100):'—'],['ETF·ETN 비중',tot>0?(etf/tot*100).toFixed(0)+'%':'—']];
- $('stat-grid').innerHTML=st.map(([a,b])=>`<div class="summary-card"><span>${a}</span><b>${b}</b></div>`).join('');
+  const bd=x.rate>=29.5?'<i class="bd u">상한가</i>':x.rate>=10?'<i class="bd u">급등</i>':x.rate<=-10?'<i class="bd d">급락</i>':'';
+  const mk=x.market.includes('KOSDAQ')?'코스닥':x.market.includes('KOSPI')?'코스피':'';
+  return `<div class="it"><div class="r1"><span class="rk">${x.rk}</span><div class="nm"><b>${escapeHtml(x.name)}${bd}</b><small>${x.code}${mk?' · '+mk:''}${x.prev?' · 전일 '+fmt(x.prev):''}</small></div><div class="px ${c}"><b>${fmt(x.price)}</b><small>${d} ${pct(x.rate)}</small></div></div><div class="r2"><span class="chip ed" data-code="${x.code}">${escapeHtml(x.sector)}</span><small class="dt">${escapeHtml(x.detail)}</small>${metric?`<span class="vl">${active==='priceTop'?'대금 ':''}${metric}${sh}</span>`:''}</div></div>`;
+ }).join('')||'<div class="empty">해당 조건의 종목이 없습니다.</div>';
  $('sector-total').textContent=arr.length+'개 섹터';
- $('sector-list').innerHTML='<table class="sec-t"><thead><tr><th>섹터</th><th>종목</th><th>비중</th><th>평균</th><th>대표</th></tr></thead><tbody>'+arr.map(a=>`<tr><td><b>${escapeHtml(a.s)}</b></td><td class="num">${a.n}</td><td><div class="bar"><i style="width:${a.share}%"></i></div><small>${a.share.toFixed(1)}%</small></td><td class="rate ${cls2(a.avg)}">${pct(a.avg)}</td><td><small>${escapeHtml(a.top)}</small></td></tr>`).join('')+'</tbody></table>';
- const real=arr.filter(a=>a.s!=='ETF·ETN'&&a.s!=='업종 미확인'),big=real.filter(a=>a.n>=2),T=[];
- if(real[0])T.push(`<b>자금 쏠림</b> · ${escapeHtml(real[0].s)}에 ${tot>0?'거래대금':'종목'} ${real[0].share.toFixed(0)}% 집중 (${real[0].n}종목, 평균 <span class="${cls2(real[0].avg)}">${pct(real[0].avg)}</span>)`);
- if(real[1])T.push(`<b>2·3위 섹터</b> · ${real.slice(1,3).map(a=>escapeHtml(a.s)+' '+a.share.toFixed(0)+'%').join(', ')}`);
+ $('sector-list').innerHTML='<table class="sec-t"><thead><tr><th>섹터 (탭: 필터)</th><th>종목</th><th>비중</th><th>평균</th></tr></thead><tbody>'+arr.map(a=>`<tr data-s="${escapeHtml(a.s)}" class="${a.s===secF?'on':''}"><td><b>${escapeHtml(a.s)}</b></td><td class="num">${a.n}</td><td><div class="bar"><i style="width:${a.share}%"></i></div><small>${a.share.toFixed(1)}%</small></td><td class="rate ${cls3(a.avg)}">${pct(a.avg)}</td></tr>`).join('')+'</tbody></table>';
+ const real=arr.filter(a=>a.s!=='업종 미확인'),big=real.filter(a=>a.n>=2),T=[],top5=base.slice(0,5).reduce((s,x)=>s+(x.value||0),0);
+ if(base.length){const r=up/Math.max(1,up+down);T.push(`<b>분위기</b> · ${r>=.65&&avg>0?'강세 우위':r<=.35&&avg<0?'약세 우위':'혼조'} · 가중 평균 <span class="${cls3(avg)}">${pct(avg)}</span> (상승 ${up} · 하락 ${down})`)}
+ if(tot>0){const uv=vs(x=>x.rate>0)/tot*100,dv=vs(x=>x.rate<0)/tot*100;T.push(`<b>자금 방향</b> · 거래대금의 <span class="up">${uv.toFixed(0)}%</span>가 상승 종목, <span class="down">${dv.toFixed(0)}%</span>가 하락 종목 · 상위5 집중 ${(top5/tot*100).toFixed(0)}%${top5/tot>.45?' (소수 종목 쏠림)':''}`)}
+ if(real[0])T.push(`<b>자금 쏠림</b> · ${escapeHtml(real[0].s)} ${real[0].share.toFixed(0)}% (${real[0].n}종목, <span class="${cls3(real[0].avg)}">${pct(real[0].avg)}</span>)${real[1]?' · 다음 '+real.slice(1,3).map(a=>escapeHtml(a.s)+' '+a.share.toFixed(0)+'%').join(', '):''}`);
  const bs=[...big].sort((a,b)=>b.avg-a.avg);
- if(bs.length>1)T.push(`<b>강세 섹터</b> · ${escapeHtml(bs[0].s)} <span class="up">${pct(bs[0].avg)}</span> / <b>약세 섹터</b> · ${escapeHtml(bs[bs.length-1].s)} <span class="down">${pct(bs[bs.length-1].avg)}</span>`);
- const sr=[...list].sort((a,b)=>(b.rate||0)-(a.rate||0));
- if(list.length>5){T.push(`<b>대금 상위 급등</b> · ${sr.slice(0,3).map(x=>`${escapeHtml(x.name)} <span class="up">${pct(x.rate)}</span>`).join(', ')}`);T.push(`<b>대금 상위 급락</b> · ${sr.slice(-3).reverse().map(x=>`${escapeHtml(x.name)} <span class="down">${pct(x.rate)}</span>`).join(', ')}`)}
- if(list.length){const r=up/Math.max(1,up+down);T.unshift(`<b>분위기</b> · ${r>=.65&&avg>0?'강세 우위':r<=.35&&avg<0?'약세 우위':'혼조'} (상승 ${up} · 하락 ${down}${tot>0?', 상위5 집중도 '+(top5/tot*100).toFixed(0)+'%'+(top5/tot>.45?' → 소수 종목 쏠림':' → 분산'):''})`)}
+ if(bs.length>1)T.push(`<b>강세</b> ${escapeHtml(bs[0].s)} <span class="up">${pct(bs[0].avg)}</span> · <b>약세</b> ${escapeHtml(bs[bs.length-1].s)} <span class="down">${pct(bs[bs.length-1].avg)}</span>`);
+ const sr=[...base].sort((a,b)=>(b.rate||0)-(a.rate||0)),hot=base.filter(x=>x.rate>=10).length;
+ if(base.length>5){T.push(`<b>급등</b> ${sr.slice(0,3).map(x=>`${escapeHtml(x.name)} <span class="up">${pct(x.rate)}</span>`).join(', ')}${hot?` · +10%↑ ${hot}종목`:''}`);T.push(`<b>급락</b> ${sr.slice(-3).reverse().map(x=>`${escapeHtml(x.name)} <span class="down">${pct(x.rate)}</span>`).join(', ')}`)}
  $('trend-list').innerHTML=T.map(t=>`<li>${t}</li>`).join('')||'<li>데이터를 불러오는 중입니다.</li>';
- const un=list.filter(x=>x.sector==='업종 미확인').length;
- $('classify-note').textContent=un?`업종 미확인 ${un}종목 · 섹터 칸을 눌러 직접 지정하면 저장됩니다.`:'모든 종목의 섹터가 분류되었습니다.';
- enrich(list);
+ const un=base.filter(x=>x.sector==='업종 미확인').length;
+ $('classify-note').textContent=un?`업종 미확인 ${un}종목 · 종목의 섹터 칩을 눌러 직접 지정하면 저장됩니다.`:'모든 종목의 섹터가 분류되었습니다.';
+ enrich(base);
 }
 function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 $('tabs').addEventListener('click',e=>{const b=e.target.closest('button[data-kind]');if(b){market='ALL';document.querySelectorAll('.filters button').forEach(x=>x.classList.toggle('selected',x.dataset.market==='ALL'));load(b.dataset.kind)}});
@@ -229,7 +234,11 @@ document.querySelectorAll('.filters button').forEach(b=>b.addEventListener('clic
 $('refresh').addEventListener('click',()=>load(active,true));
 load();
 
-$('rows').addEventListener('click',e=>{const c=e.target.closest('td.ed');if(!c)return;const code=c.dataset.code,x=cur.find(y=>y.code===code);
- const v=prompt(`${x?x.name:code} 섹터 입력 (비우면 직접 지정 해제)`,ovr[code]||x?.sector||'');if(v===null)return;
- v.trim()?ovr[code]=v.trim():delete ovr[code];svLS(LSK.ovr,ovr);render(cache[active]||[])});
-$('etfToggle').addEventListener('click',e=>{noEtf=!noEtf;e.target.classList.toggle('selected',noEtf);render(cache[active]||[])});
+document.addEventListener('click',e=>{
+ const c=e.target.closest('.chip.ed');
+ if(c){const code=c.dataset.code,x=cur.find(y=>y.code===code);const v=prompt(`${x?x.name:code} 섹터 입력 (비우면 직접 지정 해제)`,ovr[code]||x?.sector||'');if(v===null)return;v.trim()?ovr[code]=v.trim():delete ovr[code];svLS(LSK.ovr,ovr);render(cache[active]||[]);return}
+ const r=e.target.closest('tr[data-s]');if(r){secF=secF===r.dataset.s?null:r.dataset.s;render(cache[active]||[]);if(secF)$('list').scrollIntoView({behavior:'smooth'});return}
+ if(e.target.id==='clr'){e.preventDefault();secF=null;render(cache[active]||[]);return}
+ const s=e.target.closest('button[data-sort]');if(s){sortBy=s.dataset.sort;document.querySelectorAll('.sorts button').forEach(b=>b.classList.toggle('selected',b===s));render(cache[active]||[])}
+});
+setInterval(()=>{if(!document.hidden)load(active,true)},60000);

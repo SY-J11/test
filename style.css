@@ -4,3 +4,13 @@
 .stat6{grid-template-columns:repeat(3,1fr)}.trend{list-style:none;margin:0;padding:0;display:grid;gap:8px}.trend li{padding:10px 12px;background:#f6f8fc;border-radius:10px;font-size:14px;line-height:1.5}
 .sec-t{width:100%;border-collapse:collapse;font-size:13px}.sec-t th,.sec-t td{padding:7px 6px;text-align:left;border-bottom:1px solid #eef1f6}.sec-t .bar{min-width:60px}
 td.ed{cursor:pointer}#etfToggle{margin-left:6px}@media(max-width:560px){.stat6{grid-template-columns:repeat(2,1fr)}}
+
+.up{color:#e5322d!important}.down{color:#1f63e8!important}.flat{color:#111!important}
+.cards{display:block}.it{padding:11px 12px;border-top:1px solid #eef1f5}.r1{display:grid;grid-template-columns:26px 1fr auto;gap:8px;align-items:center}.rk{color:#8995a5;font-weight:800;text-align:center;font-size:12px}
+.nm b{font-size:14px;display:flex;align-items:center;gap:5px;flex-wrap:wrap}.nm small{display:block;color:var(--muted);font-size:10px;margin-top:3px}
+.px{text-align:right}.px b{display:block;font-size:16px;font-variant-numeric:tabular-nums}.px small{display:block;font-size:11px;font-weight:700;margin-top:3px;font-variant-numeric:tabular-nums}
+.r2{display:flex;align-items:center;gap:6px;margin:8px 0 0 34px;flex-wrap:wrap}.chip{background:#eaf1fa;color:#234d7d;border-radius:999px;padding:4px 9px;font-size:11px;font-weight:700}.dt{color:var(--muted);font-size:10px}.vl{margin-left:auto;font-size:11px;font-weight:700;color:#31445e}
+.bd{font-style:normal;font-size:9px;padding:2px 5px;border-radius:5px;color:#fff}.bd.u{background:#e5322d}.bd.d{background:#1f63e8}
+.sorts{display:flex;align-items:center;gap:6px;padding:9px 12px;border-bottom:1px solid var(--line)}.sorts button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 11px;font-size:11px;color:#738096}.sorts button.selected{background:#eaf1fa;color:#234d7d;font-weight:700}.sorts small{margin-left:auto;font-size:9px;color:var(--muted);text-align:right}
+.sec-t tr[data-s]{cursor:pointer}.sec-t tr.on{background:#eaf1fa}#sec-filter a{margin-left:8px;color:#234d7d}
+@media(max-width:650px){.intro{flex-direction:column;align-items:flex-start;gap:6px}.sorts small{display:none}.tabs button{padding:13px 3px}}
