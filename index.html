@@ -44,9 +44,12 @@ table.fit th:nth-child(1){width:15%}table.fit th:nth-child(2){width:15%}table.fi
 .cmp-days{display:grid;grid-template-columns:1fr 1fr;gap:8px}.cmp-card{border:1px solid var(--line);border-radius:10px;padding:8px 6px 4px;min-width:0;background:#fff}.cmp-card h4{margin:0 0 4px 3px;font-size:11px;font-weight:800;color:var(--text)}.cmp-card table{font-size:10px;table-layout:auto}.cmp-card th,.cmp-card td{padding:5px 3px}.cmp-card th:first-child,.cmp-card td:first-child{text-align:left;color:#58667b}.cmp-card td{font-weight:700}
 table th,table th:first-child,.cmp-card th,.cmp-card th:first-child{text-align:center!important;vertical-align:middle}
 table td:first-child,.cmp-card td:first-child{text-align:center!important}
-.board th{font-size:12px;padding:10px 6px;background:#eef2f7;color:#4b596d;font-weight:800}
-.board td{font-size:16px;font-weight:800;padding:14px 6px;letter-spacing:-.3px;font-variant-numeric:tabular-nums}
-.board td.mk{font-size:15px;color:var(--text);box-shadow:inset 4px 0 0 var(--mk,#3478d4)}
+.board-card{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff;box-shadow:0 1px 3px rgba(20,30,50,.06)}
+.board{table-layout:fixed;width:100%}
+.board th:first-child,.board td:first-child{width:22%}
+.board th,.board td{font-size:14px;font-weight:800;padding:13px 4px;text-align:center;letter-spacing:-.4px;font-variant-numeric:tabular-nums}
+.board th{background:#eef2f7;color:#4b596d}
+.board td.mk{color:var(--text);box-shadow:inset 4px 0 0 var(--mk,#3478d4)}
 .board .mk-kospi{--mk:#3478d4}.board .mk-kosdaq{--mk:#159b76}.board .mk-fut{--mk:#e3a33e}
 .board tbody tr:nth-child(odd){background:#fafbfd}
 </style>
@@ -149,7 +152,7 @@ table td:first-child,.cmp-card td:first-child{text-align:center!important}
 </section>
 
 <section class="panel" id="panel-compare">
-<div class="card"><div class="card-title"><b>시장별 투자자 수급 비교</b><span class="sub">최근 거래일</span></div><div class="table-scroll"><table class="board"><thead><tr><th>시장</th><th>개인</th><th>외국인</th><th>기관</th></tr></thead><tbody id="compare-table"><tr><td colspan="4" class="empty">데이터 요청 중</td></tr></tbody></table></div></div>
+<div class="card"><div class="card-title"><b>시장별 투자자 수급 비교</b><span class="sub">최근 거래일</span></div><div class="board-card"><table class="board"><thead><tr><th>시장</th><th>개인</th><th>외국인</th><th>기관</th></tr></thead><tbody id="compare-table"><tr><td colspan="4" class="empty">데이터 요청 중</td></tr></tbody></table></div></div>
 <div class="card"><div class="card-title"><b>외국인 순매수 비교</b><span class="sub">KOSPI · KOSDAQ · FUT</span></div><div class="chart tall"><canvas id="compare-chart"></canvas></div><div class="legend"><span><i style="background:#3478d4"></i>코스피</span><span><i style="background:#159b76"></i>코스닥</span><span><i style="background:#e3a33e"></i>선물</span></div></div>
 <div class="card"><div class="card-title"><b>기관 순매수 비교</b><span class="sub">KOSPI · KOSDAQ · FUT</span></div><div class="chart tall"><canvas id="compare-chart-inst"></canvas></div><div class="legend"><span><i style="background:#3478d4"></i>코스피</span><span><i style="background:#159b76"></i>코스닥</span><span><i style="background:#e3a33e"></i>선물</span></div></div>
 <div class="card"><div class="card-title"><b>일별 수급 내역</b><span class="sub" id="compare-days-sub"></span></div><div id="compare-days" class="cmp-days"></div><div class="more-box" id="compare-days-more"></div></div>
