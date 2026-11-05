@@ -2,39 +2,39 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#f4f6fa"><title>STOCK INSIGHT PRO</title><link rel="stylesheet" href="style.css?v=106">
-  <link rel="apple-touch-icon" href="./Stock.png">
+<meta name="theme-color" content="#f3f6fb"><title>국내 주식 랭킹 인사이트</title>
+<link rel="stylesheet" href="style.css?v=2">
 </head>
-<body><div class="app">
-<header><div class="brand"><i></i><div><b>종목 인사이트</b><small>STOCK INSIGHT PRO</small></div></div><div class="tools"><button id="theme" aria-label="테마 전환">◐</button><button id="refresh" aria-label="새로고침">↻</button></div></header>
+<body>
+<div class="app">
+<header><div class="brand"><span class="brand-mark">↗</span><div><b>마켓 랭킹 인사이트</b><small>KOREA STOCK MARKET · TOP 50</small></div></div><button id="refresh" class="refresh">↻ 새로고침</button></header>
 <main>
-<section class="search-card"><div class="search-heading"><div><span class="eyebrow">STOCK SEARCH</span><h2>어떤 종목을 찾으세요?</h2><p>종목명 또는 6자리 종목코드로 검색하세요.</p></div><div class="search-symbol">⌕</div></div>
-<div class="searchbox"><span class="magnify"></span><input id="query" type="search" placeholder="종목명 또는 6자리 종목코드" autocomplete="off"><button id="clear" class="clear" hidden>×</button><button id="searchBtn" class="search-btn">검색 →</button></div><div id="results" class="results" hidden></div><section class="quick-rankings" aria-label="빠른 검색 순위">
-<div class="quick-group quick-group-full favorite-group"><h3>★ 관심종목 <small id="favorite-count">0개</small></h3><div id="favorite-list" class="quick favorite-list"><span class="quick-loading">종목 옆의 ☆를 눌러 관심종목을 추가하세요.</span></div></div>
-<div class="quick-group quick-group-full"><h3>전체 시가총액 순 20개</h3><div id="quick-all-cap" class="quick"><span class="quick-loading">불러오는 중…</span></div></div>
-<details class="quick-more"><summary><span>빠른 검색 순위 더보기</span><span class="quick-arrow" aria-hidden="true">⌄</span></summary><div class="quick-more-grid">
-<div class="quick-group"><h3>코스피 시가총액 순 10개</h3><div id="quick-kospi-cap" class="quick"><span class="quick-loading">불러오는 중…</span></div></div>
-<div class="quick-group"><h3>코스닥 시가총액 순 10개</h3><div id="quick-kosdaq-cap" class="quick"><span class="quick-loading">불러오는 중…</span></div></div>
-<div class="quick-group quick-group-full"><h3>전체 거래대금 순 20개</h3><div id="quick-value" class="quick"><span class="quick-loading">불러오는 중…</span></div></div>
-<div class="quick-group"><h3>코스피 거래대금 순 10개</h3><div id="quick-kospi-value" class="quick"><span class="quick-loading">불러오는 중…</span></div></div>
-<div class="quick-group"><h3>코스닥 거래대금 순 10개</h3><div id="quick-kosdaq-value" class="quick"><span class="quick-loading">불러오는 중…</span></div></div>
-<div class="quick-group quick-group-full"><h3>전체 거래량 순 20개</h3><div id="quick-volume" class="quick"><span class="quick-loading">불러오는 중…</span></div></div>
-<div class="quick-group"><h3>코스피 거래량 순 10개</h3><div id="quick-kospi-volume" class="quick"><span class="quick-loading">불러오는 중…</span></div></div>
-<div class="quick-group"><h3>코스닥 거래량 순 10개</h3><div id="quick-kosdaq-volume" class="quick"><span class="quick-loading">불러오는 중…</span></div></div>
-</div></details>
-</section><p id="status" class="status">네이버 증권 데이터 연결 중…</p></section>
-<section class="card quote"><div class="name"><div><span id="name">종목을 검색하세요</span><small id="code"></small></div><button id="fav">☆</button></div><div class="price" id="price">— <span id="change">종목을 선택하면 시세가 표시됩니다.</span></div></section>
-<section class="card daily-chart-card"><div class="daily-chart-heading"><b id="dailyChartTitle">120일봉 차트</b><span id="dailyChartRange">최근 거래일</span></div><div class="daily-chart-tabs" role="tablist" aria-label="차트 기간"><button type="button" class="active" data-period="day" role="tab" aria-selected="true">일</button><button type="button" data-period="week" role="tab" aria-selected="false">주</button><button type="button" data-period="month" role="tab" aria-selected="false">월</button><button type="button" data-period="year" role="tab" aria-selected="false">년</button></div><div id="dailyRangeTabs" class="daily-range-tabs" aria-label="조회 기간"></div><div id="dailyChart" class="daily-chart"><div class="chart-empty">종목을 검색하면 일봉 차트가 표시됩니다.</div></div></section>
-<section class="grid g4"><div class="metric"><label>PER</label><b id="per">—</b></div><div class="metric"><label>PBR</label><b id="pbr">—</b></div><div class="metric"><label>EPS</label><b id="eps">—</b></div><div class="metric"><label>시가총액</label><b id="cap">—</b></div></section>
-<section class="grid g3"><div class="metric"><label>지난해 영업이익</label><b id="annualOp">—</b></div><div class="metric"><label>최근 4Q 영업이익</label><b id="ttmOp">—</b></div><div class="metric"><label>최근 4Q 순이익 (순이익률)</label><b id="ttmNet">—</b></div></section>
-<section class="card eps"><label>최근 6분기 EPS</label><div class="epsrow" id="epsRows"></div></section>
-<section class="grid g3"><div class="metric"><label>최근 ROE</label><b id="roe">—</b></div><div class="metric"><label>부채비율</label><b id="debt">—</b></div><div class="metric"><label>외국인소진율</label><b id="foreignFloat">—</b></div></section>
-<section class="card inv-card"><div class="daily-chart-heading"><b id="invTitle">투자자 동향 · 60일</b><span id="invRange"></span></div><div id="invTabs" class="daily-range-tabs" aria-label="투자자 동향 조회 기간"></div><div id="invChart" class="inv-chart"><div class="chart-empty">종목을 검색하면 투자자 동향이 표시됩니다.</div></div><div id="invSum" class="inv-sum"></div><div id="invTable" class="inv-table"></div></section>
-<section class="grid g3 flows"><div class="metric"><label>외국인 순매수 <small>[통합]</small></label><b id="fTotalCount">자료 없음</b><em id="fTotalStreak">—</em><em class="sell-streak" id="fTotalSellStreak">—</em></div><div class="metric"><label>외국인 순매수 <small>[KRX]</small></label><b id="fKrCount">자료 없음</b><em id="fKrStreak">—</em><em class="sell-streak" id="fKrSellStreak">—</em></div><div class="metric"><label>외국인 순매수 <small>[NXT]</small></label><b id="fNxCount">자료 없음</b><em id="fNxStreak">—</em><em class="sell-streak" id="fNxSellStreak">—</em></div><div class="metric"><label>기관 순매수 <small>[통합]</small></label><b id="iTotalCount">자료 없음</b><em id="iTotalStreak">—</em><em class="sell-streak" id="iTotalSellStreak">—</em></div><div class="metric"><label>기관 순매수 <small>[KRX]</small></label><b id="iKrCount">자료 없음</b><em id="iKrStreak">—</em><em class="sell-streak" id="iKrSellStreak">—</em></div><div class="metric"><label>기관 순매수 <small>[NXT]</small></label><b id="iNxCount">자료 없음</b><em id="iNxStreak">—</em><em class="sell-streak" id="iNxSellStreak">—</em></div></section>
-<section class="grid g3 flows combined-flows"><div class="metric"><label>외국인+기관 순매수 <small>[통합]</small></label><b id="xTotalCount">자료 없음</b></div><div class="metric"><label>외국인+기관 순매수 <small>[KRX]</small></label><b id="xKrCount">자료 없음</b></div><div class="metric"><label>외국인+기관 순매수 <small>[NXT]</small></label><b id="xNxCount">자료 없음</b></div></section>
-<p class="hint">수급 항목은 공개 응답에서 확인할 수 있는 경우에만 표시합니다.</p>
-<section class="grid g3"><div class="metric"><label>멀티플 · 지난해</label><b id="annualMultiple">—</b></div><div class="metric"><label>멀티플 · 최근 4Q</label><b id="ttmMultiple">—</b></div><div class="metric"><label>멀티플(E) · 최근 4Q</label><b id="estTtmMultiple">—</b></div></section>
-<section class="grid g3 fair-prices"><div class="metric"><label>추정 적정 주가 · 지난해</label><b id="fairAnnual">—</b></div><div class="metric"><label>추정 적정 주가 · 최근 4Q</label><b id="fairTtm">—</b></div><div class="metric"><label>추정 적정 주가(E) · 최근 4Q</label><b id="fairEstTtm">—</b></div></section>
-<section class="card chartcard"><div class="charttitle"><b>최근 6분기 영업이익</b><span>영업이익(영업이익률%)</span></div><div class="cons"><b>컨센서스</b><span>목표주가 평균 <strong id="target">—</strong></span><span>평균 투자의견 <strong id="opinion">—</strong></span></div><div class="chart-scroll"><div class="chart" id="chart"><div class="chart-empty">데이터 조회 중…</div></div><div class="labels" id="labels"></div></div></section>
-<p class="disclaimer">공개 API 응답에 포함된 데이터만 표시합니다. 단위가 확인되지 않은 값은 계산에 사용하지 않습니다.</p><footer>STOCK INSIGHT PRO · 수치 확인용 참고 정보</footer>
-</main></div><script src="app.js?v=113"></script></body></html>
+<section class="intro"><div><span class="eyebrow">MARKET SCANNER</span><h1>오늘의 국내 주식 랭킹</h1><p>네이버 증권 기준 · KRX 전체 시장</p></div><div class="updated"><span class="live-dot"></span><span id="updated">데이터 확인 중</span></div></section>
+<nav class="tabs" id="tabs" aria-label="종목 랭킹">
+<button class="active" data-kind="priceTop">거래대금 <small>50</small></button>
+<button data-kind="quantTop">거래량 <small>50</small></button>
+<button data-kind="popular">인기 종목 <small>50</small></button>
+<button data-kind="marketSum">시가총액 <small>50</small></button>
+<button data-kind="up">상승 <small>50</small></button>
+<button data-kind="down">하락 <small>50</small></button>
+</nav>
+<section class="summary-grid">
+<div class="summary-card"><span>현재 탭</span><b id="summary-title">거래대금 상위</b></div>
+<div class="summary-card"><span>조회 종목</span><b id="summary-count">—</b></div>
+<div class="summary-card"><span>상승 / 하락</span><b id="summary-breadth">—</b></div>
+</section>
+<nav class="anchors"><a href="#trend">매매 트렌드</a><a href="#stats">통계</a><a href="#sectors">섹터 분석</a><a href="#list">종목 리스트</a></nav>
+<section class="sector-card" id="trend"><div class="section-head"><div><h2>금일 매매 트렌드</h2><p>현재 목록 자동 요약 · 참고용 통계</p></div></div><ul id="trend-list" class="trend"><li>데이터를 불러오는 중입니다.</li></ul></section>
+<section class="sector-card" id="stats"><div class="section-head"><div><h2>통계</h2><p>현재 목록 50개 기준</p></div></div><div id="stat-grid" class="summary-grid stat6"></div></section>
+<section class="sector-card" id="sectors"><div class="section-head"><div><h2>섹터 분석</h2><p>비중 = 거래대금(없으면 종목 수) · 평균 = 가중 등락률</p></div><span id="sector-total">—</span></div><div id="sector-list" class="sector-list"><div class="empty">데이터를 불러오는 중입니다.</div></div><div id="classify-note" class="notice"></div></section>
+<section class="list-card" id="list">
+<div class="section-head"><div><h2 id="list-title">거래대금 상위 50</h2><p id="list-desc">당일 누적 거래대금 순</p></div><div class="filters"><button class="selected" data-market="ALL">전체</button><button data-market="KOSPI">코스피</button><button data-market="KOSDAQ">코스닥</button><button id="etfToggle">ETF 제외</button></div></div>
+<div class="table-wrap"><table><thead><tr><th>순위</th><th>종목</th><th>현재가</th><th>전일대비</th><th>등락률</th><th id="metric-head">거래대금</th><th>섹터 / 주요 분야<br><small>(탭하여 수정)</small></th></tr></thead><tbody id="rows"><tr><td colspan="7" class="empty">데이터를 불러오는 중입니다.</td></tr></tbody></table></div>
+<div id="notice" class="notice">네이버 증권 공개 데이터를 불러옵니다. 실제 집계 시점과 거래소 반영 시점에 따라 HTS와 차이가 날 수 있습니다.</div>
+</section>
+<section class="method"><b>집계 기준</b><p>코스피·코스닥 전체, KRX 기준. 인기 종목은 네이버 증권의 검색 인기 순위를 사용합니다. ETF·ETN 및 신규 상장 종목 포함 여부는 네이버 원본 응답 범위에 따릅니다.</p></section>
+</main>
+<footer>DATA SOURCE · <a href="https://stock.naver.com/market/stock/kr/stocklist/priceTop" target="_blank" rel="noopener">네이버 증권 실시간 랭킹</a></footer>
+</div>
+<script src="app.js?v=2"></script>
+</body></html>
