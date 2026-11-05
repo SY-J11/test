@@ -4,10 +4,15 @@ const $=id=>document.getElementById(id);
 const kinds={
  priceTop:{title:'거래대금 상위 50',desc:'당일 누적 거래대금 순',metric:'거래대금',order:'priceTop'},
  quantTop:{title:'거래량 상위 50',desc:'당일 누적 거래량 순',metric:'거래량',order:'quantTop'},
- popular:{title:'인기 종목 50',desc:'네이버 증권 검색 인기 순위',metric:'인기 지수',order:'popular'},
  marketSum:{title:'시가총액 상위 50',desc:'시가총액 순',metric:'시가총액',order:'marketSum'},
- up:{title:'상승률 상위 50',desc:'당일 등락률 높은 순',metric:'등락률',order:'up'},
- down:{title:'하락률 상위 50',desc:'당일 등락률 낮은 순',metric:'등락률',order:'down'}
+ popular:{title:'인기 종목 50',desc:'네이버 증권 인기 종목 순',metric:'인기 지수',order:'popular'},
+ up:{title:'상승 상위 50',desc:'당일 등락률 높은 순',metric:'등락률',order:'up'},
+ flat:{title:'보합 종목',desc:'등락 없는 종목 · 거래대금 순 (거래대금 상위 종목 기준 계산)',metric:'거래대금',derived:true},
+ down:{title:'하락 상위 50',desc:'당일 등락률 낮은 순',metric:'등락률',order:'down'},
+ volSurge:{title:'거래량 급증 50',desc:'전일 대비 거래량 증가율 높은 순 (거래대금 상위 종목 기준 계산)',metric:'거래량 증감',derived:true},
+ volDrop:{title:'거래량 급감 50',desc:'전일 대비 거래량 감소율 큰 순 (거래대금 상위 종목 기준 계산)',metric:'거래량 증감',derived:true},
+ high52:{title:'52주 최고 종목',desc:'당일 52주 최고가 기록 · 거래대금 순 (거래대금 상위 종목 기준 계산)',metric:'52주 최고',derived:true},
+ low52:{title:'52주 최저 종목',desc:'당일 52주 최저가 기록 · 거래대금 순 (거래대금 상위 종목 기준 계산)',metric:'52주 최저',derived:true}
 };
 let active='priceTop',market='ALL',cache={};
 // 종목코드 우선 분류. 회사명 키워드 추정보다 정확한 코드 매핑을 먼저 적용합니다.
@@ -73,7 +78,7 @@ const nameRules=[
  [/로봇|자동화|스마트팩토리|공장자동화/,'로봇·자동화','산업용 로봇·공장 자동화'],
  [/지주|홀딩스|홀딩|그룹/,'지주·투자','계열사 지배·투자 및 사업 포트폴리오']
 ];
-const dbg={raw:[],ind:''},EXT={};
+const dbg={raw:[],ind:'',src:{}},EXT={};
 const LSK={ovr:'sector_override_v1',ind:'sector_naver_v1'};
 const ldLS=k=>{try{return JSON.parse(localStorage.getItem(k)||'{}')}catch(e){return {}}};
 const svLS=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
@@ -165,7 +170,7 @@ function getRows(root){
   const cap=num(first(o,['marketValue','marketCap','marketSum','marketCapitalization','marketCapital']));
   const hit=num(first(o,['hitCount','searchCount','count','rankingValue']));
   const endType=String(first(o,['stockEndType','endType','stockType','type'])||'')+(o.etfType||o.nav?' etf':'');const [sector,detail,src]=classify({code,name,endType});
-  const mv=first(o,['marketType','market','stockExchangeType','exchangeType']);return {code,name,price,rate,diff,prev,basis,unsure,value,volume,cap,hit,sector,detail,src,endType,market:String(mv&&typeof mv==='object'?(mv.name||mv.code||''):(mv||(o.sosok==='0'?'KOSPI':o.sosok==='1'?'KOSDAQ':''))).toUpperCase()};
+  const mv=first(o,['marketType','market','stockExchangeType','exchangeType']);return {code,name,price,rate,diff,prev,basis,unsure,value,volume,cap,hit,qr:num(o.quantDiffRate),w52h:num(o.week52HighPrice),w52l:num(o.week52LowPrice),hi:num(o.highPrice),lo:num(o.lowPrice),sector,detail,src,endType,market:String(mv&&typeof mv==='object'?(mv.name||mv.code||''):(mv||(o.sosok==='0'?'KOSPI':o.sosok==='1'?'KOSDAQ':''))).toUpperCase()};
  }
  function walk(node,depth=0){
   if(!node||typeof node!=='object'||depth>9)return [];
@@ -189,16 +194,19 @@ async function fetchJson(url){
 async function load(kind=active,force=false){
  active=kind;
  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('active',b.dataset.kind===kind));
+ {const a=document.querySelector&&document.querySelector('#tabs button.active');if(a&&a.scrollIntoView)a.scrollIntoView({inline:'center',block:'nearest'})}
  const cfg=kinds[kind];$('summary-title').textContent=cfg.title;$('list-title').textContent=cfg.title;$('list-desc').textContent=cfg.desc;$('metric-head').textContent=cfg.metric;
  if(!cache[kind])$('rows').innerHTML='<div class="empty">순위를 불러오는 중입니다…</div>';
  try{
   let data;
   if(!force&&cache[kind])data=cache[kind];
+  else if(cfg.derived){data=derive(kind,await loadUniverse());cache[kind]=data}
   else{
-   let url;
-   if(kind==='popular')url=`${DESKTOP}/api/domestic/market/searchTop?nationType=KOR&startIdx=0&pageSize=50`;
-   else url=`${DESKTOP}/api/domestic/market/stock/default?tradeType=KRX&marketType=${market}&orderType=${cfg.order}&startIdx=0&pageSize=100`;
-   const raw=await fetchJson(url);data=getRows(raw);
+   const U=o=>`${DESKTOP}/api/domestic/market/stock/default?tradeType=KRX&marketType=${market}&orderType=${o}&startIdx=0&pageSize=100`;
+   const urls=kind==='popular'?[U('top'),`${DESKTOP}/api/domestic/market/searchTop?nationType=KOR&startIdx=0&pageSize=50`]:[U(cfg.order)];
+   let lastErr;data=[];
+   for(const u of urls){try{const d=getRows(await fetchJson(u));if(d.length>=10){data=d;dbg.src[kind]=u.includes('searchTop')?'searchTop':'stocklist';break}}catch(e){lastErr=e}}
+   if(data.length<10&&lastErr)throw lastErr;
    if(data.length<10)throw new Error(`응답에서 종목 ${data.length}개만 확인했습니다. 원본 API 구조가 변경됐을 수 있습니다.`);
    cache[kind]=data;
   }
@@ -206,6 +214,28 @@ async function load(kind=active,force=false){
   $('updated').textContent='조회 '+new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
  }catch(e){$('rows').innerHTML=`<div class="error">${escapeHtml(e.message)}<br><small>Cloudflare Worker 주소와 배포 상태를 확인해 주세요.</small></div>`;$('updated').textContent='조회 실패'}
 }
+let UNI=null,UNIAT=0;
+async function loadUniverse(){
+ if(UNI&&Date.now()-UNIAT<55000)return UNI;let last;
+ for(const n of [500,300,100]){try{const d=getRows(await fetchJson(`${DESKTOP}/api/domestic/market/stock/default?tradeType=KRX&marketType=ALL&orderType=priceTop&startIdx=0&pageSize=${n}`));if(d.length>=10){UNI=d;UNIAT=Date.now();dbg.src.uni=n+'요청→'+d.length+'종목';return d}}catch(e){last=e}}
+ throw last||new Error('전체 종목 목록을 불러오지 못했습니다.');
+}
+function derive(kind,uni){
+ const L=uni.filter(x=>!isEtf(x)),byV=(a,b)=>(b.value||0)-(a.value||0);
+ if(kind==='flat')return L.filter(x=>x.rate===0).sort(byV);
+ if(kind==='volSurge')return L.filter(x=>x.qr!=null&&x.volume>0).sort((a,b)=>b.qr-a.qr);
+ if(kind==='volDrop')return L.filter(x=>x.qr!=null&&x.volume>0).sort((a,b)=>a.qr-b.qr);
+ if(kind==='high52')return L.filter(x=>x.w52h>0&&x.hi>=x.w52h).sort(byV);
+ if(kind==='low52')return L.filter(x=>x.w52l>0&&x.lo>0&&x.lo<=x.w52l).sort(byV);
+ return L;
+}
+const mo=x=>{switch(active){
+ case 'priceTop':return '대금 '+money(x.value);case 'quantTop':return fmt(x.volume);case 'marketSum':return money(x.cap);
+ case 'popular':return x.hit!=null?fmt(x.hit):'대금 '+money(x.value);
+ case 'volSurge':case 'volDrop':return '거래량 '+fmt(x.volume)+(x.qr!=null?' ('+(x.qr>0?'+':'')+x.qr.toFixed(0)+'%)':'');
+ case 'high52':return '52주 최고 '+fmt(x.w52h)+' · 대금 '+money(x.value);
+ case 'low52':return '52주 최저 '+fmt(x.w52l)+' · 대금 '+money(x.value);
+ default:return x.value?'대금 '+money(x.value):''}};
 function agg(list){
  const tot=list.reduce((s,x)=>s+(x.value||0),0),w=x=>tot>0?(x.value||0):1,W=list.reduce((s,x)=>s+w(x),0)||1,g={};
  list.forEach(x=>{const a=g[x.sector]||(g[x.sector]={n:0,w:0,rw:0,top:x});a.n++;a.w+=w(x);a.rw+=(x.rate||0)*w(x)});
@@ -217,7 +247,7 @@ const cls3=v=>v>0?'up':v<0?'down':'flat';
 function render(data){
  data.forEach(x=>{const e=EXT[x.code];if(!e)return;if(x.value==null&&e.value!=null)x.value=e.value;if(x.unsure&&e.prev>0&&x.price!=null){x.prev=e.prev;x.diff=x.price-e.prev;x.rate=x.diff/e.prev*100;x.basis='전일종가(상세조회)';x.unsure=false}});
  data.forEach(x=>{[x.sector,x.detail,x.src]=classify(x)});
- const rows=(market==='ALL'||active==='popular'?data:data.filter(x=>!x.market||x.market.includes(market))).filter(x=>!isEtf(x));
+ const rows=(market==='ALL'?data:data.filter(x=>!x.market||x.market.includes(market))).filter(x=>!isEtf(x));
  const base=rows.slice(0,50);base.forEach((x,i)=>x.rk=i+1);cur=base;
  if(secF&&!base.some(x=>x.sector===secF))secF=null;
  const up=base.filter(x=>(x.rate||0)>0).length,down=base.filter(x=>(x.rate||0)<0).length,flat=base.length-up-down;
@@ -228,12 +258,12 @@ function render(data){
  if(sortBy==='rate')list.sort((a,b)=>(b.rate||0)-(a.rate||0));
  $('sec-filter').hidden=!secF;$('sec-filter').innerHTML=secF?`섹터 필터: <b>${escapeHtml(secF)}</b> (${list.length}종목) <a href="#" id="clr">해제 ✕</a>`:'';
  $('rows').innerHTML=list.map(x=>{
-  const c=cls3(x.rate),metric=active==='priceTop'?money(x.value):active==='quantTop'?fmt(x.volume):active==='marketSum'?money(x.cap):active==='popular'?fmt(x.hit):'';
+  const c=cls3(x.rate),m=mo(x);
   const sh=tot>0&&x.value?` · 비중 ${(x.value/tot*100).toFixed(1)}%`:'';
   const rs=x.rate===null||x.rate===undefined?'—':(x.rate>0?'+':x.rate<0?'-':'')+Math.abs(x.rate).toFixed(2)+'%';const d=x.diff===null||x.diff===undefined?'—':x.unsure?fmt(Math.abs(x.diff)):(x.diff>0?'▲':x.diff<0?'▼':'')+fmt(Math.abs(x.diff));
   const bd=x.rate>=29.5?'<i class="bd u">상한가</i>':x.rate>=10?'<i class="bd u">급등</i>':x.rate<=-10?'<i class="bd d">급락</i>':'';
   const mk=x.market.includes('KOSDAQ')?'코스닥':x.market.includes('KOSPI')?'코스피':'';
-  return `<div class="it"><div class="r1"><span class="rk">${x.rk}</span><div class="nm"><b>${escapeHtml(x.name)}${bd}</b><small>${x.code}${mk?' · '+mk:''}${x.prev?' · 전일 '+fmt(x.prev):''}</small></div><div class="px ${c}"><b>${fmt(x.price)}</b><small>${d} (${rs})</small></div></div><div class="r2"><span class="chip ed" data-code="${x.code}">${escapeHtml(x.sector)}</span><small class="dt">${escapeHtml(x.detail)}</small>${metric?`<span class="vl">${active==='priceTop'?'대금 ':''}${metric}${sh}</span>`:''}</div></div>`;
+  return `<div class="it"><div class="r1"><span class="rk">${x.rk}</span><div class="nm"><b>${escapeHtml(x.name)}${bd}</b><small>${x.code}${mk?' · '+mk:''}${x.prev?' · 전일 '+fmt(x.prev):''}</small></div><div class="px ${c}"><b>${fmt(x.price)}</b><small>${d} (${rs})</small></div></div><div class="r2"><span class="chip ed" data-code="${x.code}">${escapeHtml(x.sector)}</span><small class="dt">${escapeHtml(x.detail)}</small>${m?`<span class="vl">${m}${sh}</span>`:''}</div></div>`;
  }).join('')||'<div class="empty">해당 조건의 종목이 없습니다.</div>';
  $('sector-total').textContent=arr.length+'개 섹터';
  const sOpen=secOpen||(secF&&arr.findIndex(a=>a.s===secF)>=5),sh5=sOpen?arr:arr.slice(0,5);$('sector-list').innerHTML='<table class="sec-t"><thead><tr><th>섹터 (탭: 필터)</th><th>종목</th><th>비중</th><th>평균</th></tr></thead><tbody>'+sh5.map(a=>`<tr data-s="${escapeHtml(a.s)}" class="${a.s===secF?'on':''}"><td><b>${escapeHtml(a.s)}</b></td><td class="num">${a.n}</td><td><div class="bar"><i style="width:${a.share}%"></i></div><small>${a.share.toFixed(1)}%</small></td><td class="rate ${cls3(a.avg)}">${pct(a.avg)}</td></tr>`).join('')+'</tbody></table>'+(arr.length>5?`<button id="secMore" class="more">${sOpen?'▲ 접기':'▼ 나머지 '+(arr.length-5)+'개 섹터 펼치기'}</button>`:'');
@@ -265,11 +295,11 @@ document.addEventListener('click',e=>{
 });
 setInterval(()=>{if(!document.hidden)load(active,true)},60000);
 
-(function(){const b=document.createElement('p');b.className='dbgbar';b.innerHTML='<a href="#" id="dbgL">데이터 점검 · 분류 백업 (V8)</a>';document.body.appendChild(b)})();
+(function(){const b=document.createElement('p');b.className='dbgbar';b.innerHTML='<a href="#" id="dbgL">데이터 점검 · 분류 백업 (V10)</a>';document.body.appendChild(b)})();
 document.addEventListener('click',e=>{
  if(e.target.id==='dbgL'){e.preventDefault();let p=document.getElementById('dbgP');if(!p){p=document.createElement('div');p.id='dbgP';p.className='dbgp';document.body.appendChild(p)}
   const x=cur.slice(0,3).map(y=>({name:y.name,price:y.price,prev:y.prev,diff:y.diff,rate:y.rate&&+y.rate.toFixed(2),basis:y.basis}));
-  p.innerHTML=`<b>계산값</b><pre>${escapeHtml(JSON.stringify(x,null,1))}</pre><b>원본 응답(상위 2종목)</b><pre>${escapeHtml(JSON.stringify(dbg.raw,null,1).slice(0,3500))}</pre><b>업종 조회 응답(실패 시)</b><pre>${escapeHtml(dbg.ind.slice(0,3600)||'없음')}</pre><b>섹터 직접 지정 백업</b><textarea id="bk" rows="4">${escapeHtml(JSON.stringify(ovr))}</textarea><button id="bkL">가져오기</button>`;p.scrollIntoView();return}
+  p.innerHTML=`<b>계산값 (출처: ${escapeHtml(JSON.stringify(dbg.src))})</b><pre>${escapeHtml(JSON.stringify(x,null,1))}</pre><b>원본 응답(상위 2종목)</b><pre>${escapeHtml(JSON.stringify(dbg.raw,null,1).slice(0,3500))}</pre><b>업종 조회 응답(실패 시)</b><pre>${escapeHtml(dbg.ind.slice(0,3600)||'없음')}</pre><b>섹터 직접 지정 백업</b><textarea id="bk" rows="4">${escapeHtml(JSON.stringify(ovr))}</textarea><button id="bkL">가져오기</button>`;p.scrollIntoView();return}
  if(e.target.id==='bkL'){try{Object.assign(ovr,JSON.parse($('bk').value));svLS(LSK.ovr,ovr);syncPush();render(cache[active]||[]);alert('가져왔습니다')}catch(err){alert('형식이 올바르지 않습니다')}}
 });
 

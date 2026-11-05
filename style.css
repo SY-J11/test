@@ -30,3 +30,6 @@ td.ed{cursor:pointer}#etfToggle{margin-left:6px}@media(max-width:560px){.stat6{g
 .sec-t th,.sec-t td{padding:8px 4px!important;white-space:normal;word-break:keep-all;font-size:12px}
 .sec-t td b{font-size:12px}.sec-t small{font-size:10px;color:var(--muted)}
 .sector-list .more{position:static!important;box-sizing:border-box;width:100%;margin:10px 0 0}
+
+.tabs{display:flex!important;gap:7px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px}.tabs::-webkit-scrollbar{display:none}
+.tabs button{flex:0 0 auto;white-space:nowrap;padding:11px 14px!important}

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#f3f6fb"><title>국내 주식 랭킹 인사이트</title>
-<link rel="stylesheet" href="style.css?v=8">
+<link rel="stylesheet" href="style.css?v=10">
 </head>
 <body>
 <div class="app">
@@ -11,12 +11,17 @@
 <main>
 <section class="intro"><div><span class="eyebrow">MARKET SCANNER</span><h1>오늘의 국내 주식 랭킹</h1><p>네이버 증권 기준 · KRX 전체 시장</p></div><div class="updated"><span class="live-dot"></span><span id="updated">데이터 확인 중</span></div></section>
 <nav class="tabs" id="tabs" aria-label="종목 랭킹">
-<button class="active" data-kind="priceTop">거래대금 <small>50</small></button>
-<button data-kind="quantTop">거래량 <small>50</small></button>
-<button data-kind="popular">인기 종목 <small>50</small></button>
-<button data-kind="marketSum">시가총액 <small>50</small></button>
-<button data-kind="up">상승 <small>50</small></button>
-<button data-kind="down">하락 <small>50</small></button>
+<button class="active" data-kind="priceTop">거래대금 상위</button>
+<button data-kind="quantTop">거래량 상위</button>
+<button data-kind="marketSum">시가총액</button>
+<button data-kind="popular">인기 종목</button>
+<button data-kind="up">상승</button>
+<button data-kind="flat">보합</button>
+<button data-kind="down">하락</button>
+<button data-kind="volSurge">거래량 급증</button>
+<button data-kind="volDrop">거래량 급감</button>
+<button data-kind="high52">52주 최고</button>
+<button data-kind="low52">52주 최저</button>
 </nav>
 <section class="summary-grid">
 <div class="summary-card"><span>현재 탭</span><b id="summary-title">거래대금 상위</b></div>
@@ -35,5 +40,5 @@
 </main>
 <footer>DATA SOURCE · <a href="https://stock.naver.com/market/stock/kr/stocklist/priceTop" target="_blank" rel="noopener">네이버 증권 실시간 랭킹</a></footer>
 </div>
-<script src="app.js?v=8"></script>
+<script src="app.js?v=10"></script>
 </body></html>
