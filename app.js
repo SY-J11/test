@@ -100,7 +100,7 @@ function nvNorm(v){return String(v).trim().replace(/^(.+?)[와과](.+)$/,'$1·$2
 // 우선순위: 직접 지정 > ETF > 종목코드 사전 > 우선주(보통주 따라감) > 네이버 업종 > 이름 규칙 > 미확인
 function classify(x){
  const code=String(x.code||'').toUpperCase(),name=String(x.name||''),n=name.replace(/\s+/g,'');
- if(ovr[code])return [ovr[code],'직접 지정','ovr'];
+ if(ovr[code]){const v=ovr[code];return Array.isArray(v)?[v[0],v[1]||'직접 지정','ovr']:[v,'직접 지정','ovr']}
  if(isEtf(x))return ['ETF·ETN',etfKind(name),'etf'];
  if(sectorMap[code])return [...sectorMap[code],'map'];
  if(/우[A-C]?(\(전환\))?$/.test(n)&&code.slice(-1)!=='0'){const b=sectorMap[code.slice(0,5)+'0'];if(b)return [b[0],b[1]+' (우선주)','map']}
@@ -140,9 +140,11 @@ function getRows(root){
   const g=ks=>{const v=K?num(first(K,ks)):null;return v!==null?v:num(first(o,ks))};
   const price=g(['closePrice','currentPrice','nowPrice','tradePrice','priceValue']),apiRate=g(['fluctuationsRatio','changeRate','compareToPreviousCloseRate','changeRateValue']);
   const vc=g(['previousClosePrice','prevClosePrice','previousPrice','basePrice','yesterdayClosePrice','prevPrice','preClosePrice']),rawDiff=g(['compareToPreviousClosePrice','compareToPreviousPrice','changePrice','prevChangePrice']);
+  const dirOf=v=>{const s=v&&typeof v==='object'?String(v.name||'')+' '+String(v.text||''):String(v||'');return /UPPER|RIS|상승|상한/i.test(s)?1:/LOWER|FALL|하락|하한/i.test(s)?-1:/UNCHANG|EVEN|보합/i.test(s)?0:null};
+  const dir=dirOf((K&&first(K,['compareToPreviousPrice','fluctuationType']))??first(o,['compareToPreviousPrice','compareToPreviousPriceType','fluctuationType','priceChangeType']));
   let diff,rate,prev,basis;
   if(price!==null&&vc>0){prev=vc;diff=price-vc;rate=diff/vc*100;basis='전일종가 계산'}
-  else{rate=apiRate;diff=rawDiff!==null?Math.abs(rawDiff):(price!==null&&rate!==null?Math.abs(price-price/(1+rate/100)):null);if(diff!==null&&rate<0)diff=-diff;prev=(price!==null&&diff!==null)?price-diff:null;basis='API 값'}
+  else{rate=apiRate;diff=rawDiff!==null?Math.abs(rawDiff):(price!==null&&rate!==null?Math.abs(price-price/(1+rate/100)):null);if(diff!==null&&rate<0)diff=-diff;if(dir!==null){if(rate!==null)rate=dir===0?0:Math.abs(rate)*dir;if(diff!==null)diff=dir===0?0:Math.abs(diff)*dir}prev=(price!==null&&diff!==null)?price-diff:null;basis='API 값'}
   const value=num(first(o,['accumulatedTradingValue','tradingValue','accAmount','priceTop','tradeValue','totalTradingValue']));
   const volume=num(first(o,['accumulatedTradingVolume','tradingVolume','accQuant','quantTop','volume','totalTradingVolume']));
   const cap=num(first(o,['marketValue','marketCap','marketSum','marketCapitalization','marketCapital']));
@@ -195,7 +197,7 @@ function agg(list){
  return {tot,W,avg:list.reduce((s,x)=>s+(x.rate||0)*w(x),0)/W,arr:Object.entries(g).map(([s,a])=>({s,n:a.n,share:a.w/W*100,avg:a.w?a.rw/a.w:0,top:a.top.name})).sort((a,b)=>b.share-a.share||b.n-a.n)};
 }
 const cls2=v=>v>0?'up':v<0?'down':'';
-let sortBy='rank',secF=null;
+let sortBy='rank',secF=null,secOpen=false;
 const cls3=v=>v>0?'up':v<0?'down':'flat';
 function render(data){
  data.forEach(x=>{[x.sector,x.detail,x.src]=classify(x)});
@@ -218,7 +220,7 @@ function render(data){
   return `<div class="it"><div class="r1"><span class="rk">${x.rk}</span><div class="nm"><b>${escapeHtml(x.name)}${bd}</b><small>${x.code}${mk?' · '+mk:''}${x.prev?' · 전일 '+fmt(x.prev):''}</small></div><div class="px ${c}"><b>${fmt(x.price)}</b><small>${d} ${pct(x.rate)}</small></div></div><div class="r2"><span class="chip ed" data-code="${x.code}">${escapeHtml(x.sector)}</span><small class="dt">${escapeHtml(x.detail)}</small>${metric?`<span class="vl">${active==='priceTop'?'대금 ':''}${metric}${sh}</span>`:''}</div></div>`;
  }).join('')||'<div class="empty">해당 조건의 종목이 없습니다.</div>';
  $('sector-total').textContent=arr.length+'개 섹터';
- $('sector-list').innerHTML='<table class="sec-t"><thead><tr><th>섹터 (탭: 필터)</th><th>종목</th><th>비중</th><th>평균</th></tr></thead><tbody>'+arr.map(a=>`<tr data-s="${escapeHtml(a.s)}" class="${a.s===secF?'on':''}"><td><b>${escapeHtml(a.s)}</b></td><td class="num">${a.n}</td><td><div class="bar"><i style="width:${a.share}%"></i></div><small>${a.share.toFixed(1)}%</small></td><td class="rate ${cls3(a.avg)}">${pct(a.avg)}</td></tr>`).join('')+'</tbody></table>';
+ const sOpen=secOpen||(secF&&arr.findIndex(a=>a.s===secF)>=5),sh5=sOpen?arr:arr.slice(0,5);$('sector-list').innerHTML='<table class="sec-t"><thead><tr><th>섹터 (탭: 필터)</th><th>종목</th><th>비중</th><th>평균</th></tr></thead><tbody>'+sh5.map(a=>`<tr data-s="${escapeHtml(a.s)}" class="${a.s===secF?'on':''}"><td><b>${escapeHtml(a.s)}</b></td><td class="num">${a.n}</td><td><div class="bar"><i style="width:${a.share}%"></i></div><small>${a.share.toFixed(1)}%</small></td><td class="rate ${cls3(a.avg)}">${pct(a.avg)}</td></tr>`).join('')+'</tbody></table>'+(arr.length>5?`<button id="secMore" class="more">${sOpen?'▲ 접기':'▼ 나머지 '+(arr.length-5)+'개 섹터 펼치기'}</button>`:'');
  const real=arr.filter(a=>a.s!=='업종 미확인'),big=real.filter(a=>a.n>=2),T=[],top5=base.slice(0,5).reduce((s,x)=>s+(x.value||0),0);
  if(base.length){const r=up/Math.max(1,up+down);T.push(`<b>분위기</b> · ${r>=.65&&avg>0?'강세 우위':r<=.35&&avg<0?'약세 우위':'혼조'} · 가중 평균 <span class="${cls3(avg)}">${pct(avg)}</span> (상승 ${up} · 하락 ${down})`)}
  if(tot>0){const uv=vs(x=>x.rate>0)/tot*100,dv=vs(x=>x.rate<0)/tot*100;T.push(`<b>자금 방향</b> · 거래대금의 <span class="up">${uv.toFixed(0)}%</span>가 상승 종목, <span class="down">${dv.toFixed(0)}%</span>가 하락 종목 · 상위5 집중 ${(top5/tot*100).toFixed(0)}%${top5/tot>.45?' (소수 종목 쏠림)':''}`)}
@@ -240,7 +242,7 @@ load();
 
 document.addEventListener('click',e=>{
  const c=e.target.closest('.chip.ed');
- if(c){const code=c.dataset.code,x=cur.find(y=>y.code===code);const v=prompt(`${x?x.name:code} 섹터 입력 (비우면 직접 지정 해제)`,ovr[code]||x?.sector||'');if(v===null)return;v.trim()?ovr[code]=v.trim():delete ovr[code];svLS(LSK.ovr,ovr);render(cache[active]||[]);return}
+ if(c){const code=c.dataset.code,x=cur.find(y=>y.code===code);const o0=ovr[code],d0=Array.isArray(o0)?o0.join(' / '):(o0||(x&&x.src!=='unknown'?x.sector+' / '+x.detail:''));const v=prompt(`${x?x.name:code}\n섹터 / 세부분야 입력\n예) 반도체 / DRAM·NAND·HBM\n(비우면 직접 지정 해제)`,d0);if(v===null)return;const pr=v.split('/').map(t=>t.trim());pr[0]?ovr[code]=pr[1]?[pr[0],pr[1]]:pr[0]:delete ovr[code];svLS(LSK.ovr,ovr);syncPush();render(cache[active]||[]);return}
  const r=e.target.closest('tr[data-s]');if(r){secF=secF===r.dataset.s?null:r.dataset.s;render(cache[active]||[]);if(secF)$('list').scrollIntoView({behavior:'smooth'});return}
  if(e.target.id==='clr'){e.preventDefault();secF=null;render(cache[active]||[]);return}
  const s=e.target.closest('button[data-sort]');if(s){sortBy=s.dataset.sort;document.querySelectorAll('.sorts button').forEach(b=>b.classList.toggle('selected',b===s));render(cache[active]||[])}
@@ -252,5 +254,12 @@ document.addEventListener('click',e=>{
  if(e.target.id==='dbgL'){e.preventDefault();let p=document.getElementById('dbgP');if(!p){p=document.createElement('div');p.id='dbgP';p.className='dbgp';document.body.appendChild(p)}
   const x=cur.slice(0,3).map(y=>({name:y.name,price:y.price,prev:y.prev,diff:y.diff,rate:y.rate&&+y.rate.toFixed(2),basis:y.basis}));
   p.innerHTML=`<b>계산값</b><pre>${escapeHtml(JSON.stringify(x,null,1))}</pre><b>원본 응답(상위 2종목)</b><pre>${escapeHtml(JSON.stringify(dbg.raw,null,1).slice(0,3500))}</pre><b>업종 조회 응답(실패 시)</b><pre>${escapeHtml(dbg.ind.slice(0,2000)||'없음')}</pre><b>섹터 직접 지정 백업</b><textarea id="bk" rows="4">${escapeHtml(JSON.stringify(ovr))}</textarea><button id="bkL">가져오기</button>`;p.scrollIntoView();return}
- if(e.target.id==='bkL'){try{Object.assign(ovr,JSON.parse($('bk').value));svLS(LSK.ovr,ovr);render(cache[active]||[]);alert('가져왔습니다')}catch(err){alert('형식이 올바르지 않습니다')}}
+ if(e.target.id==='bkL'){try{Object.assign(ovr,JSON.parse($('bk').value));svLS(LSK.ovr,ovr);syncPush();render(cache[active]||[]);alert('가져왔습니다')}catch(err){alert('형식이 올바르지 않습니다')}}
 });
+
+let syncOn=false;
+function syncPush(){if(!syncOn)return;try{fetch(WORKER+'/?sectors=1',{method:'POST',body:JSON.stringify(ovr)}).catch(()=>{})}catch(e){}}
+async function syncPull(){try{const r=await fetch(WORKER+'/?sectors=1',{cache:'no-store'});if(!r.ok)return;const rem=await r.json();syncOn=true;
+ if(rem&&Object.keys(rem).length){ovr=rem;localStorage.setItem(LSK.ovr,JSON.stringify(ovr));render(cache[active]||[])}else if(Object.keys(ovr).length)syncPush()}catch(e){}}
+document.addEventListener('click',e=>{if(e.target.id==='secMore'){secOpen=!secOpen;render(cache[active]||[])}});
+syncPull();

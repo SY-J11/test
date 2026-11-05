@@ -17,3 +17,5 @@ td.ed{cursor:pointer}#etfToggle{margin-left:6px}@media(max-width:560px){.stat6{g
 
 #summary-breadth{white-space:nowrap;display:block}#summary-breadth span{display:inline!important;margin:0!important;font-size:inherit!important}
 .dbgbar{text-align:center;font-size:10px;margin:0 0 18px}.dbgbar a{color:#6d87a6}.dbgp{margin:0 12px 24px;padding:12px;background:#fff;border:1px solid var(--line);border-radius:12px;font-size:11px}.dbgp pre{white-space:pre-wrap;word-break:break-all;background:#f6f8fc;padding:8px;border-radius:8px;max-height:220px;overflow:auto}.dbgp textarea{width:100%}
+
+.more{display:block;width:100%;margin-top:10px;padding:10px;border:1px solid var(--line);background:#f6f8fc;border-radius:10px;color:#234d7d;font-weight:700;font-size:12px}
