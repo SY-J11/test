@@ -14,3 +14,6 @@ td.ed{cursor:pointer}#etfToggle{margin-left:6px}@media(max-width:560px){.stat6{g
 .sorts{display:flex;align-items:center;gap:6px;padding:9px 12px;border-bottom:1px solid var(--line)}.sorts button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 11px;font-size:11px;color:#738096}.sorts button.selected{background:#eaf1fa;color:#234d7d;font-weight:700}.sorts small{margin-left:auto;font-size:9px;color:var(--muted);text-align:right}
 .sec-t tr[data-s]{cursor:pointer}.sec-t tr.on{background:#eaf1fa}#sec-filter a{margin-left:8px;color:#234d7d}
 @media(max-width:650px){.intro{flex-direction:column;align-items:flex-start;gap:6px}.sorts small{display:none}.tabs button{padding:13px 3px}}
+
+#summary-breadth{white-space:nowrap;display:block}#summary-breadth span{display:inline!important;margin:0!important;font-size:inherit!important}
+.dbgbar{text-align:center;font-size:10px;margin:0 0 18px}.dbgbar a{color:#6d87a6}.dbgp{margin:0 12px 24px;padding:12px;background:#fff;border:1px solid var(--line);border-radius:12px;font-size:11px}.dbgp pre{white-space:pre-wrap;word-break:break-all;background:#f6f8fc;padding:8px;border-radius:8px;max-height:220px;overflow:auto}.dbgp textarea{width:100%}

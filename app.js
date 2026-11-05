@@ -73,6 +73,7 @@ const nameRules=[
  [/로봇|자동화|스마트팩토리|공장자동화/,'로봇·자동화','산업용 로봇·공장 자동화'],
  [/지주|홀딩스|홀딩|그룹/,'지주·투자','계열사 지배·투자 및 사업 포트폴리오']
 ];
+const dbg={raw:[],ind:''};
 const LSK={ovr:'sector_override_v1',ind:'sector_naver_v1'};
 const ldLS=k=>{try{return JSON.parse(localStorage.getItem(k)||'{}')}catch(e){return {}}};
 const svLS=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
@@ -117,7 +118,7 @@ async function enrich(list){
  if(!t.length)return;let hit=0;
  for(let i=0;i<t.length;i+=6){
   await Promise.all(t.slice(i,i+6).map(async x=>{tried.add(x.code);
-   try{const j=await fetchJson(`https://m.stock.naver.com/api/stock/${x.code}/integration`);const v=findInd(j);if(v){indC[x.code]=v;hit++}}catch(e){}}));
+   try{const j=await fetchJson(`https://m.stock.naver.com/api/stock/${x.code}/integration`);const v=findInd(j);if(v){indC[x.code]=v;hit++}else if(!dbg.ind)dbg.ind=x.name+' '+JSON.stringify(j)}catch(e){}}));
  }
  if(hit){svLS(LSK.ind,indC);render(cache[active]||[])}
 }
@@ -134,17 +135,20 @@ function getRows(root){
  function normalize(o){
   const code=codeOf(first(o,codeKeys)),name=String(first(o,nameKeys)||'').trim();
   if(!code||!name||seen.has(code))return null;seen.add(code);
-  const priceObj=o.price?.krx||o.price?.nxt||o.price||{};
-  const price=num(first(o,['closePrice','currentPrice','nowPrice','tradePrice','priceValue'])??first(priceObj,['closePrice','currentPrice','nowPrice','tradePrice']));
-  const rate=num(first(o,['fluctuationsRatio','changeRate','compareToPreviousCloseRate','changeRateValue'])??first(priceObj,['fluctuationsRatio','changeRate','compareToPreviousCloseRate']));
+  if(dbg.raw.length<2)dbg.raw.push(o);
+  const K=o.price&&typeof o.price==='object'&&o.price.krx&&typeof o.price.krx==='object'?o.price.krx:null;
+  const g=ks=>{const v=K?num(first(K,ks)):null;return v!==null?v:num(first(o,ks))};
+  const price=g(['closePrice','currentPrice','nowPrice','tradePrice','priceValue']),apiRate=g(['fluctuationsRatio','changeRate','compareToPreviousCloseRate','changeRateValue']);
+  const vc=g(['previousClosePrice','prevClosePrice','previousPrice','basePrice','yesterdayClosePrice','prevPrice','preClosePrice']),rawDiff=g(['compareToPreviousClosePrice','compareToPreviousPrice','changePrice','prevChangePrice']);
+  let diff,rate,prev,basis;
+  if(price!==null&&vc>0){prev=vc;diff=price-vc;rate=diff/vc*100;basis='전일종가 계산'}
+  else{rate=apiRate;diff=rawDiff!==null?Math.abs(rawDiff):(price!==null&&rate!==null?Math.abs(price-price/(1+rate/100)):null);if(diff!==null&&rate<0)diff=-diff;prev=(price!==null&&diff!==null)?price-diff:null;basis='API 값'}
   const value=num(first(o,['accumulatedTradingValue','tradingValue','accAmount','priceTop','tradeValue','totalTradingValue']));
   const volume=num(first(o,['accumulatedTradingVolume','tradingVolume','accQuant','quantTop','volume','totalTradingVolume']));
   const cap=num(first(o,['marketValue','marketCap','marketSum','marketCapitalization','marketCapital']));
   const hit=num(first(o,['hitCount','searchCount','count','rankingValue']));
   const endType=String(first(o,['stockEndType','endType','stockType'])||'');const [sector,detail,src]=classify({code,name,endType});
-  const rawDiff=num(first(o,['compareToPreviousClosePrice','compareToPreviousPrice','changePrice','prevChangePrice'])??first(priceObj,['compareToPreviousClosePrice','compareToPreviousPrice']));
-  let diff=rawDiff!==null?Math.abs(rawDiff):(price!==null&&rate!==null?Math.abs(price-price/(1+rate/100)):null);if(diff!==null&&rate<0)diff=-diff;
-  const mv=first(o,['marketType','market','stockExchangeType','exchangeType']);const prev=(price!==null&&diff!==null)?price-diff:null;const rate2=(prev>0&&rawDiff!==null)?diff/prev*100:rate;return {code,name,price,rate:rate2,diff,prev,value,volume,cap,hit,sector,detail,src,endType,market:String(mv&&typeof mv==='object'?(mv.name||mv.code||''):(mv||'')).toUpperCase()};
+  const mv=first(o,['marketType','market','stockExchangeType','exchangeType']);return {code,name,price,rate,diff,prev,basis,value,volume,cap,hit,sector,detail,src,endType,market:String(mv&&typeof mv==='object'?(mv.name||mv.code||''):(mv||'')).toUpperCase()};
  }
  function walk(node,depth=0){
   if(!node||typeof node!=='object'||depth>9)return [];
@@ -200,7 +204,7 @@ function render(data){
  if(secF&&!base.some(x=>x.sector===secF))secF=null;
  const up=base.filter(x=>(x.rate||0)>0).length,down=base.filter(x=>(x.rate||0)<0).length,flat=base.length-up-down;
  $('summary-count').textContent=base.length+'개';
- $('summary-breadth').innerHTML=`<span class="up">${up}</span> / <span class="flat">${flat}</span> / <span class="down">${down}</span>`;
+ const p2=n=>String(n).padStart(2,'0');$('summary-breadth').innerHTML=`<span class="up">${p2(up)}</span> / <span class="flat">${p2(flat)}</span> / <span class="down">${p2(down)}</span>`;
  const {tot,avg,arr}=agg(base),vs=f=>base.filter(f).reduce((s,x)=>s+(x.value||0),0);
  let list=secF?base.filter(x=>x.sector===secF):base.slice();
  if(sortBy==='rate')list.sort((a,b)=>(b.rate||0)-(a.rate||0));
@@ -242,3 +246,11 @@ document.addEventListener('click',e=>{
  const s=e.target.closest('button[data-sort]');if(s){sortBy=s.dataset.sort;document.querySelectorAll('.sorts button').forEach(b=>b.classList.toggle('selected',b===s));render(cache[active]||[])}
 });
 setInterval(()=>{if(!document.hidden)load(active,true)},60000);
+
+(function(){const b=document.createElement('p');b.className='dbgbar';b.innerHTML='<a href="#" id="dbgL">데이터 점검 · 분류 백업</a>';document.body.appendChild(b)})();
+document.addEventListener('click',e=>{
+ if(e.target.id==='dbgL'){e.preventDefault();let p=document.getElementById('dbgP');if(!p){p=document.createElement('div');p.id='dbgP';p.className='dbgp';document.body.appendChild(p)}
+  const x=cur.slice(0,3).map(y=>({name:y.name,price:y.price,prev:y.prev,diff:y.diff,rate:y.rate&&+y.rate.toFixed(2),basis:y.basis}));
+  p.innerHTML=`<b>계산값</b><pre>${escapeHtml(JSON.stringify(x,null,1))}</pre><b>원본 응답(상위 2종목)</b><pre>${escapeHtml(JSON.stringify(dbg.raw,null,1).slice(0,3500))}</pre><b>업종 조회 응답(실패 시)</b><pre>${escapeHtml(dbg.ind.slice(0,2000)||'없음')}</pre><b>섹터 직접 지정 백업</b><textarea id="bk" rows="4">${escapeHtml(JSON.stringify(ovr))}</textarea><button id="bkL">가져오기</button>`;p.scrollIntoView();return}
+ if(e.target.id==='bkL'){try{Object.assign(ovr,JSON.parse($('bk').value));svLS(LSK.ovr,ovr);render(cache[active]||[]);alert('가져왔습니다')}catch(err){alert('형식이 올바르지 않습니다')}}
+});
