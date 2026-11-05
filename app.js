@@ -82,7 +82,7 @@ const dbg={raw:[],ind:'',src:{}},EXT={};
 const LSK={ovr:'sector_override_v1',ind:'sector_naver_v1'};
 const ldLS=k=>{try{return JSON.parse(localStorage.getItem(k)||'{}')}catch(e){return {}}};
 const svLS=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
-let ovr=ldLS(LSK.ovr),indC=ldLS(LSK.ind),cur=[];const tried=new Set();
+let ovr=ldLS(LSK.ovr),indC=ldLS(LSK.ind),cur=[];const tried=new Set();let ORD=ldLS('order_map_v1');
 [[/소프트|시스템|정보통신|데이터|클라우드|인공지능|솔루션/,'IT·소프트웨어','소프트웨어·IT서비스·AI'],
  [/의료|메디|헬스|덴탈|임플란트/,'의료기기·헬스케어','의료기기·진단·헬스케어'],
  [/디스플레이|OLED|LED|광학|카메라|센서|이노텍|전자/,'전자부품·디스플레이','전자부품·디스플레이·센서'],
@@ -200,19 +200,20 @@ async function load(kind=active,force=false){
  try{
   let data;
   if(!force&&cache[kind])data=cache[kind];
-  else if(cfg.derived){data=derive(kind,await loadUniverse());cache[kind]=data}
+  else if(cfg.derived&&!ORD[kind]){data=derive(kind,await loadUniverse());cache[kind]=data}
   else{
    const U=o=>`${DESKTOP}/api/domestic/market/stock/default?tradeType=KRX&marketType=${market}&orderType=${o}&startIdx=0&pageSize=100`;
-   const urls=kind==='popular'?[U('top'),`${DESKTOP}/api/domestic/market/searchTop?nationType=KOR&startIdx=0&pageSize=50`]:[U(cfg.order)];
+   const mn=ORD[kind]?1:10;
+   const urls=ORD[kind]?[U(ORD[kind])]:kind==='popular'?[U('top'),`${DESKTOP}/api/domestic/market/searchTop?nationType=KOR&startIdx=0&pageSize=50`]:[U(cfg.order)];
    let lastErr;data=[];
-   for(const u of urls){try{const d=getRows(await fetchJson(u));if(d.length>=10){data=d;dbg.src[kind]=u.includes('searchTop')?'searchTop':'stocklist';break}}catch(e){lastErr=e}}
-   if(data.length<10&&lastErr)throw lastErr;
-   if(data.length<10)throw new Error(`응답에서 종목 ${data.length}개만 확인했습니다. 원본 API 구조가 변경됐을 수 있습니다.`);
+   for(const u of urls){try{const d=getRows(await fetchJson(u));if(d.length>=mn){data=d;dbg.src[kind]=ORD[kind]?'저장된 이름 '+ORD[kind]:u.includes('searchTop')?'searchTop':'stocklist';break}}catch(e){lastErr=e}}
+   if(data.length<mn&&lastErr)throw lastErr;
+   if(data.length<mn)throw new Error(`응답에서 종목 ${data.length}개만 확인했습니다. 원본 API 구조가 변경됐을 수 있습니다.`);
    cache[kind]=data;
   }
   render(data);
   $('updated').textContent='조회 '+new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
- }catch(e){$('rows').innerHTML=`<div class="error">${escapeHtml(e.message)}<br><small>Cloudflare Worker 주소와 배포 상태를 확인해 주세요.</small></div>`;$('updated').textContent='조회 실패'}
+ }catch(e){$('rows').innerHTML=`<div class="error">${escapeHtml(e.message)}<br><small>Worker를 최신 파일로 다시 배포했는지 확인하고, 화면 맨 아래 '데이터 점검'에서 '정렬 이름 자동 찾기'를 실행해 보세요.</small></div>`;$('updated').textContent='조회 실패'}
 }
 let UNI=null,UNIAT=0;
 async function loadUniverse(){
@@ -295,11 +296,11 @@ document.addEventListener('click',e=>{
 });
 setInterval(()=>{if(!document.hidden)load(active,true)},60000);
 
-(function(){const b=document.createElement('p');b.className='dbgbar';b.innerHTML='<a href="#" id="dbgL">데이터 점검 · 분류 백업 (V10)</a>';document.body.appendChild(b)})();
+(function(){const b=document.createElement('p');b.className='dbgbar';b.innerHTML='<a href="#" id="dbgL">데이터 점검 · 분류 백업 (V11)</a>';document.body.appendChild(b)})();
 document.addEventListener('click',e=>{
  if(e.target.id==='dbgL'){e.preventDefault();let p=document.getElementById('dbgP');if(!p){p=document.createElement('div');p.id='dbgP';p.className='dbgp';document.body.appendChild(p)}
   const x=cur.slice(0,3).map(y=>({name:y.name,price:y.price,prev:y.prev,diff:y.diff,rate:y.rate&&+y.rate.toFixed(2),basis:y.basis}));
-  p.innerHTML=`<b>계산값 (출처: ${escapeHtml(JSON.stringify(dbg.src))})</b><pre>${escapeHtml(JSON.stringify(x,null,1))}</pre><b>원본 응답(상위 2종목)</b><pre>${escapeHtml(JSON.stringify(dbg.raw,null,1).slice(0,3500))}</pre><b>업종 조회 응답(실패 시)</b><pre>${escapeHtml(dbg.ind.slice(0,3600)||'없음')}</pre><b>섹터 직접 지정 백업</b><textarea id="bk" rows="4">${escapeHtml(JSON.stringify(ovr))}</textarea><button id="bkL">가져오기</button>`;p.scrollIntoView();return}
+  p.innerHTML=`<b>계산값 (출처: ${escapeHtml(JSON.stringify(dbg.src))})</b><pre>${escapeHtml(JSON.stringify(x,null,1))}</pre><b>원본 응답(상위 2종목)</b><pre>${escapeHtml(JSON.stringify(dbg.raw,null,1).slice(0,3500))}</pre><b>업종 조회 응답(실패 시)</b><pre>${escapeHtml(dbg.ind.slice(0,3600)||'없음')}</pre><b>탭 정렬 이름 자동 찾기</b><div><button id="probeB" class="more">자동 찾기 실행 (1~2분)</button><button id="ordClr" class="more">저장된 정렬 이름 지우기</button></div><pre id="probeOut">${escapeHtml(JSON.stringify(ORD))}</pre><b>섹터 직접 지정 백업</b><textarea id="bk" rows="4">${escapeHtml(JSON.stringify(ovr))}</textarea><button id="bkL">가져오기</button>`;p.scrollIntoView();return}
  if(e.target.id==='bkL'){try{Object.assign(ovr,JSON.parse($('bk').value));svLS(LSK.ovr,ovr);syncPush();render(cache[active]||[]);alert('가져왔습니다')}catch(err){alert('형식이 올바르지 않습니다')}}
 });
 
@@ -309,3 +310,34 @@ async function syncPull(){try{const r=await fetch(WORKER+'/?sectors=1',{cache:'n
  if(rem&&Object.keys(rem).length){ovr=rem;localStorage.setItem(LSK.ovr,JSON.stringify(ovr));render(cache[active]||[])}else if(Object.keys(ovr).length)syncPush()}catch(e){}}
 document.addEventListener('click',e=>{if(e.target.id==='secMore'){secOpen=!secOpen;render(cache[active]||[])}});
 syncPull();
+
+const CAND={
+ popular:['top','popular','searchTop','hit','hot','interest','searchRank','search','view','viewTop','trend','favorite','attention','focus','mostViewed','rank'],
+ flat:['steady','unchanged','flat','even','same','noChange','zero','hold','stay','fix','steadyPrice','unchangedPrice'],
+ volSurge:['quantSurge','quantUp','quantHigh','volumeSurge','quantRise','quantRiseRate','quantIncrease','surgeQuant','quantDiffRateUp','quantDiffUp','quantJump','quantSoar','volumeUp','quantPlus','quantDiffRate','quantRateUp','quantUpRate','quantGrowth'],
+ volDrop:['quantPlunge','quantDown','quantLow','volumeDrop','quantFall','quantFallRate','quantDecrease','dropQuant','quantDiffRateDown','quantDiffDown','quantSlump','volumeDown','quantMinus','quantRateDown','quantDownRate','quantDecline'],
+ high52:['high52','week52High','high52Week','highPrice52','new52High','yearHigh','highest','high','week52HighPrice','highPrice','newHigh','high1Year','highYear','top52','upper52','week52Up'],
+ low52:['low52','week52Low','low52Week','lowPrice52','new52Low','yearLow','lowest','low','week52LowPrice','lowPrice','newLow','low1Year','lowYear','bottom52','lower52','week52Down']};
+async function probe(){
+ const out=document.getElementById('probeOut'),log=t=>{out.textContent+=t+'\n'};out.textContent='검색 중입니다. 화면을 닫지 마세요…\n';
+ const U=o=>`${DESKTOP}/api/domestic/market/stock/default?tradeType=KRX&marketType=ALL&orderType=${o}&startIdx=0&pageSize=100`,sig=a=>a.slice(0,10).map(x=>x.code).join();
+ const base=[];for(const o of ['priceTop','quantTop','marketSum','up','down']){try{base.push(sig(getRows(await fetchJson(U(o)))))}catch(e){}}
+ const okf={popular:a=>true,flat:a=>a.slice(0,5).every(x=>x.rate===0),volSurge:a=>a.length>4&&a[0].qr!=null&&a[0].qr>=a[4].qr,volDrop:a=>a.length>4&&a[0].qr!=null&&a[0].qr<=a[4].qr,high52:a=>a.slice(0,5).filter(x=>x.hi>=x.w52h).length>=3,low52:a=>a.slice(0,5).filter(x=>x.lo>0&&x.lo<=x.w52l).length>=3};
+ for(const [k,cs] of Object.entries(CAND)){
+  let found=null;
+  for(let i=0;i<cs.length&&!found;i+=4){
+   const rs=await Promise.all(cs.slice(i,i+4).map(async c=>{try{const a=getRows(await fetchJson(U(c)));return {c,a}}catch(e){return {c,err:String(e.message).replace(/\D+/g,' ').trim()}}}));
+   for(const r of rs){
+    if(r.err){log(`${k} ✗ ${r.c} (${r.err})`);continue}
+    const same=base.includes(sig(r.a)),good=r.a.length>=1&&!same&&okf[k](r.a);
+    log(`${k} ${good?'✓':'△'} ${r.c} · ${r.a.length}종목${same?' · 기존 탭과 같은 목록':''}${r.a.length?' · '+r.a.slice(0,3).map(x=>x.name).join(','):''}`);
+    if(good&&!found)found=r.c}
+  }
+  if(found){ORD[k]=found;log(`→ ${k}: ${found} 저장`)}else log(`→ ${k}: 못 찾음 (앱 계산 방식 유지)`)
+ }
+ svLS('order_map_v1',ORD);cache={};log('완료. 위 내용을 복사해 보내 주셔도 됩니다. 탭을 눌러 확인해 보세요.');
+}
+document.addEventListener('click',e=>{
+ if(e.target.id==='probeB'){probe();return}
+ if(e.target.id==='ordClr'){ORD={};svLS('order_map_v1',ORD);cache={};document.getElementById('probeOut').textContent='{}';alert('지웠습니다')}
+});
