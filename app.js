@@ -411,32 +411,47 @@ function renderChart(qs){
   const chart=$('chart'),labels=$('labels');qs=(qs||[]).slice(-6);
   if(!qs.length||qs.every(q=>q.profit===null)){chart.innerHTML='<div class="chart-empty">분기 영업이익 데이터를 확인할 수 없습니다.</div>';labels.innerHTML='';return}
   const vals=qs.map(v=>v.profit).filter(v=>v!==null),maxP=Math.max(0,...vals),maxN=Math.max(0,...vals.map(v=>-v));
-  const W=900;
-  const allNonNegative=vals.every(v=>v>=0);
-  // 양수 분기는 기준선 아래의 불필요한 여백을 줄이고,
-  // 음수 분기 그래프의 기존 좌표와 배치는 그대로 유지한다.
-  const top=64,bottom=allNonNegative?190:258,h=bottom-top;
-  const scaleY=allNonNegative?2.4:1;
-  const zero=(maxP&&maxN?top+h*maxP/(maxP+maxN):maxP?bottom:top)*scaleY;
-  const y=v=>(v>=0?190-(maxP?v/maxP*126:0):top+(maxN?-v/maxN*(bottom-top):0))*scaleY;
+  const W=900,allNonNegative=vals.every(v=>v>=0);
   const cell=W/qs.length;
-  const bars=qs.map((q,i)=>{
-    const x=(i+.5)*cell,v=q.profit;
-    if(v===null)return`<text x="${x}" y="${160*scaleY}" text-anchor="middle" font-size="10" fill="currentColor">자료 없음</text>`;
-    const yy=y(v),bh=Math.max(3,Math.abs(zero-yy)),by=v<0?zero:yy;
-    const amount=Math.abs(v)>=10000?`${(v/10000).toLocaleString('ko-KR',{maximumFractionDigits:1})}조`:`${v.toLocaleString('ko-KR',{maximumFractionDigits:1})}억`;
-    const pct=q.margin===null?'(—)':`(${q.margin.toLocaleString('ko-KR',{maximumFractionDigits:1})}%)`;
-    let amountY,marginY;
-    if(v>=0){amountY=Math.max(24,by-33*scaleY);marginY=Math.max(44*scaleY,by-13*scaleY)}
-    else{amountY=Math.min(294,by+bh+22);marginY=Math.min(322,by+bh+43)}
-    const marginColor=q.margin!==null&&q.margin<0?'#3979d8':'#929baa';
-    const amountWidth=Math.min(cell-8,Math.max(12,amount.length*(allNonNegative?21.6:14.4)));
-    const pctWidth=Math.min(cell-8,Math.max(12,pct.length*(allNonNegative?18:12)));
-    return`<g><rect x="${x-34}" y="${by}" width="68" height="${bh}" rx="4" fill="${v<0?'#3979d8':'#df5967'}" opacity="${/\(E\)/i.test(q.label)?'.75':'1'}"/><text x="${x}" y="${amountY}" text-anchor="middle" font-size="${allNonNegative?15:10}" textLength="${amountWidth}" lengthAdjust="spacingAndGlyphs" font-weight="750" fill="${v<0?'#3979d8':'currentColor'}">${amount}</text><text x="${x}" y="${marginY}" text-anchor="middle" font-size="${allNonNegative?15:10}" textLength="${pctWidth}" lengthAdjust="spacingAndGlyphs" font-weight="650" fill="${marginColor}">${pct}</text></g>`;
-  }).join('');
-  const baselineLabels=allNonNegative?qs.map((q,i)=>{const labelWidth=i===qs.length-1?Math.min(cell-8,120):Math.min(cell-8,112);return`<text x="${(i+.5)*cell}" y="${210*scaleY}" text-anchor="middle" font-size="${allNonNegative?15:10}" textLength="${labelWidth}" lengthAdjust="spacingAndGlyphs" font-weight="600" fill="currentColor">${escapeHtml(q.label||'—')}</text>`}).join(''): '';
-  chart.classList.toggle('chart-compact-positive',allNonNegative);
-  chart.innerHTML=`<svg class="profit-svg" viewBox="0 0 ${W} ${allNonNegative?224*scaleY:340}" preserveAspectRatio="xMidYMid meet" role="img"><line x1="0" y1="${zero}" x2="${W}" y2="${zero}" stroke="#929baa" stroke-dasharray="4 4"/>${bars}${baselineLabels}</svg>`;
+  let bars='',baselineLabels='',zero=0,viewHeight=340;
+  if(allNonNegative){
+    // 양수 그래프는 SVG 좌표 자체를 900×340으로 구성한다.
+    // 글자 크기는 그대로 두고 막대 영역만 넉넉하게 확보해 가로 폭을 꽉 채운다.
+    const top=78,bottom=270,barMax=174;
+    zero=bottom;
+    bars=qs.map((q,i)=>{
+      const x=(i+.5)*cell,v=q.profit;
+      if(v===null)return `<text x="${x}" y="${bottom-18}" text-anchor="middle" font-size="15" fill="currentColor">자료 없음</text>`;
+      const bh=Math.max(4,maxP?v/maxP*barMax:4),by=bottom-bh;
+      const amount=Math.abs(v)>=10000?`${(v/10000).toLocaleString('ko-KR',{maximumFractionDigits:1})}조`:`${v.toLocaleString('ko-KR',{maximumFractionDigits:1})}억`;
+      const pct=q.margin===null?'(—)':`(${q.margin.toLocaleString('ko-KR',{maximumFractionDigits:1})}%)`;
+      const amountY=Math.max(26,by-39),marginY=Math.max(47,by-17);
+      const marginColor=q.margin!==null&&q.margin<0?'#3979d8':'#929baa';
+      const amountWidth=Math.min(cell-12,Math.max(30,amount.length*15));
+      const pctWidth=Math.min(cell-12,Math.max(34,pct.length*12));
+      return `<g><rect x="${x-34}" y="${by}" width="68" height="${bh}" rx="4" fill="#df5967" opacity="${/\(E\)/i.test(q.label)?'.75':'1'}"/><text x="${x}" y="${amountY}" text-anchor="middle" font-size="15" textLength="${amountWidth}" lengthAdjust="spacingAndGlyphs" font-weight="750" fill="currentColor">${amount}</text><text x="${x}" y="${marginY}" text-anchor="middle" font-size="13" textLength="${pctWidth}" lengthAdjust="spacingAndGlyphs" font-weight="650" fill="${marginColor}">${pct}</text></g>`;
+    }).join('');
+    baselineLabels=qs.map((q,i)=>`<text x="${(i+.5)*cell}" y="${bottom+30}" text-anchor="middle" font-size="15" textLength="${Math.min(cell-8,112)}" lengthAdjust="spacingAndGlyphs" font-weight="600" fill="currentColor">${escapeHtml(q.label||'—')}</text>`).join('');
+    chart.classList.add('chart-compact-positive');
+  }else{
+    // 음수/혼합 그래프는 기존 좌표와 렌더링을 그대로 유지한다.
+    const top=64,bottom=258,h=bottom-top;
+    zero=(maxP&&maxN?top+h*maxP/(maxP+maxN):maxP?bottom:top);
+    const y=v=>(v>=0?190-(maxP?v/maxP*126:0):top+(maxN?-v/maxN*(bottom-top):0));
+    bars=qs.map((q,i)=>{
+      const x=(i+.5)*cell,v=q.profit;
+      if(v===null)return`<text x="${x}" y="160" text-anchor="middle" font-size="10" fill="currentColor">자료 없음</text>`;
+      const yy=y(v),bh=Math.max(3,Math.abs(zero-yy)),by=v<0?zero:yy;
+      const amount=Math.abs(v)>=10000?`${(v/10000).toLocaleString('ko-KR',{maximumFractionDigits:1})}조`:`${v.toLocaleString('ko-KR',{maximumFractionDigits:1})}억`;
+      const pct=q.margin===null?'(—)':`(${q.margin.toLocaleString('ko-KR',{maximumFractionDigits:1})}%)`;
+      const amountY=v>=0?Math.max(24,by-33):Math.min(294,by+bh+22),marginY=v>=0?Math.max(44,by-13):Math.min(322,by+bh+43);
+      const marginColor=q.margin!==null&&q.margin<0?'#3979d8':'#929baa';
+      const amountWidth=Math.min(cell-8,Math.max(12,amount.length*14.4)),pctWidth=Math.min(cell-8,Math.max(12,pct.length*12));
+      return`<g><rect x="${x-34}" y="${by}" width="68" height="${bh}" rx="4" fill="${v<0?'#3979d8':'#df5967'}" opacity="${/\(E\)/i.test(q.label)?'.75':'1'}"/><text x="${x}" y="${amountY}" text-anchor="middle" font-size="10" textLength="${amountWidth}" lengthAdjust="spacingAndGlyphs" font-weight="750" fill="${v<0?'#3979d8':'currentColor'}">${amount}</text><text x="${x}" y="${marginY}" text-anchor="middle" font-size="10" textLength="${pctWidth}" lengthAdjust="spacingAndGlyphs" font-weight="650" fill="${marginColor}">${pct}</text></g>`;
+    }).join('');
+    chart.classList.remove('chart-compact-positive');
+  }
+  chart.innerHTML=`<svg class="profit-svg" viewBox="0 0 ${W} ${viewHeight}" preserveAspectRatio="xMidYMid meet" role="img"><line x1="0" y1="${zero}" x2="${W}" y2="${zero}" stroke="#929baa" stroke-dasharray="4 4"/>${bars}${baselineLabels}</svg>`;
   labels.innerHTML=allNonNegative?'':qs.map(q=>`<span>${escapeHtml(q.label||'—')}</span>`).join('');
 }
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
