@@ -411,8 +411,11 @@ function renderChart(qs){
   const chart=$('chart'),labels=$('labels');qs=(qs||[]).slice(-6);
   if(!qs.length||qs.every(q=>q.profit===null)){chart.innerHTML='<div class="chart-empty">분기 영업이익 데이터를 확인할 수 없습니다.</div>';labels.innerHTML='';return}
   const vals=qs.map(v=>v.profit).filter(v=>v!==null),maxP=Math.max(0,...vals),maxN=Math.max(0,...vals.map(v=>-v));
-  const W=900,top=64,bottom=258,h=bottom-top;
+  const W=900;
   const allNonNegative=vals.every(v=>v>=0);
+  // 양수 분기는 기준선 아래의 불필요한 여백을 줄이고,
+  // 음수 분기 그래프의 기존 좌표와 배치는 그대로 유지한다.
+  const top=64,bottom=allNonNegative?190:258,h=bottom-top;
   const zero=maxP&&maxN?top+h*maxP/(maxP+maxN):maxP?bottom:top;
   const y=v=>v>=0?zero-(maxP?v/maxP*(zero-top):0):zero+(maxN?-v/maxN*(bottom-zero):0);
   const cell=W/qs.length;
@@ -430,9 +433,9 @@ function renderChart(qs){
     const pctWidth=Math.min(cell-8,Math.max(12,pct.length*12));
     return`<g><rect x="${x-34}" y="${by}" width="68" height="${bh}" rx="4" fill="${v<0?'#3979d8':'#df5967'}" opacity="${/\(E\)/i.test(q.label)?'.75':'1'}"/><text x="${x}" y="${amountY}" text-anchor="middle" font-size="10" textLength="${amountWidth}" lengthAdjust="spacingAndGlyphs" font-weight="750" fill="${v<0?'#3979d8':'currentColor'}">${amount}</text><text x="${x}" y="${marginY}" text-anchor="middle" font-size="10" textLength="${pctWidth}" lengthAdjust="spacingAndGlyphs" font-weight="650" fill="${marginColor}">${pct}</text></g>`;
   }).join('');
-  const baselineLabels=allNonNegative?qs.map((q,i)=>{const labelWidth=i===qs.length-1?Math.min(cell-8,120):Math.min(cell-8,112);return`<text x="${(i+.5)*cell}" y="278" text-anchor="middle" font-size="10" textLength="${labelWidth}" lengthAdjust="spacingAndGlyphs" font-weight="600" fill="currentColor">${escapeHtml(q.label||'—')}</text>`}).join(''): '';
+  const baselineLabels=allNonNegative?qs.map((q,i)=>{const labelWidth=i===qs.length-1?Math.min(cell-8,120):Math.min(cell-8,112);return`<text x="${(i+.5)*cell}" y="210" text-anchor="middle" font-size="10" textLength="${labelWidth}" lengthAdjust="spacingAndGlyphs" font-weight="600" fill="currentColor">${escapeHtml(q.label||'—')}</text>`}).join(''): '';
   chart.classList.toggle('chart-compact-positive',allNonNegative);
-  chart.innerHTML=`<svg class="profit-svg" viewBox="0 0 ${W} ${allNonNegative?292:340}" preserveAspectRatio="none" role="img"><line x1="0" y1="${zero}" x2="${W}" y2="${zero}" stroke="#929baa" stroke-dasharray="4 4"/>${bars}${baselineLabels}</svg>`;
+  chart.innerHTML=`<svg class="profit-svg" viewBox="0 0 ${W} ${allNonNegative?224:340}" preserveAspectRatio="none" role="img"><line x1="0" y1="${zero}" x2="${W}" y2="${zero}" stroke="#929baa" stroke-dasharray="4 4"/>${bars}${baselineLabels}</svg>`;
   labels.innerHTML=allNonNegative?'':qs.map(q=>`<span>${escapeHtml(q.label||'—')}</span>`).join('');
 }
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
