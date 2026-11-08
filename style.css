@@ -55,4 +55,4 @@
 
 
 /* 종목별 전자공시 바로가기 */
-.dart-link-wrap{padding:10px 0 18px;text-align:center}.dart-link{display:block;width:100%;box-sizing:border-box;padding:13px 16px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--text);font-size:12px;font-weight:700;text-decoration:none;text-align:center}.dart-link:active{opacity:.75}
+.dart-link-wrap{padding:2px 0 6px;text-align:center}.dart-link{display:block;width:100%;box-sizing:border-box;padding:13px 16px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--text);font-size:12px;font-weight:700;text-decoration:none;text-align:center}.dart-link:active{opacity:.75}
