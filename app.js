@@ -381,6 +381,8 @@ $("themeBtn").addEventListener("click", () => {
   const form=document.getElementById("personForm");
   const addBtn=document.getElementById("addPersonBtn");
   const cancelBtn=document.getElementById("cancelPersonBtn");
+  const toggleDeleteBtn=document.getElementById("toggleDeletePeopleBtn");
+  let deleteMode=false;
   let filter="all";
   const search=document.getElementById("peopleSearch");
   const count=document.getElementById("peopleCount");
@@ -395,7 +397,9 @@ $("themeBtn").addEventListener("click", () => {
       const grade=influence[p.name]||"B";
       return `<article class="person-card" data-person="${esc(p.name)}"><div class="person-card-top"><div><h3>${esc(p.name)}</h3><div class="person-meta">${esc(p.country)} · ${esc(p.role)}</div></div><div class="person-card-badges"><span class="person-sector">${esc(p.group)}</span><span class="influence-grade grade-${grade}" title="${gradeText[grade]}">영향력 ${grade}</span></div><button class="person-delete-btn" type="button" data-delete="${esc(p.name)}" aria-label="${esc(p.name)} 삭제">삭제</button></div><p class="person-impact">${esc(p.impact)}</p><div class="person-watch"><b>체크할 뉴스</b><br>${esc(p.watch)}</div><section class="person-news" data-query="${esc(newsQuery(p))}"><div class="person-news-head"><b>최근 기사</b><span>최신순 · 최대 8건</span></div><div class="person-news-list"><div class="person-news-state">화면에 표시되면 최신 기사를 불러옵니다.</div></div></section><a class="person-link" href="https://news.google.com/search?q=${encodeURIComponent(newsQuery(p))}&hl=ko&gl=KR&ceid=KR%3Ako" target="_blank" rel="noopener noreferrer">뉴스 검색 결과 전체 보기 ↗</a></article>`;
     }).join("")||'<div class="empty">검색 조건에 맞는 인물이 없습니다.</div>';
-    root.querySelectorAll("[data-delete]").forEach(button => button.addEventListener("click", () => {
+    root.querySelectorAll("[data-delete]").forEach(button => {
+      button.hidden = !deleteMode;
+      button.addEventListener("click", () => {
       const name = button.dataset.delete;
       if (!confirm(name + " 인물을 목록에서 삭제할까요?")) return;
       const index = people.findIndex(p => p.name === name);
@@ -406,7 +410,8 @@ $("themeBtn").addEventListener("click", () => {
         savePeople();
         render();
       }
-    }));
+      });
+    });
     observeNews();
   }
 
@@ -460,6 +465,14 @@ $("themeBtn").addEventListener("click", () => {
     document.querySelectorAll(".tab-panel").forEach(x=>x.classList.toggle("active",x.id==="panel-"+target));
     window.scrollTo({top:0,behavior:"smooth"});
   }));
+  if (toggleDeleteBtn) toggleDeleteBtn.addEventListener("click", () => {
+    deleteMode = !deleteMode;
+    toggleDeleteBtn.classList.toggle("active", deleteMode);
+    toggleDeleteBtn.setAttribute("aria-pressed", String(deleteMode));
+    toggleDeleteBtn.textContent = deleteMode ? "삭제 선택 종료" : "－ 인물 삭제";
+    render();
+    if (deleteMode) root.scrollIntoView({behavior:"smooth",block:"start"});
+  });
   if (addBtn && form) addBtn.addEventListener("click", () => {
     form.hidden = false;
     cancelBtn.hidden = false;
@@ -485,6 +498,8 @@ $("themeBtn").addEventListener("click", () => {
     people.push(person);
     savePeople();
     form.reset(); form.hidden = true; cancelBtn.hidden = true; addBtn.hidden = false;
+    deleteMode = false;
+    if (toggleDeleteBtn) { toggleDeleteBtn.classList.remove("active"); toggleDeleteBtn.setAttribute("aria-pressed","false"); toggleDeleteBtn.textContent = "－ 인물 삭제"; }
     document.querySelectorAll(".people-filter").forEach(x => x.classList.toggle("active", x.dataset.pfilter === "all"));
     filter = "all";
     render();

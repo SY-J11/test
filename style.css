@@ -199,3 +199,17 @@ html.dark .history-content .history-meta,html.dark .history-content .history-imp
 .history-content-body{border-top:1px solid #e4e8ef}.history-content-body .history-header{display:none}.history-content-body .history-main{padding-top:0}.history-content-body .history-main .history-toolbar{margin-top:15px}
 @media(max-width:680px){.history-intro{padding:16px 15px 11px}.history-intro h2{font-size:18px}.history-summary{grid-template-columns:repeat(2,minmax(0,1fr));padding:0 15px 14px;gap:6px}.history-summary>div{padding:9px}.history-summary span{font-size:9px}}
 html.dark .history-intro h2,html.dark .history-summary b{color:#edf1f6}html.dark .history-intro p,html.dark .history-summary span{color:#9aa6b8}html.dark .history-summary>div{background:#202733;border-color:#303a49}
+
+/* 인물 모니터 하단 관리 영역 */
+.people-bottom-management{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:22px 0 12px;padding:16px 18px}
+.people-bottom-copy h3{margin:0 0 4px;font-size:15px}
+.people-bottom-copy p{margin:0;color:var(--muted);font-size:12px;line-height:1.5}
+.people-management-bottom{display:flex;align-items:center;gap:8px;margin:0;flex-shrink:0}
+.people-manage-btn.danger{border-color:#e5a4a8;color:#bd454c;background:transparent}
+.people-manage-btn.danger.active{background:#bd454c;border-color:#bd454c;color:#fff}
+.person-delete-btn[hidden]{display:none!important}
+@media(max-width:620px){
+ .people-bottom-management{align-items:stretch;flex-direction:column;gap:10px;padding:14px}
+ .people-management-bottom{display:grid;grid-template-columns:1fr 1fr}
+ .people-management-bottom button{width:100%}
+}

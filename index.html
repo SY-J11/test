@@ -32,11 +32,30 @@
         <p>정책·금리·무역·AI 투자·기업 전략과 관련된 주요 인물을 추적합니다. 인물의 발언 자체보다 <b>정책 변화 → 산업·기업 영향 → 실제 시장 반응</b>의 연결을 확인하세요.</p>
         <div class="people-caveat">※ 인물 카드마다 최근 기사 제목을 최대 8건 표시합니다. 기사는 Google 뉴스 RSS 기준이며 제목을 누르면 원문으로 이동합니다. 영향력 등급은 시장 파급 범위에 대한 참고 분류입니다.</div>
       </div>
-      <div class="people-management">
-        <button id="addPersonBtn" class="people-manage-btn primary" type="button">＋ 인물 추가</button>
-        <button id="cancelPersonBtn" class="people-manage-btn" type="button" hidden>닫기</button>
+<div class="people-tools">
+        <input id="peopleSearch" type="search" placeholder="인물·국가·분야 검색" aria-label="인물 검색">
+        <div class="people-filters">
+          <button class="people-filter active" data-pfilter="all">전체</button>
+          <button class="people-filter" data-pfilter="정책·거시">정책·거시</button>
+          <button class="people-filter" data-pfilter="중앙은행">중앙은행</button>
+          <button class="people-filter" data-pfilter="투자·자금">투자·자금</button>
+          <button class="people-filter" data-pfilter="기술·기업">기술·기업</button>
+        </div>
       </div>
-      <form id="personForm" class="person-form card" hidden>
+      <div class="people-section-head"><div><h3>우선 모니터링 대상</h3><p>시장 파급력이 큰 인물 중심 · 한국 인물 제외</p></div><span id="peopleCount" class="count-badge">0명</span></div>
+      <div id="peopleCards" class="people-cards"></div>
+      <div class="people-bottom-management card">
+        <div class="people-bottom-copy">
+          <h3>인물 목록 관리</h3>
+          <p>새로운 인물을 추가하거나 삭제할 인물을 선택해 목록을 정리할 수 있습니다.</p>
+        </div>
+        <div class="people-management people-management-bottom">
+          <button id="addPersonBtn" class="people-manage-btn primary" type="button">＋ 인물 추가</button>
+          <button id="toggleDeletePeopleBtn" class="people-manage-btn danger" type="button" aria-pressed="false">－ 인물 삭제</button>
+          <button id="cancelPersonBtn" class="people-manage-btn" type="button" hidden>닫기</button>
+        </div>
+      </div>
+<form id="personForm" class="person-form card" hidden>
         <h3>모니터링 인물 추가</h3>
         <div class="person-form-grid">
           <label>이름<input name="name" required placeholder="예: 제롬 파월"></label>
@@ -49,18 +68,6 @@
         </div>
         <button class="people-manage-btn primary" type="submit">인물 저장</button>
       </form>
-      <div class="people-tools">
-        <input id="peopleSearch" type="search" placeholder="인물·국가·분야 검색" aria-label="인물 검색">
-        <div class="people-filters">
-          <button class="people-filter active" data-pfilter="all">전체</button>
-          <button class="people-filter" data-pfilter="정책·거시">정책·거시</button>
-          <button class="people-filter" data-pfilter="중앙은행">중앙은행</button>
-          <button class="people-filter" data-pfilter="투자·자금">투자·자금</button>
-          <button class="people-filter" data-pfilter="기술·기업">기술·기업</button>
-        </div>
-      </div>
-      <div class="people-section-head"><div><h3>우선 모니터링 대상</h3><p>시장 파급력이 큰 인물 중심 · 한국 인물 제외</p></div><span id="peopleCount" class="count-badge">0명</span></div>
-      <div id="peopleCards" class="people-cards"></div>
       <div class="people-method card">
         <h3>뉴스를 볼 때 확인할 항목</h3>
         <div class="method-grid">
