@@ -1,48 +1,105 @@
 <!doctype html>
 <html lang="ko">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#f4f6fa"><title>STOCK INSIGHT PRO</title><link rel="stylesheet" href="style.css?v=109">
-  <link rel="apple-touch-icon" href="./Stock.png">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f4f6fa">
+<link rel="apple-touch-icon" href="./Stock_macro.png">
+<title>MARKET INSIGHT DAILY</title>
+<link rel="stylesheet" href="style.css?v=4">
+<script>try{if(localStorage.getItem("theme_v1")==="dark"){document.documentElement.classList.add("dark");document.querySelector('meta[name="theme-color"]').content="#151a22"}}catch(e){}</script>
 </head>
-<body><div class="app">
-<header><div class="brand"><i></i><div><b>종목 인사이트</b><small>STOCK INSIGHT PRO</small></div></div><div class="tools"><button id="theme" aria-label="테마 전환">◐</button><button id="refresh" aria-label="새로고침">↻</button></div></header>
-<main>
-<section class="search-card"><div class="search-heading"><div><span class="eyebrow">STOCK SEARCH</span><h2>어떤 종목을 찾으세요?</h2><p>종목명 또는 6자리 종목코드로 검색하세요.</p></div><div class="search-symbol">⌕</div></div>
-<div class="searchbox"><span class="magnify"></span><input id="query" type="search" placeholder="종목명 또는 6자리 종목코드" autocomplete="off"><button id="clear" class="clear" hidden>×</button><button id="searchBtn" class="search-btn">검색 →</button></div><div id="results" class="results" hidden></div><section class="quick-rankings" aria-label="빠른 검색 순위">
-<div class="quick-group quick-group-full favorite-group"><h3>★ 관심종목 <small id="favorite-count">0개</small></h3><div id="favorite-list" class="quick favorite-list"><span class="quick-loading">종목 옆의 ☆를 눌러 관심종목을 추가하세요.</span></div></div>
-<div class="quick-group quick-group-full"><h3>전체 시가총액 순 20개</h3><div id="quick-all-cap" class="quick"><span class="quick-loading">불러오는 중…</span></div></div>
-<details class="quick-more"><summary><span>빠른 검색 순위 더보기</span><span class="quick-arrow" aria-hidden="true">⌄</span></summary><div class="quick-more-grid">
-<div class="quick-group"><h3>코스피 시가총액 순 10개</h3><div id="quick-kospi-cap" class="quick"><span class="quick-loading">불러오는 중…</span></div></div>
-<div class="quick-group"><h3>코스닥 시가총액 순 10개</h3><div id="quick-kosdaq-cap" class="quick"><span class="quick-loading">불러오는 중…</span></div></div>
-<div class="quick-group quick-group-full"><h3>전체 거래대금 순 20개</h3><div id="quick-value" class="quick"><span class="quick-loading">불러오는 중…</span></div></div>
-<div class="quick-group"><h3>코스피 거래대금 순 10개</h3><div id="quick-kospi-value" class="quick"><span class="quick-loading">불러오는 중…</span></div></div>
-<div class="quick-group"><h3>코스닥 거래대금 순 10개</h3><div id="quick-kosdaq-value" class="quick"><span class="quick-loading">불러오는 중…</span></div></div>
-<div class="quick-group quick-group-full"><h3>전체 거래량 순 20개</h3><div id="quick-volume" class="quick"><span class="quick-loading">불러오는 중…</span></div></div>
-<div class="quick-group"><h3>코스피 거래량 순 10개</h3><div id="quick-kospi-volume" class="quick"><span class="quick-loading">불러오는 중…</span></div></div>
-<div class="quick-group"><h3>코스닥 거래량 순 10개</h3><div id="quick-kosdaq-volume" class="quick"><span class="quick-loading">불러오는 중…</span></div></div>
-</div></details>
-</section><p id="status" class="status">네이버 증권 데이터 연결 중…</p></section>
-<section class="card quote"><div class="name"><div><span id="name">종목을 검색하세요</span><small id="code"></small></div><button id="fav">☆</button></div><div class="price" id="price">— <span id="change">종목을 선택하면 시세가 표시됩니다.</span></div></section>
-<section class="card daily-chart-card"><div class="daily-chart-heading"><b id="dailyChartTitle">120일봉 차트</b><span id="dailyChartRange">최근 거래일</span></div><div class="daily-chart-tabs" role="tablist" aria-label="차트 기간"><button type="button" class="active" data-period="day" role="tab" aria-selected="true">일</button><button type="button" data-period="week" role="tab" aria-selected="false">주</button><button type="button" data-period="month" role="tab" aria-selected="false">월</button><button type="button" data-period="year" role="tab" aria-selected="false">년</button></div><div id="dailyRangeTabs" class="daily-range-tabs" aria-label="조회 기간"></div><div id="dailyChart" class="daily-chart"><div class="chart-empty">종목을 검색하면 일봉 차트가 표시됩니다.</div></div></section>
-<section class="grid g4"><div class="metric"><label>PER</label><b id="per">—</b></div><div class="metric"><label>PBR</label><b id="pbr">—</b></div><div class="metric"><label>EPS</label><b id="eps">—</b></div><div class="metric"><label>시가총액</label><b id="cap">—</b></div></section>
-<section class="grid g3"><div class="metric"><label>지난해 영업이익</label><b id="annualOp">—</b></div><div class="metric"><label>최근 4Q 영업이익</label><b id="ttmOp">—</b></div><div class="metric"><label>최근 4Q 순이익 (순이익률)</label><b id="ttmNet">—</b></div></section>
-<section class="card eps"><label>최근 6분기 EPS</label><div class="epsrow" id="epsRows"></div></section>
-<section class="grid g3"><div class="metric"><label>최근 ROE</label><b id="roe">—</b></div><div class="metric"><label>부채비율</label><b id="debt">—</b></div><div class="metric"><label>외국인소진율</label><b id="foreignFloat">—</b></div></section>
-<section class="card inv-card"><div class="daily-chart-heading"><b id="invTitle">투자자 동향 · 60일</b><span id="invRange"></span></div><div id="invTabs" class="daily-range-tabs" aria-label="투자자 동향 조회 기간"></div><div id="invChart" class="inv-chart"><div class="chart-empty">종목을 검색하면 투자자 동향이 표시됩니다.</div></div><div id="invSum" class="inv-sum"></div><div id="invTable" class="inv-table"></div></section>
-<section class="grid g3 flows"><div class="metric"><label>외국인 순매수 <small>[통합]</small></label><b id="fTotalCount">자료 없음</b><em id="fTotalStreak">—</em><em class="sell-streak" id="fTotalSellStreak">—</em></div><div class="metric"><label>외국인 순매수 <small>[KRX]</small></label><b id="fKrCount">자료 없음</b><em id="fKrStreak">—</em><em class="sell-streak" id="fKrSellStreak">—</em></div><div class="metric"><label>외국인 순매수 <small>[NXT]</small></label><b id="fNxCount">자료 없음</b><em id="fNxStreak">—</em><em class="sell-streak" id="fNxSellStreak">—</em></div><div class="metric"><label>기관 순매수 <small>[통합]</small></label><b id="iTotalCount">자료 없음</b><em id="iTotalStreak">—</em><em class="sell-streak" id="iTotalSellStreak">—</em></div><div class="metric"><label>기관 순매수 <small>[KRX]</small></label><b id="iKrCount">자료 없음</b><em id="iKrStreak">—</em><em class="sell-streak" id="iKrSellStreak">—</em></div><div class="metric"><label>기관 순매수 <small>[NXT]</small></label><b id="iNxCount">자료 없음</b><em id="iNxStreak">—</em><em class="sell-streak" id="iNxSellStreak">—</em></div></section>
-<section class="grid g3 flows combined-flows"><div class="metric"><label>외국인+기관 순매수 <small>[통합]</small></label><b id="xTotalCount">자료 없음</b></div><div class="metric"><label>외국인+기관 순매수 <small>[KRX]</small></label><b id="xKrCount">자료 없음</b></div><div class="metric"><label>외국인+기관 순매수 <small>[NXT]</small></label><b id="xNxCount">자료 없음</b></div></section>
-<p class="hint">수급 항목은 공개 응답에서 확인할 수 있는 경우에만 표시합니다.</p>
-<section class="grid g3"><div class="metric"><label>멀티플 · 지난해</label><b id="annualMultiple">—</b></div><div class="metric"><label>멀티플 · 최근 4Q</label><b id="ttmMultiple">—</b></div><div class="metric"><label>멀티플(E) · 최근 4Q</label><b id="estTtmMultiple">—</b></div></section>
-<section class="grid g3 fair-prices"><div class="metric"><label>추정 적정 주가 · 지난해</label><b id="fairAnnual">—</b></div><div class="metric"><label>추정 적정 주가 · 최근 4Q</label><b id="fairTtm">—</b></div><div class="metric"><label>추정 적정 주가(E) · 최근 4Q</label><b id="fairEstTtm">—</b></div></section>
-<section class="card chartcard"><div class="charttitle"><b>최근 6분기 영업이익</b><span>영업이익(영업이익률%)</span></div><div class="cons"><b>컨센서스</b><span>목표주가 평균 <strong id="target">—</strong></span><span>평균 투자의견 <strong id="opinion">—</strong></span></div><div class="chart-scroll"><div class="chart" id="chart"><div class="chart-empty">데이터 조회 중…</div></div><div class="labels" id="labels"></div></div><section class="dart-link-wrap"><a id="dartLink" class="dart-link" href="https://dart.fss.or.kr/dsab001/main.do">DART 전자공시 바로가기 ↗</a></section></section>
-<p class="disclaimer">공개 API 응답에 포함된 데이터만 표시합니다. 단위가 확인되지 않은 값은 계산에 사용하지 않습니다.</p><footer>STOCK INSIGHT PRO · 수치 확인용 참고 정보</footer>
+<body>
+<div class="app">
+  <header class="topbar">
+    <a class="brand" href="#"><i class="brand-mark" aria-hidden="true"></i><span><b>마켓 인사이트</b><small>MARKET INSIGHT DAILY</small></span></a>
+    <div class="top-actions"><span id="updatedAt" class="updated">업데이트 확인 중</span><button id="themeBtn" class="icon-btn" type="button" title="명암 전환" aria-label="테마 전환">◐</button><button id="refreshBtn" class="icon-btn" title="새로고침" aria-label="새로고침">↻</button></div>
+  </header>
+  <main>
+    <section class="hero">
+      <div><span class="eyebrow">KOREA MARKET · GLOBAL SIGNALS</span><h1>시장을 움직이는<br><em>핵심 변수</em>를 한눈에</h1><p>해외 매크로부터 국내 증시까지, 중요한 이슈만 연결해서 추적합니다.</p></div>
+      <div class="hero-date"><span id="todayLabel">TODAY</span><b id="dateLabel">—</b><small>한국시간 기준</small></div>
+    </section>
+    <nav class="main-tabs" aria-label="메인 메뉴">
+      <button class="main-tab active" data-panel="dashboard">시장 브리핑</button>
+      <button class="main-tab" data-panel="people-live">인물 모니터</button>
+      <button class="main-tab" data-panel="people-history">영향력 있는 인물</button>
+    </nav>
+    <section id="panel-people-live" class="tab-panel people-panel">
+      <div class="people-intro card">
+        <span class="eyebrow">MARKET PEOPLE WATCH</span>
+        <h2>증시에 영향을 주는 생존 인물</h2>
+        <p>정책·금리·무역·AI 투자·기업 전략과 관련된 주요 인물을 추적합니다. 인물의 발언 자체보다 <b>정책 변화 → 산업·기업 영향 → 실제 시장 반응</b>의 연결을 확인하세요.</p>
+        <div class="people-caveat">※ 인물 카드마다 최근 기사 제목을 최대 8건 표시합니다. 기사는 Google 뉴스 RSS 기준이며 제목을 누르면 원문으로 이동합니다. 영향력 등급은 시장 파급 범위에 대한 참고 분류입니다.</div>
+      </div>
+      <div class="people-tools">
+        <input id="peopleSearch" type="search" placeholder="인물·국가·분야 검색" aria-label="인물 검색">
+        <div class="people-filters">
+          <button class="people-filter active" data-pfilter="all">전체</button>
+          <button class="people-filter" data-pfilter="정책·거시">정책·거시</button>
+          <button class="people-filter" data-pfilter="중앙은행">중앙은행</button>
+          <button class="people-filter" data-pfilter="투자·자금">투자·자금</button>
+          <button class="people-filter" data-pfilter="기술·기업">기술·기업</button>
+        </div>
+      </div>
+      <div class="people-section-head"><div><h3>우선 모니터링 대상</h3><p>시장 파급력이 큰 인물 중심 · 한국 인물 제외</p></div><span id="peopleCount" class="count-badge">0명</span></div>
+      <div id="peopleCards" class="people-cards"></div>
+      <div class="people-method card">
+        <h3>뉴스를 볼 때 확인할 항목</h3>
+        <div class="method-grid">
+          <div><b>① 발언·사건</b><span>정확한 발언, 발표 시각, 공식 자료 여부</span></div>
+          <div><b>② 영향 경로</b><span>금리·환율·관세·규제·투자·공급망 등</span></div>
+          <div><b>③ 수혜·피해</b><span>영향 업종과 대표 기업, 실적 연결성</span></div>
+          <div><b>④ 시장 검증</b><span>지수·금리·환율·관련 종목의 실제 반응</span></div>
+        </div>
+        <p>뉴스의 논조가 긍정적이어도 주가가 하락할 수 있습니다. <b>뉴스 방향과 가격 반응은 별도로 기록</b>하고, 루머·개인 이슈는 기업의 사업·규제·지배구조에 실질적 영향이 확인될 때만 시장 재료로 분류합니다.</p>
+      </div>
+    </section>
+    <section id="panel-people-history" class="tab-panel history-panel">
+      <div class="history-heading"><div><span class="eyebrow">MARKET HISTORY</span><h2>주식시장을 만든 투자 철학과 인물</h2><p>투자 대가·정책 결정자·거시경제학자·산업 리더의 시대와 명언, 시장에 남긴 영향을 살펴봅니다.</p></div></div>
+      <iframe title="주식시장 영향력 있는 인물" src="people_history.html" loading="lazy"></iframe>
+    </section>
+    <section id="panel-dashboard" class="tab-panel active">
+    <section class="briefing card">
+      <div class="section-head"><div><span class="eyebrow">DAILY BRIEFING</span><h2>오늘의 브리핑</h2></div><span id="briefingStatus" class="status-pill">불러오는 중</span></div>
+      <div id="briefingSummary" class="briefing-summary"><div class="skeleton"></div><div class="skeleton short"></div></div>
+      <div class="brief-grid">
+        <div class="brief-column positive"><b><i>＋</i> 긍정 요인</b><ul id="positiveList"><li>분석 자료를 불러오는 중입니다.</li></ul></div>
+        <div class="brief-column negative"><b><i>－</i> 부정 요인</b><ul id="negativeList"><li>분석 자료를 불러오는 중입니다.</li></ul></div>
+      </div>
+      <div class="brief-bottom"><span id="marketView">시장 영향 분석을 준비하고 있습니다.</span><span id="eventCount">주요 이슈 —건</span></div>
+    </section>
 
-</main></div>
-<div id="dartModal" class="dart-modal" hidden role="dialog" aria-modal="true" aria-label="DART 전자공시">
-  <div class="dart-modal-panel">
-    <div class="dart-modal-head"><strong>DART 전자공시</strong><button id="dartClose" type="button" aria-label="닫기">✕</button></div>
-    <div class="dart-modal-viewport"><div id="dartFrameStage" class="dart-frame-stage"><iframe id="dartFrame" title="DART 전자공시" src="about:blank" width="750" height="900" frameborder="0" scrolling="auto"></iframe></div></div>
-  </div>
+    <section class="category-section">
+      <div class="section-head"><div><span class="eyebrow">MARKET NEWS</span><h2>뉴스 카테고리</h2></div><span class="muted">카테고리를 선택해 관련 뉴스 확인</span></div>
+      <nav id="categoryNav" class="category-nav">
+        <button class="category active" data-category="all"><b>전체</b><small>ALL</small></button>
+        <button class="category" data-category="global"><b>미국·글로벌 증시</b><small>GLOBAL</small></button>
+        <button class="category" data-category="macro"><b>금리·환율·경제</b><small>MACRO</small></button>
+        <button class="category" data-category="geopolitics"><b>지정학·원자재</b><small>GEOPOLITICS</small></button>
+        <button class="category" data-category="korea"><b>국내 증시·정책</b><small>KOREA</small></button>
+        <button class="category" data-category="industry"><b>산업·기업</b><small>INDUSTRY</small></button>
+      </nav>
+      <div class="news-toolbar"><b id="newsTitle">전체 뉴스</b><span id="newsCount" class="muted">0건</span></div>
+      <div id="newsList" class="news-list"><div class="empty">뉴스를 불러오는 중입니다.</div></div>
+      <button id="moreNews" class="more-btn" hidden>뉴스 더 보기 <span>＋</span></button>
+    </section>
+
+    <section class="issues-section card">
+      <div class="section-head"><div><span class="eyebrow">ONGOING THEMES</span><h2>지속 추적 이슈</h2><p class="section-desc">새로운 뉴스가 기존 이슈와 관련되면 하나의 주제로 이어서 관리합니다.</p></div><span id="issueCount" class="count-badge">0개</span></div>
+      <div class="issue-filters"><button class="issue-filter active" data-status="active">진행 중</button><button class="issue-filter" data-status="long">장기 추적</button><button class="issue-filter" data-status="all">전체 활성</button></div>
+      <div id="issueList" class="issue-list"><div class="empty">추적 이슈를 불러오는 중입니다.</div></div>
+    </section>
+    <section class="archive-section">
+      <div class="section-head"><div><span class="eyebrow">CLOSED TOPICS</span><h2>종료된 이슈</h2><p class="section-desc">재료가 소멸한 이슈는 활성 목록에서 제외하고 이력으로 보관합니다.</p></div><button id="archiveToggle" class="text-btn">종료 이슈 보기⌄</button></div>
+      <div id="archiveList" class="archive-list" hidden></div>
+    </section>
+    </section><!-- /panel-dashboard -->
+
+    <footer><b>MARKET INSIGHT DAILY</b><span>정보 제공 및 시장 참고용 · 투자 판단은 본인의 책임입니다.</span><span>뉴스 원문과 업데이트 시각을 함께 확인하세요.</span></footer>
+  </main>
 </div>
-<script src="app.js?v=115"></script></body></html>
+<div id="toast" class="toast" role="status"></div>
+<script src="app.js?v=2"></script>
+<script src="people.js?v=2"></script>
+</body></html>
