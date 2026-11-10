@@ -803,7 +803,7 @@ buttons.forEach(btn=>btn.addEventListener('click',()=>{
       let btn = group.querySelector(":scope > .global-group-delete");
       if (deleteMode && !btn) {
         btn = document.createElement("button"); btn.type = "button"; btn.className = "global-group-delete";
-        btn.textContent = "항목 세트 삭제";
+        btn.textContent = "삭제";
         btn.addEventListener("click", () => {
           const id = group.dataset.groupId;
           const record = added.find(x => x.id === id);
@@ -837,7 +837,9 @@ buttons.forEach(btn=>btn.addEventListener('click',()=>{
       });
       const permanent = document.createElement("button"); permanent.type = "button"; permanent.className = "people-manage-btn danger"; permanent.textContent = "삭제";
       permanent.addEventListener("click", () => { deleted.splice(index, 1); save(); renderDeleted(); });
-      row.append(label, restore, permanent); deletedList.appendChild(row);
+      const actions = document.createElement("div"); actions.className = "global-deleted-actions";
+      actions.append(restore, permanent);
+      row.append(label, actions); deletedList.appendChild(row);
     });
   }
   // Render persisted custom groups as complete, three-card sets.

@@ -426,3 +426,12 @@ html.dark .history-content .history-field-quote .history-quote,html.dark .histor
 .global-item-form .people-manage-btn{white-space:nowrap;min-width:88px}
 .global-deleted-row .people-manage-btn{min-height:28px;padding:5px 10px;font-size:11px;white-space:nowrap}
 @media(max-width:680px){.global-item-form{grid-template-columns:1fr}.global-item-form .people-manage-btn{width:max-content}}
+
+/* v22: balanced desktop add form and right-aligned restore actions */
+@media(min-width:681px){
+  .global-item-form{width:100%;max-width:none;grid-template-columns:minmax(260px,420px) auto;justify-content:start;align-items:end;}
+  .global-item-form label{width:100%;}
+  .global-item-form .people-manage-btn{justify-self:start;}
+  .global-deleted-row{justify-content:flex-start;}
+  .global-deleted-actions{margin-left:auto;justify-content:flex-end;flex:none;}
+}
