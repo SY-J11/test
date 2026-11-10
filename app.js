@@ -16,6 +16,9 @@ const state = {
   news: [],
   issues: [],
   archive: [],
+  archiveLoaded: false,
+  dashboardLoaded: false,
+  dashboardLoading: null,
   offset: 0,
   limit: 12
 };
@@ -206,18 +209,16 @@ function renderArchive() {
 
 async function load() {
   try {
-    const [data, news, issues, archive] = await Promise.all([
+    const [data, news, issues] = await Promise.all([
       api("briefing"),
       api("news?limit=100"),
-      api("issues?status=active"),
-      api("issues?status=closed")
+      api("issues?status=active")
     ]);
 
     renderBriefing(data.briefing, issues.items?.length || 0);
 
     state.news = news.items || [];
     state.issues = issues.items || [];
-    state.archive = archive.items || [];
 
     $("updatedAt").textContent = data.briefing?.updatedAt
       ? `최근 업데이트 ${dateText(data.briefing.updatedAt)}`
@@ -232,7 +233,7 @@ async function load() {
 
     renderNews();
     renderIssues();
-    renderArchive();
+    state.dashboardLoaded = true;
 
   } catch (e) {
     $("updatedAt").textContent = "서버 연결 필요";
@@ -243,6 +244,7 @@ async function load() {
 
     state.news = [];
     state.issues = [];
+    state.dashboardLoaded = false;
 
     renderNews();
     renderIssues();
@@ -286,6 +288,12 @@ $("archiveToggle").addEventListener("click", () => {
   $("archiveToggle").textContent = box.hidden
     ? "종료 이슈 보기⌄"
     : "종료 이슈 접기⌃";
+  if (!box.hidden && !state.archiveLoaded) {
+    box.innerHTML = '<div class="empty">종료 이슈를 불러오는 중입니다.</div>';
+    api("issues?status=closed").then(data => {
+      state.archive = data.items || []; state.archiveLoaded = true; renderArchive();
+    }).catch(() => { box.innerHTML = '<div class="empty">종료 이슈를 불러오지 못했습니다.</div>'; });
+  }
 });
 
 $("refreshBtn").addEventListener("click", async () => {
@@ -293,13 +301,14 @@ $("refreshBtn").addEventListener("click", async () => {
   b.disabled = true;
   b.textContent = "…";
 
+  state.dashboardLoaded = false;
   await load();
 
   b.disabled = false;
   b.textContent = "↻";
 });
 
-load();
+// 대시보드 데이터는 실제 탭을 열 때 요청해 첫 화면의 네트워크 작업을 줄입니다.
 
 // 명암(다크/라이트) 전환
 $("themeBtn").addEventListener("click", () => {
@@ -572,7 +581,7 @@ $("themeBtn").addEventListener("click", () => {
       const controller=new AbortController();
       const timeout=setTimeout(()=>controller.abort(),12000);
       let response;
-      try { response=await fetch(url,{signal:controller.signal,headers:{'Accept':'application/json'}}); }
+      try { response=await fetch(url,{signal:controller.signal,headers:{'Accept':'application/json'},cache:'force-cache'}); }
       finally { clearTimeout(timeout); }
       const data=await response.json();
       if(!response.ok) throw new Error(data.error||('뉴스 서버 응답 오류 (HTTP '+response.status+')'));
@@ -619,7 +628,7 @@ $("themeBtn").addEventListener("click", () => {
   let newsObserver=null;
   function observeNews(){
     if(newsObserver) newsObserver.disconnect();
-    const sections=[...document.querySelectorAll(".person-news")];
+    const sections=[...document.querySelectorAll(".person-news:not([data-custom-id])")];
     if("IntersectionObserver" in window){
       newsObserver=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){loadNews(entry.target);newsObserver.unobserve(entry.target);}}),{rootMargin:"250px 0px"});
       sections.forEach(section=>{if(!loadedNews.has(section))newsObserver.observe(section);});
@@ -634,7 +643,10 @@ $("themeBtn").addEventListener("click", () => {
     const target=b.dataset.panel;
     document.querySelectorAll(".main-tab").forEach(x=>x.classList.toggle("active",x===b));
     document.querySelectorAll(".tab-panel").forEach(x=>x.classList.toggle("active",x.id==="panel-"+target));
-    if(target==="global-perspective") observeNews();
+    if(target==="global-perspective" || target==="people-live") observeNews();
+    if(target==="dashboard" && !state.dashboardLoaded && !state.dashboardLoading) {
+      state.dashboardLoading = load().finally(() => { state.dashboardLoading = null; });
+    }
     window.scrollTo({top:0,behavior:"smooth"});
   }));
   if (toggleDeleteBtn) toggleDeleteBtn.addEventListener("click", () => {
@@ -786,6 +798,16 @@ buttons.forEach(btn=>btn.addEventListener('click',()=>{
       if (more) more.hidden = true;
     } catch (error) { list.innerHTML = `<div class="person-news-state">검색 결과를 불러오지 못했습니다: ${esc(error.message || error)}</div>`; card.dataset.loaded = "0"; }
   }
+  const addedNewsObserver = "IntersectionObserver" in window
+    ? new IntersectionObserver(entries => entries.forEach(entry => {
+        if (entry.isIntersecting) { loadAddedCard(entry.target); addedNewsObserver.unobserve(entry.target); }
+      }), {rootMargin:"220px 0px"})
+    : null;
+  const observeAddedCard = card => {
+    if (!card) return;
+    if (addedNewsObserver) addedNewsObserver.observe(card);
+    else loadAddedCard(card);
+  };
   const renderGroup = (record, shouldLoad = true) => {
     const group = createPeerGroup(record.market, record.id);
     const grid = group.querySelector(".global-market-grid");
@@ -794,7 +816,7 @@ buttons.forEach(btn=>btn.addEventListener('click',()=>{
       const holder = document.createElement("div"); holder.innerHTML = html;
       const card = holder.firstElementChild; if (!card) return;
       card.dataset.customId = record.id + "-" + i; grid.appendChild(card);
-      if (shouldLoad) loadAddedCard(card);
+      if (shouldLoad) observeAddedCard(card);
     });
     return group;
   };
@@ -844,6 +866,11 @@ buttons.forEach(btn=>btn.addEventListener('click',()=>{
   }
   // Render persisted custom groups as complete, three-card sets.
   added.forEach(record => renderGroup(record));
+  document.querySelectorAll(".main-tab[data-panel=\"global-perspective\"]").forEach(button => {
+    button.addEventListener("click", () => {
+      root.querySelectorAll(".custom-global-group .global-news-card").forEach(observeAddedCard);
+    });
+  });
   addBtn?.addEventListener("click", () => {
     form.hidden = false; cancelBtn.hidden = false; addBtn.hidden = true;
     form.scrollIntoView({behavior:"smooth", block:"center"});
@@ -867,19 +894,3 @@ buttons.forEach(btn=>btn.addEventListener('click',()=>{
   renderDeleted(); ensureDeleteControls();
 })();
 
-/* Remove stray template marker text from rendered page content. */
-(() => {
-  const cleanMarkers = () => {
-    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
-    const nodes = [];
-    while (walker.nextNode()) nodes.push(walker.currentNode);
-    nodes.forEach(node => {
-      if (node.nodeValue && node.nodeValue.includes("@@GROUPS@@")) {
-        node.nodeValue = node.nodeValue.replace(/\\s*@@GROUPS@@\\s*/g, " ").trim();
-      }
-    });
-  };
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", cleanMarkers, {once:true});
-  else cleanMarkers();
-  new MutationObserver(cleanMarkers).observe(document.documentElement, {childList:true,subtree:true,characterData:true});
-})();
