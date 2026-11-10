@@ -341,7 +341,8 @@ $("themeBtn").addEventListener("click", () => {
     {name:"순다르 피차이",country:"미국",role:"Alphabet CEO",group:"기술·기업",impact:"검색·광고·클라우드·AI 전략 변화가 플랫폼 기업의 경쟁구도와 광고시장에 영향을 줍니다.",watch:"검색 사업 변화, Gemini, 클라우드 성장, AI CAPEX",query:"Sundar Pichai Google AI strategy"},
     {name:"마크 저커버그",country:"미국",role:"Meta CEO",group:"기술·기업",impact:"AI 추천·광고 효율·메타버스 및 AI 인프라 투자 규모가 플랫폼·반도체 기업에 영향을 줍니다.",watch:"광고 성장, AI 투자액, Llama, 설비투자·수익성",query:"Mark Zuckerberg Meta AI capex"},
     {name:"일론 머스크",country:"미국",role:"Tesla·SpaceX 경영자",group:"기술·기업",impact:"전기차·자율주행·로봇·우주산업의 사업 전략과 발언이 관련 기업 및 성장주 심리에 영향을 줍니다.",watch:"테슬라 판매·마진, 자율주행, 로보택시, 우주·AI 사업",query:"Elon Musk Tesla markets business"},
-    {name:"리사 수",country:"미국",role:"AMD CEO",group:"기술·기업",impact:"AI 가속기와 서버 CPU 경쟁력, 공급망 및 고객사 수요가 반도체 업황의 중요한 단서입니다.",watch:"AI GPU 매출, 데이터센터 실적, 공급능력, 경쟁사 점유율",query:"Lisa Su AMD AI data center"}
+    {name:"리사 수",country:"미국",role:"AMD CEO",group:"기술·기업",impact:"AI 가속기와 서버 CPU 경쟁력, 공급망 및 고객사 수요가 반도체 업황의 중요한 단서입니다.",watch:"AI GPU 매출, 데이터센터 실적, 공급능력, 경쟁사 점유율",query:"Lisa Su AMD AI data center"},
+    {name:"숀 킴",country:"미국",role:"글로벌 금융·시장 분석가",group:"투자·자금",impact:"글로벌 금융시장과 한국 증시에 대한 해외 투자자·기관의 시각을 파악하는 참고 인물입니다.",watch:"한국 증시 전망, 외국인 수급, 글로벌 자금 흐름, 미국 금융기관의 한국 시장 분석",query:"Sean Kim global markets Korea stocks"}
   ];
 
   const STORAGE_KEY = "marketInsightPeople_v1";
@@ -398,7 +399,7 @@ $("themeBtn").addEventListener("click", () => {
     "빌 애크먼":"Bill Ackman", "데이비드 테퍼":"David Tepper", "캐시 우드":"Cathie Wood",
     "마이클 버리":"Michael Burry", "하워드 막스":"Howard Marks", "마크 미너비니":"Mark Minervini",
     "젠슨 황":"Jensen Huang", "샘 올트먼":"Sam Altman", "사티아 나델라":"Satya Nadella",
-    "순다르 피차이":"Sundar Pichai", "마크 저커버그":"Mark Zuckerberg", "일론 머스크":"Elon Musk", "리사 수":"Lisa Su"
+    "순다르 피차이":"Sundar Pichai", "마크 저커버그":"Mark Zuckerberg", "일론 머스크":"Elon Musk", "리사 수":"Lisa Su", "숀 킴":"Sean Kim"
   };
   const newsQuery = p => overseasNames[p.name] || String(p.query || p.name).trim().split(/\s+/).slice(0, 2).join(" ");
 
@@ -618,7 +619,7 @@ $("themeBtn").addEventListener("click", () => {
   let newsObserver=null;
   function observeNews(){
     if(newsObserver) newsObserver.disconnect();
-    const sections=[...root.querySelectorAll(".person-news")];
+    const sections=[...document.querySelectorAll(".person-news")];
     if("IntersectionObserver" in window){
       newsObserver=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){loadNews(entry.target);newsObserver.unobserve(entry.target);}}),{rootMargin:"250px 0px"});
       sections.forEach(section=>{if(!loadedNews.has(section))newsObserver.observe(section);});
@@ -633,6 +634,7 @@ $("themeBtn").addEventListener("click", () => {
     const target=b.dataset.panel;
     document.querySelectorAll(".main-tab").forEach(x=>x.classList.toggle("active",x===b));
     document.querySelectorAll(".tab-panel").forEach(x=>x.classList.toggle("active",x.id==="panel-"+target));
+    if(target==="global-perspective") observeNews();
     window.scrollTo({top:0,behavior:"smooth"});
   }));
   if (toggleDeleteBtn) toggleDeleteBtn.addEventListener("click", () => {
