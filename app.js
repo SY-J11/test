@@ -326,7 +326,7 @@ $("themeBtn").addEventListener("click", () => {
     {name:"토머스 바킨",country:"미국",role:"리치먼드 연은 총재",group:"중앙은행",impact:"물가와 경기의 균형에 대한 발언이 연준 정책 기대에 영향을 줍니다.",watch:"서비스 물가, 임금, 소비·고용, 정책금리",query:"Thomas Barkin Fed speech"},
     {name:"우에다 가즈오",country:"일본",role:"일본은행 총재",group:"중앙은행",impact:"일본 금리 정상화와 엔화 흐름, 엔 캐리 트레이드 청산 가능성을 통해 글로벌 위험자산에 영향을 줍니다.",watch:"금리 인상 시점, 임금·물가, 국채매입, 엔화",query:"Kazuo Ueda BOJ yen rates"},
     {name:"크리스틴 라가르드",country:"유럽연합",role:"ECB 총재",group:"중앙은행",impact:"유럽 금리와 유로화, 유럽 경기 전망을 좌우하며 글로벌 채권·환율시장에 영향을 줍니다.",watch:"ECB 금리 결정, 임금·서비스 물가, 경기 전망",query:"Christine Lagarde ECB rates"},
-    {name:"제이미 다이먼",country:"미국",role:"JPMorgan CEO",group:"투자·자금",impact:"미국 은행권·신용시장·소비·경기 위험에 대한 발언이 금융주와 시장 심리에 영향을 줍니다.",watch:"신용 위험, 경기침체 경고, 은행 규제, 소비자 건전성",query:"Jamie Dimon market outlook economy"},
+    {name:"제이미 다이먼",country:"미국",role:"J.P.Morgan CEO",group:"투자·자금",impact:"미국 은행권·신용시장·소비·경기 위험에 대한 발언이 금융주와 시장 심리에 영향을 줍니다.",watch:"신용 위험, 경기침체 경고, 은행 규제, 소비자 건전성",query:"Jamie Dimon market outlook economy"},
     {name:"래리 핑크",country:"미국",role:"BlackRock CEO",group:"투자·자금",impact:"글로벌 자금 흐름과 기관투자자 관점, 채권·주식·대체투자 수요를 읽는 데 중요합니다.",watch:"ETF 자금 유입·유출, 채권 수요, AI·인프라 투자",query:"Larry Fink BlackRock markets flows"},
     {name:"스탠리 드러켄밀러",country:"미국",role:"투자자",group:"투자·자금",impact:"거시경제와 유동성, 자산가격에 대한 견해가 기관투자자 심리와 테마 투자에 영향을 줄 수 있습니다.",watch:"달러·금리·재정적자, 주식 밸류에이션, 포지션 변화",query:"Stanley Druckenmiller markets interview"},
     {name:"빌 애크먼",country:"미국",role:"Pershing Square 창립자",group:"투자·자금",impact:"집중 투자와 공개 캠페인, 거시 전망을 통해 개별 기업 및 시장 심리에 영향을 줍니다.",watch:"공개 투자 의견, 기업 지배구조 캠페인, 금리 전망",query:"Bill Ackman markets investment"},
@@ -869,7 +869,21 @@ buttons.forEach(btn=>btn.addEventListener('click',()=>{
     card.dataset.source = source;
     card.dataset.customId = id;
     card.innerHTML = `<div class="person-news-head"><b></b><span class="person-news-actions"><a class="person-news-search-link" target="_blank" rel="noopener noreferrer">공식 검색 보기 ↗</a><span>최신순</span></span></div><div class="person-news-list"><div class="person-news-state">화면에 표시되면 검색 결과를 불러옵니다.</div></div><button type="button" class="person-news-more" data-news-more disabled>기사 10개 더 보기</button>`;
-    card.querySelector(".person-news-head>b").textContent = provider;
+    const normalizedProvider = /j\.?\s*p\.?\s*morgan|jpmorgan/i.test(provider) ? "J.P.Morgan"
+      : /goldman/i.test(provider) ? "Goldman Sachs"
+      : /morgan\s*stanley/i.test(provider) ? "Morgan Stanley" : provider;
+    const providerHeading = card.querySelector(".person-news-head>b");
+    providerHeading.textContent = normalizedProvider;
+    const logoDomain = /goldman/i.test(normalizedProvider) ? "goldmansachs.com"
+      : /morgan stanley/i.test(normalizedProvider) ? "morganstanley.com"
+      : /j\.p\.morgan/i.test(normalizedProvider) ? "jpmorgan.com" : "";
+    if (logoDomain) {
+      providerHeading.classList.add("provider-brand");
+      const logo = document.createElement("img");
+      logo.src = "https://www.google.com/s2/favicons?domain=" + logoDomain + "&sz=64";
+      logo.alt = ""; logo.loading = "lazy";
+      providerHeading.prepend(logo);
+    }
     const link = card.querySelector(".person-news-search-link");
     if (searchUrl) link.href = searchUrl;
     else link.href = "https://www.google.com/search?q=" + encodeURIComponent(query + " " + provider);
