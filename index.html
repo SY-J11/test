@@ -30,6 +30,10 @@ main{padding:10px}
 a.link{display:flex;align-items:center;gap:12px;padding:14px;background:var(--card);border:1px solid var(--line);border-radius:13px;box-shadow:0 2px 10px #26364f08;color:inherit;text-decoration:none;-webkit-tap-highlight-color:transparent}
 a.link:active{opacity:.65}
 a.link:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.custom-item{display:flex;align-items:center;gap:4px;background:var(--card);border:1px solid var(--line);border-radius:13px;box-shadow:0 2px 10px #26364f08;overflow:hidden}
+.custom-item a.link{flex:1;min-width:0;border:0;box-shadow:none;background:transparent}
+.custom-delete{flex:none;margin-right:10px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--tool);color:var(--muted);font:inherit;font-size:10px;cursor:pointer}
+.custom-delete:active{opacity:.6}
 .custom-add{margin-top:7px;width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:13px;background:var(--card);border:1px dashed var(--muted);border-radius:13px;color:var(--text);font:inherit;font-size:12px;font-weight:700;cursor:pointer}
 .custom-add:active{opacity:.65}
 .modal-backdrop{position:fixed;inset:0;background:#10182799;display:none;align-items:center;justify-content:center;padding:18px;z-index:20}
@@ -148,7 +152,9 @@ footer{text-align:center;color:var(--muted);font-size:8px;padding:18px 3px}
   }
   function renderCustomItems(){
     customMenu.innerHTML='';
-    readCustomItems().forEach(function(item){
+    readCustomItems().forEach(function(item,index){
+      var wrap=document.createElement('div');
+      wrap.className='custom-item';
       var a=document.createElement('a');
       a.className='link';
       a.href=item.url;
@@ -162,7 +168,21 @@ footer{text-align:center;color:var(--muted);font-size:8px;padding:18px 3px}
       txt.appendChild(title);txt.appendChild(english);
       var go=document.createElement('span');go.className='go';go.textContent='›';
       a.appendChild(ico);a.appendChild(txt);a.appendChild(go);
-      customMenu.appendChild(a);
+      var del=document.createElement('button');
+      del.type='button';del.className='custom-delete';del.textContent='삭제하기';
+      del.setAttribute('aria-label',item.title+' 삭제하기');
+      del.addEventListener('click',function(){
+        var items=readCustomItems();
+        items.splice(index,1);
+        try{
+          localStorage.setItem(storageKey,JSON.stringify(items));
+          renderCustomItems();
+        }catch(e){
+          window.alert('삭제하지 못했습니다. 브라우저 저장 공간을 확인해 주세요.');
+        }
+      });
+      wrap.appendChild(a);wrap.appendChild(del);
+      customMenu.appendChild(wrap);
     });
   }
   function renderIconPicker(){
