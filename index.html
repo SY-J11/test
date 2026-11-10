@@ -34,6 +34,11 @@ a.link:focus-visible{outline:2px solid var(--green);outline-offset:2px}
 .custom-item a.link{flex:1;min-width:0;border:0;box-shadow:none;background:transparent}
 .custom-delete{flex:none;margin-right:10px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--tool);color:var(--muted);font:inherit;font-size:10px;cursor:pointer}
 .custom-delete:active{opacity:.6}
+.trash-actions{display:flex;gap:6px;flex:none;margin-right:9px}
+.trash-actions button{padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--tool);color:var(--text);font:inherit;font-size:10px;cursor:pointer}
+.trash-actions .permanent-delete{color:#d64b4b}
+.trash-meta{font-size:9px;color:var(--muted);margin-top:4px}
+#customTrash{margin-top:8px}
 .custom-add{margin-top:7px;width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:13px;background:var(--card);border:1px dashed var(--muted);border-radius:13px;color:var(--text);font:inherit;font-size:12px;font-weight:700;cursor:pointer}
 .custom-add:active{opacity:.65}
 .modal-backdrop{position:fixed;inset:0;background:#10182799;display:none;align-items:center;justify-content:center;padding:18px;z-index:20}
@@ -90,6 +95,11 @@ footer{text-align:center;color:var(--muted);font-size:8px;padding:18px 3px}
   <div class="group"><span class="ko">맞춤 메뉴</span> CUSTOMIZED MENU</div>
   <nav class="list" id="customMenu" aria-label="맞춤 메뉴"></nav>
   <button class="custom-add" id="addCustomMenu" type="button"><span>＋</span> 추가하기</button>
+  <button class="custom-add" id="toggleTrash" type="button" aria-expanded="false"><span>♻️</span> 삭제한 메뉴 복구</button>
+  <section id="customTrash" hidden aria-label="삭제한 메뉴 목록">
+    <div class="group">삭제한 메뉴 <span id="trashCount"></span></div>
+    <nav class="list" id="trashMenu"></nav>
+  </section>
 </main>
 <footer>투자 판단과 책임은 본인에게 있습니다.</footer>
 </div>
@@ -138,28 +148,95 @@ footer{text-align:center;color:var(--muted);font-size:8px;padding:18px 3px}
   });
 
   var customMenu=document.getElementById('customMenu');
+  var trashMenu=document.getElementById('trashMenu');
+  var trashSection=document.getElementById('customTrash');
+  var trashCount=document.getElementById('trashCount');
+  var toggleTrash=document.getElementById('toggleTrash');
   var modal=document.getElementById('customModal');
   var form=document.getElementById('customMenuForm');
   var iconPicker=document.getElementById('iconPicker');
   var selectedIcon='🔗';
   var iconChoices=['🔗','📈','📊','💹','🌍','🌐','📰','🏦','💰','💵','🪙','📉','📅','🗓️','📌','⭐','🔥','💡','🔍','🧭','🏛️','📚','🧮','⚙️','🎯','🚀','☀️','🌅'];
   var storageKey='market-insight-custom-menu';
-  function readCustomItems(){
+  var trashStorageKey='market-insight-custom-menu-trash';
+  var retentionMs=30*24*60*60*1000;
+
+  function readStorage(key){
     try{
-      var value=JSON.parse(localStorage.getItem(storageKey)||'[]');
-      var items=Array.isArray(value)?value:[];
-      var defaultItem={
-        icon:'📈',
-        title:'네이버 Npay 증권',
-        english:'NAVER Npay STOCK',
-        url:'https://stock.naver.com/'
-      };
-      if(!items.some(function(item){return item&&item.url==='https://stock.naver.com/'})){
-        items.unshift(defaultItem);
-        localStorage.setItem(storageKey,JSON.stringify(items));
-      }
-      return items;
+      var value=JSON.parse(localStorage.getItem(key)||'[]');
+      return Array.isArray(value)?value:[];
     }catch(e){return []}
+  }
+  function writeStorage(key,items){
+    localStorage.setItem(key,JSON.stringify(items));
+  }
+  function readCustomItems(){
+    var items=readStorage(storageKey);
+    var defaultItem={
+      icon:'📈',
+      title:'네이버 Npay 증권',
+      english:'NAVER Npay STOCK',
+      url:'https://stock.naver.com/'
+    };
+    if(!items.some(function(item){return item&&item.url===defaultItem.url})){
+      items.unshift(defaultItem);
+      try{writeStorage(storageKey,items)}catch(e){}
+    }
+    return items;
+  }
+  function readTrashItems(){
+    var now=Date.now();
+    var items=readStorage(trashStorageKey);
+    var active=items.filter(function(item){
+      return item&&item.deletedAt&&now-Number(item.deletedAt)<retentionMs;
+    });
+    if(active.length!==items.length){
+      try{writeStorage(trashStorageKey,active)}catch(e){}
+    }
+    return active;
+  }
+  function moveToTrash(index){
+    var items=readCustomItems();
+    if(index<0||index>=items.length)return;
+    var removed=items.splice(index,1)[0];
+    var trash=readTrashItems();
+    removed.deletedAt=Date.now();
+    trash.unshift(removed);
+    try{
+      writeStorage(storageKey,items);
+      writeStorage(trashStorageKey,trash);
+      renderCustomItems();
+    }catch(e){
+      window.alert('삭제 항목을 보관하지 못했습니다. 브라우저 저장 공간을 확인해 주세요.');
+    }
+  }
+  function restoreTrashItem(index){
+    var trash=readTrashItems();
+    if(index<0||index>=trash.length)return;
+    var item=trash.splice(index,1)[0];
+    delete item.deletedAt;
+    var items=readCustomItems();
+    items.push(item);
+    try{
+      writeStorage(storageKey,items);
+      writeStorage(trashStorageKey,trash);
+      renderCustomItems();
+    }catch(e){
+      window.alert('메뉴를 복구하지 못했습니다. 브라우저 저장 공간을 확인해 주세요.');
+    }
+  }
+  function permanentlyDeleteTrashItem(index){
+    var trash=readTrashItems();
+    if(index<0||index>=trash.length)return;
+    var item=trash[index];
+    if(!window.confirm('"' + item.title + '" 메뉴를 영구 삭제할까요? 이 작업은 되돌릴 수 없습니다.'))return;
+    trash.splice(index,1);
+    try{
+      writeStorage(trashStorageKey,trash);
+      renderCustomItems();
+    }catch(e){
+      window.alert('영구 삭제하지 못했습니다. 브라우저 저장 공간을 확인해 주세요.');
+    }
   }
   function renderCustomItems(){
     customMenu.innerHTML='';
@@ -182,20 +259,55 @@ footer{text-align:center;color:var(--muted);font-size:8px;padding:18px 3px}
       var del=document.createElement('button');
       del.type='button';del.className='custom-delete';del.textContent='삭제하기';
       del.setAttribute('aria-label',item.title+' 삭제하기');
-      del.addEventListener('click',function(){
-        var items=readCustomItems();
-        items.splice(index,1);
-        try{
-          localStorage.setItem(storageKey,JSON.stringify(items));
-          renderCustomItems();
-        }catch(e){
-          window.alert('삭제하지 못했습니다. 브라우저 저장 공간을 확인해 주세요.');
-        }
-      });
+      del.addEventListener('click',function(){moveToTrash(index)});
       wrap.appendChild(a);wrap.appendChild(del);
       customMenu.appendChild(wrap);
     });
+    renderTrashItems();
   }
+  function renderTrashItems(){
+    var items=readTrashItems();
+    trashMenu.innerHTML='';
+    trashCount.textContent='('+items.length+'개)';
+    items.forEach(function(item,index){
+      var wrap=document.createElement('div');
+      wrap.className='custom-item';
+      var a=document.createElement('div');
+      a.className='link';
+      var ico=document.createElement('span');
+      ico.className='ico';ico.textContent=item.icon;
+      var txt=document.createElement('span');txt.className='txt';
+      var title=document.createElement('b');title.textContent=item.title;
+      var english=document.createElement('small');english.textContent=item.english;
+      var meta=document.createElement('div');meta.className='trash-meta';
+      var days=Math.max(0,30-Math.floor((Date.now()-Number(item.deletedAt))/86400000));
+      meta.textContent='영구 삭제까지 '+days+'일';
+      txt.appendChild(title);txt.appendChild(english);txt.appendChild(meta);
+      a.appendChild(ico);a.appendChild(txt);
+      var actions=document.createElement('div');actions.className='trash-actions';
+      var restore=document.createElement('button');restore.type='button';restore.textContent='복구';
+      restore.addEventListener('click',function(){restoreTrashItem(index)});
+      var permanent=document.createElement('button');permanent.type='button';
+      permanent.className='permanent-delete';permanent.textContent='영구 삭제';
+      permanent.addEventListener('click',function(){permanentlyDeleteTrashItem(index)});
+      actions.appendChild(restore);actions.appendChild(permanent);
+      wrap.appendChild(a);wrap.appendChild(actions);
+      trashMenu.appendChild(wrap);
+    });
+    if(!items.length){
+      var empty=document.createElement('div');
+      empty.style.cssText='padding:14px;color:var(--muted);text-align:center;background:var(--card);border:1px solid var(--line);border-radius:12px';
+      empty.textContent='삭제한 메뉴가 없습니다.';
+      trashMenu.appendChild(empty);
+    }
+  }
+  toggleTrash.addEventListener('click',function(){
+    var opening=trashSection.hidden;
+    trashSection.hidden=!opening;
+    toggleTrash.setAttribute('aria-expanded',String(opening));
+    toggleTrash.innerHTML=opening?'<span>♻️</span> 복구 메뉴 닫기':'<span>♻️</span> 삭제한 메뉴 복구';
+    if(opening)renderTrashItems();
+  });
   function renderIconPicker(){
     iconPicker.innerHTML='';
     iconChoices.forEach(function(icon){
@@ -235,7 +347,7 @@ footer{text-align:center;color:var(--muted);font-size:8px;padding:18px 3px}
     var items=readCustomItems();
     items.push({icon:selectedIcon,title:title,english:english,url:parsed.href});
     try{
-      localStorage.setItem(storageKey,JSON.stringify(items));
+      writeStorage(storageKey,items);
     }catch(e){
       error.textContent='저장할 수 없습니다. 브라우저 저장 공간을 확인해 주세요.';
       return;
