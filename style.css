@@ -452,3 +452,10 @@ html.dark .history-content .history-field-quote .history-quote,html.dark .histor
   border: 0 !important;
   outline: none;
 }
+
+/* v28: 빠른 인물 바로가기 및 강조 표시 */
+.people-quick-nav{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin:14px 0 18px}
+.people-quick-link{min-width:0;padding:9px 5px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font-size:11px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+.people-quick-link:hover{border-color:var(--blue);color:var(--blue)}
+.person-card-highlight{outline:2px solid var(--blue);outline-offset:3px;transition:outline .2s}
+@media(max-width:560px){.people-quick-nav{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}.people-quick-link{font-size:10px;padding:8px 2px}}

@@ -464,6 +464,15 @@ $("themeBtn").addEventListener("click", () => {
     const q=(search.value||"").trim().toLowerCase();
     const rows=people.filter(p=>(filter==="all"||p.group===filter)&&(!q||[p.name,p.country,p.role,p.group,p.impact,p.watch].join(" ").toLowerCase().includes(q)));
     count.textContent=rows.length+"명";
+    const quickNav=document.getElementById("peopleQuickNav");
+    if(quickNav){
+      quickNav.innerHTML=people.map((p,i)=>`<button type="button" class="people-quick-link" data-jump-person="${esc(p.name)}">${esc(p.name)}</button>`).join("");
+      quickNav.querySelectorAll("[data-jump-person]").forEach(btn=>btn.addEventListener("click",()=>{
+        const target=[...root.querySelectorAll(".person-card")].find(card=>card.dataset.person===btn.dataset.jumpPerson);
+        if(target){target.scrollIntoView({behavior:"smooth",block:"start"});target.classList.add("person-card-highlight");window.setTimeout(()=>target.classList.remove("person-card-highlight"),1400);}
+        else { if(search) search.value=""; filter="all"; document.querySelectorAll(".people-filter").forEach(b=>b.classList.toggle("active",b.dataset.pfilter==="all")); render(); const found=[...root.querySelectorAll(".person-card")].find(card=>card.dataset.person===btn.dataset.jumpPerson); found?.scrollIntoView({behavior:"smooth",block:"start"}); }
+      }));
+    }
     root.innerHTML=rows.map(p=>{
       const grade=influence[p.name]||"B";
       const overseasName = newsQuery(p);
@@ -548,7 +557,7 @@ $("themeBtn").addEventListener("click", () => {
     const html=visible.map((item,i)=>{
       const date=item.publishedAt?new Date(item.publishedAt):null;
       const dateText=date&&!Number.isNaN(date.getTime())?date.toLocaleDateString('ko-KR',{month:'2-digit',day:'2-digit'}):'';
-      return `<a class="person-news-item" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer"><span class="person-news-number">${i+1}</span><span class="person-news-copy"><b>${esc(item.title)}</b><small>${esc(item.source||newsProviders.get(section)||'뉴스')}${dateText?' · '+dateText:''}</small></span><span class="person-news-arrow">↗</span></a>`;
+      return `<a class="person-news-item" href="${escGlobal(item.url)}" target="_blank" rel="noopener noreferrer"><span class="person-news-number">${i+1}</span><span class="person-news-copy"><b>${escGlobal(item.title)}</b><small>${esc(item.source||newsProviders.get(section)||'뉴스')}${dateText?' · '+dateText:''}</small></span><span class="person-news-arrow">↗</span></a>`;
     }).join('');
     list.insertAdjacentHTML('afterbegin',html);
     if(loadingNews.has(section)){
@@ -745,7 +754,10 @@ buttons.forEach(btn=>btn.addEventListener('click',()=>{
       group.cards.push(x.html);
     });
   } catch (_) {}
-  const save = () => localStorage.setItem(storageKey, JSON.stringify({deleted, added}));
+  const escGlobal = value => String(value ?? "").replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
+  const purgeExpired = () => { const cutoff = Date.now() - 30 * 86400000; deleted = deleted.filter(item => Number(item.deletedAt || 0) > cutoff); };
+  purgeExpired();
+  const save = () => { purgeExpired(); localStorage.setItem(storageKey, JSON.stringify({deleted, added})); };
   const groups = () => [...root.querySelectorAll(".global-market-group")];
   const marketName = group => group.querySelector(".global-market-heading h2")?.textContent.trim() || "추가 항목";
   const createPeerGroup = (name, id) => {
@@ -793,10 +805,10 @@ buttons.forEach(btn=>btn.addEventListener('click',()=>{
       const data = await response.json(); if (!response.ok) throw new Error(data.error || "검색 요청 실패");
       const items = Array.isArray(data.items) ? data.items : [];
       list.innerHTML = items.map((item, i) =>
-        `<a class="person-news-item" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer"><span class="person-news-number">${i+1}</span><span class="person-news-copy"><b>${esc(item.title)}</b><small>${esc(item.source || data.provider || "검색 결과")}</small></span><span class="person-news-arrow">↗</span></a>`
-      ).join("") || `<div class="person-news-state">${esc(data.error || "검색 결과가 없습니다.")}</div>`;
+        `<a class="person-news-item" href="${escGlobal(item.url)}" target="_blank" rel="noopener noreferrer"><span class="person-news-number">${i+1}</span><span class="person-news-copy"><b>${escGlobal(item.title)}</b><small>${escGlobal(item.source || data.provider || "검색 결과")}</small></span><span class="person-news-arrow">↗</span></a>`
+      ).join("") || `<div class="person-news-state">${escGlobal(data.error || "검색 결과가 없습니다.")}</div>`;
       if (more) more.hidden = true;
-    } catch (error) { list.innerHTML = `<div class="person-news-state">검색 결과를 불러오지 못했습니다: ${esc(error.message || error)}</div>`; card.dataset.loaded = "0"; }
+    } catch (error) { list.innerHTML = `<div class="person-news-state">검색 결과를 불러오지 못했습니다: ${escGlobal(error.message || error)}</div>`; card.dataset.loaded = "0"; }
   }
   const addedNewsObserver = "IntersectionObserver" in window
     ? new IntersectionObserver(entries => entries.forEach(entry => {
@@ -837,11 +849,15 @@ buttons.forEach(btn=>btn.addEventListener('click',()=>{
     });
   };
   function renderDeleted() {
+    purgeExpired(); save();
     deletedList.innerHTML = "";
     if (!deleted.length) { deletedList.innerHTML = "<p>복원할 항목이 없습니다.</p>"; return; }
     deleted.forEach((item, index) => {
       const row = document.createElement("div"); row.className = "global-deleted-row";
-      const label = document.createElement("span"); label.textContent = item.market || "추가 항목";
+      const label = document.createElement("span");
+      const deadline = Number(item.deletedAt || Date.now()) + 30 * 86400000;
+      const daysLeft = Math.max(0, Math.ceil((deadline - Date.now()) / 86400000));
+      label.textContent = `${item.market || "추가 항목"} · 자동 영구 삭제까지 ${daysLeft}일`;
       const restore = document.createElement("button"); restore.type = "button"; restore.className = "people-manage-btn"; restore.textContent = "복원";
       restore.addEventListener("click", () => {
         const holder = document.createElement("div"); holder.innerHTML = item.html || "";
@@ -892,5 +908,6 @@ buttons.forEach(btn=>btn.addEventListener('click',()=>{
     ensureDeleteControls(); group.scrollIntoView({behavior:"smooth", block:"start"});
   });
   renderDeleted(); ensureDeleteControls();
+  window.setInterval(() => { const before = deleted.length; purgeExpired(); if (deleted.length !== before) { save(); renderDeleted(); } }, 60 * 60 * 1000);
 })();
 
