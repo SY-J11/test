@@ -259,3 +259,19 @@ html.dark .history-intro h2,html.dark .history-summary b{color:#edf1f6}html.dark
 html.dark .truth-posts{background:#202733;border-color:#303a49}
 html.dark .person-news-more{background:#202733;color:#e7edf6}
 html.dark .people-manage-btn.danger{background:#38272b}
+
+/* 인물명 옆의 분야·영향력 배지를 작고 간결한 한 줄로 표시 */
+.person-name-line{display:flex;align-items:center;gap:7px;flex-wrap:nowrap;min-width:0}
+.person-name-line h3{font-size:15px;line-height:1.25;margin:0;flex:none}
+.person-card-badges{display:inline-flex;flex-direction:row;align-items:center;gap:4px;flex-wrap:nowrap;min-width:0}
+.person-sector,.influence-grade{display:inline-flex;align-items:center;font-size:8px;line-height:1.2;font-weight:800;padding:3px 5px;border-radius:5px;white-space:nowrap}
+.person-sector{background:#eef1f5;color:#687386}
+.influence-grade.grade-S{background:#fde7e9;color:#b42332}
+.influence-grade.grade-A{background:#fff0d9;color:#a85b08}
+.influence-grade.grade-B{background:#e5efff;color:#315fa8}
+html.dark .person-sector{background:#303846;color:#c2ccda}
+html.dark .influence-grade.grade-S{background:#512b34;color:#ffadb5}
+html.dark .influence-grade.grade-A{background:#4b3924;color:#ffd08a}
+html.dark .influence-grade.grade-B{background:#293e5c;color:#a9c8ff}
+.truth-posts{margin:11px 0 0}
+@media(max-width:680px){.person-name-line{gap:5px}.person-name-line h3{font-size:14px}.person-sector,.influence-grade{font-size:8px;padding:3px 4px}}

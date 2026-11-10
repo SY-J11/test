@@ -397,7 +397,7 @@ $("themeBtn").addEventListener("click", () => {
     count.textContent=rows.length+"명";
     root.innerHTML=rows.map(p=>{
       const grade=influence[p.name]||"B";
-      return `<article class="person-card" data-person="${esc(p.name)}">${p.name==="도널드 트럼프"?`<section class="truth-posts"><div class="person-news-head"><b>Truth Social 최신 게시물</b><span>최신순 · 최대 5개</span></div><div class="truth-post-list"><div class="person-news-state">최신 게시물을 불러오는 중…</div></div></section>`:""}<div class="person-card-top"><div class="person-heading"><div class="person-name-line"><h3>${esc(p.name)}</h3><div class="person-card-badges"><span class="person-sector">${esc(p.group)}</span><span class="influence-grade grade-${grade}" title="${gradeText[grade]}">영향력 ${grade}</span></div></div><div class="person-meta">${esc(p.country)} · ${esc(p.role)}</div></div><button class="person-delete-btn" type="button" data-delete="${esc(p.name)}" aria-label="${esc(p.name)} 삭제">삭제</button></div><p class="person-impact">${esc(p.impact)}</p><div class="person-watch"><b>체크할 뉴스</b><br>${esc(p.watch)}</div><section class="person-news" data-query="${esc(newsQuery(p))}"><div class="person-news-head"><b>최근 기사</b><span>최신순 · 처음 3개</span></div><div class="person-news-list"><div class="person-news-state">화면에 표시되면 최신 기사를 불러옵니다.</div></div></section><div class="person-search-links"><a class="person-link" href="https://news.google.com/search?q=${encodeURIComponent(newsQuery(p))}&hl=ko&gl=KR&ceid=KR%3Ako" target="_blank" rel="noopener noreferrer">뉴스 검색 결과 전체 보기 ↗</a><a class="person-link" href="https://search.naver.com/search.naver?where=news&query=${encodeURIComponent(p.name)}" target="_blank" rel="noopener noreferrer">NAVER 뉴스 검색 결과 전체 보기 ↗</a></div></article>`;
+      return `<article class="person-card" data-person="${esc(p.name)}"><div class="person-card-top"><div class="person-heading"><div class="person-name-line"><h3>${esc(p.name)}</h3><div class="person-card-badges"><span class="person-sector">${esc(p.group)}</span><span class="influence-grade grade-${grade}" title="${gradeText[grade]}">영향력 ${grade}</span></div></div><div class="person-meta">${esc(p.country)} · ${esc(p.role)}</div></div><button class="person-delete-btn" type="button" data-delete="${esc(p.name)}" aria-label="${esc(p.name)} 삭제">삭제</button></div><p class="person-impact">${esc(p.impact)}</p><div class="person-watch"><b>체크할 뉴스</b><br>${esc(p.watch)}</div>${p.name==="도널드 트럼프"?`<section class="truth-posts"><div class="person-news-head"><b>Truth Social 최신 게시물</b><span>최신순 · 처음 5개</span></div><div class="truth-post-list"><div class="person-news-state">최신 게시물을 불러오는 중…</div></div></section>`:""}<section class="person-news" data-query="${esc(newsQuery(p))}" data-source="global"><div class="person-news-head"><b>최근 기사 [해외]</b><span>최신순 · 처음 3개</span></div><div class="person-news-list"><div class="person-news-state">화면에 표시되면 최신 기사를 불러옵니다.</div></div></section><section class="person-news" data-query="${esc(p.name)}" data-source="naver"><div class="person-news-head"><b>최근 기사 [NAVER]</b><span>최신순 · 처음 3개</span></div><div class="person-news-list"><div class="person-news-state">화면에 표시되면 NAVER 뉴스를 불러옵니다.</div></div></section><div class="person-search-links"><a class="person-link" href="https://news.google.com/search?q=${encodeURIComponent(newsQuery(p))}&hl=ko&gl=KR&ceid=KR%3Ako" target="_blank" rel="noopener noreferrer">뉴스 검색 결과 전체 보기 ↗</a><a class="person-link" href="https://search.naver.com/search.naver?where=news&query=${encodeURIComponent(p.name)}" target="_blank" rel="noopener noreferrer">NAVER 뉴스 검색 결과 전체 보기 ↗</a></div></article>`;
     }).join("")||'<div class="empty">검색 조건에 맞는 인물이 없습니다.</div>';
     root.querySelectorAll("[data-delete]").forEach(button => {
       button.hidden = !deleteMode;
@@ -449,7 +449,8 @@ $("themeBtn").addEventListener("click", () => {
     else { const state=document.createElement("div");state.className="person-news-state";state.textContent="기사를 더 불러오는 중…";list.appendChild(state); }
     try{
       const offset=Number(newsOffsets.get(section)||0);
-      const url="https://macro.mcraft-tiger-574.workers.dev/api/person-news?q="+encodeURIComponent(section.dataset.query)+"&limit=10&offset="+offset;
+      const source=section.dataset.source||"global";
+      const url="https://macro.mcraft-tiger-574.workers.dev/api/person-news?q="+encodeURIComponent(section.dataset.query)+"&source="+encodeURIComponent(source)+"&limit=10&offset="+offset;
       const controller=new AbortController();
       const timeout=setTimeout(()=>controller.abort(),20000);
       let response;
@@ -459,7 +460,7 @@ $("themeBtn").addEventListener("click", () => {
       if(!response.ok) throw new Error(data.error || ("뉴스 서버 응답 오류 (HTTP "+response.status+")"));
       if(data.error && (!Array.isArray(data.items)||!data.items.length)) throw new Error(data.error);
       const items=Array.isArray(data.items)?data.items:[];
-      if(!items.length){list.innerHTML='<div class="person-news-state">최근 기사를 찾지 못했습니다. 아래 전체 검색 결과를 확인하세요.</div>';return;}
+      if(!items.length){list.innerHTML='<div class="person-news-state">최근 기사를 찾지 못했습니다. 아래 전체 검색 결과를 확인하세요.</div>';loadedNews.add(section);return;}
       const initial=offset===0?items.slice(0,3):items;
       list.querySelectorAll(".person-news-state").forEach(el=>el.remove());
       const html=initial.map((item,i)=>{
