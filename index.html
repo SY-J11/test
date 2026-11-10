@@ -34,11 +34,14 @@ a.link:focus-visible{outline:2px solid var(--green);outline-offset:2px}
 .custom-item a.link{flex:1;min-width:0;border:0;box-shadow:none;background:transparent}
 .custom-delete{flex:none;margin-right:10px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--tool);color:var(--muted);font:inherit;font-size:10px;cursor:pointer}
 .custom-delete:active{opacity:.6}
-.trash-actions{display:flex;gap:6px;flex:none;margin-right:9px}
-.trash-actions button{padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--tool);color:var(--text);font:inherit;font-size:10px;cursor:pointer}
+.trash-actions{display:flex;gap:6px;flex:none;margin-right:10px}
+.trash-actions button{padding:8px 11px;border:1px solid var(--line);border-radius:8px;background:var(--tool);color:var(--text);font:inherit;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap}
+.trash-actions button:active{opacity:.65}
+.trash-actions .restore-item{background:var(--accent);border-color:var(--accent);color:#fff}
 .trash-actions .permanent-delete{color:#d64b4b}
-.trash-meta{font-size:9px;color:var(--muted);margin-top:4px}
+.trash-meta{font-size:9px;color:var(--muted);margin-top:5px;letter-spacing:.1px}
 #customTrash{margin-top:8px}
+#trashMenu{display:grid;gap:7px}
 .custom-add{margin-top:7px;width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:13px;background:var(--card);border:1px dashed var(--muted);border-radius:13px;color:var(--text);font:inherit;font-size:12px;font-weight:700;cursor:pointer}
 .custom-add:active{opacity:.65}
 .modal-backdrop{position:fixed;inset:0;background:#10182799;display:none;align-items:center;justify-content:center;padding:18px;z-index:20}
@@ -178,10 +181,14 @@ footer{text-align:center;color:var(--muted);font-size:8px;padding:18px 3px}
       english:'NAVER Npay STOCK',
       url:'https://stock.naver.com/'
     };
-    if(!items.some(function(item){return item&&item.url===defaultItem.url})){
-      items.unshift(defaultItem);
-      try{writeStorage(storageKey,items)}catch(e){}
-    }
+    // 최초 방문에만 기본 메뉴를 한 번 추가합니다.
+    // 사용자가 삭제해 빈 목록이 되더라도 이후 자동으로 다시 생성하지 않습니다.
+    try{
+      if(localStorage.getItem(storageKey)===null){
+        items.unshift(defaultItem);
+        writeStorage(storageKey,items);
+      }
+    }catch(e){}
     return items;
   }
   function readTrashItems(){
@@ -257,7 +264,7 @@ footer{text-align:center;color:var(--muted);font-size:8px;padding:18px 3px}
       var go=document.createElement('span');go.className='go';go.textContent='›';
       a.appendChild(ico);a.appendChild(txt);a.appendChild(go);
       var del=document.createElement('button');
-      del.type='button';del.className='custom-delete';del.textContent='삭제하기';
+      del.type='button';del.className='custom-delete';del.textContent='삭제';
       del.setAttribute('aria-label',item.title+' 삭제하기');
       del.addEventListener('click',function(){moveToTrash(index)});
       wrap.appendChild(a);wrap.appendChild(del);
@@ -274,6 +281,8 @@ footer{text-align:center;color:var(--muted);font-size:8px;padding:18px 3px}
       wrap.className='custom-item';
       var a=document.createElement('div');
       a.className='link';
+      a.style.flex='1';
+      a.style.minWidth='0';
       var ico=document.createElement('span');
       ico.className='ico';ico.textContent=item.icon;
       var txt=document.createElement('span');txt.className='txt';
@@ -281,11 +290,12 @@ footer{text-align:center;color:var(--muted);font-size:8px;padding:18px 3px}
       var english=document.createElement('small');english.textContent=item.english;
       var meta=document.createElement('div');meta.className='trash-meta';
       var days=Math.max(0,30-Math.floor((Date.now()-Number(item.deletedAt))/86400000));
-      meta.textContent='영구 삭제까지 '+days+'일';
+      meta.textContent='자동 영구 삭제까지 '+days+'일';
       txt.appendChild(title);txt.appendChild(english);txt.appendChild(meta);
       a.appendChild(ico);a.appendChild(txt);
       var actions=document.createElement('div');actions.className='trash-actions';
-      var restore=document.createElement('button');restore.type='button';restore.textContent='복구';
+      var restore=document.createElement('button');restore.type='button';
+      restore.className='restore-item';restore.textContent='복구';
       restore.addEventListener('click',function(){restoreTrashItem(index)});
       var permanent=document.createElement('button');permanent.type='button';
       permanent.className='permanent-delete';permanent.textContent='영구 삭제';
