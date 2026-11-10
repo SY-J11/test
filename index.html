@@ -3,288 +3,32 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#f4f6fa">
-<link rel="apple-touch-icon" href="./Stock_macro.png">
-<title>MARKET INSIGHT DAILY</title>
-<link rel="stylesheet" href="style.css?v=6">
-<script>try{if(localStorage.getItem("theme_v1")==="dark"){document.documentElement.classList.add("dark");document.querySelector('meta[name="theme-color"]').content="#151a22"}}catch(e){}</script>
+<meta name="theme-color" content="#f3f5f9">
+<title>국내 증시 개장 전 분석</title>
+<link rel="apple-touch-icon" href="./Stock.png">
+<link rel="stylesheet" href="./style.css?v=43">
+<script src="https://unpkg.com/lightweight-charts@4.2.2/dist/lightweight-charts.standalone.production.js"></script>
 </head>
 <body>
 <div class="app">
-  <header class="topbar">
-    <a class="brand" href="#"><i class="brand-mark" aria-hidden="true"></i><span><b>마켓 인사이트</b><small>MARKET INSIGHT DAILY</small></span></a>
-    <div class="top-actions"><span id="updatedAt" class="updated">업데이트 확인 중</span><button id="themeBtn" class="icon-btn" type="button" title="명암 전환" aria-label="테마 전환">◐</button><button id="refreshBtn" class="icon-btn" title="새로고침" aria-label="새로고침">↻</button></div>
-  </header>
-  <main>
-    <section class="hero">
-      <div><span class="eyebrow">KOREA MARKET · GLOBAL SIGNALS</span><h1>시장을 움직이는<br><em>핵심 변수</em>를 한눈에</h1><p>해외 매크로부터 국내 증시까지, 중요한 이슈만 연결해서 추적합니다.</p></div>
-      <div class="hero-date"><span id="todayLabel">TODAY</span><b id="dateLabel">—</b><small>한국시간 기준</small></div>
-    </section>
-    <nav class="main-tabs" aria-label="메인 메뉴">
-      <button class="main-tab active" data-panel="people-live">인물 모니터</button>
-      <button class="main-tab" data-panel="people-history">영향력 있는 인물</button>
-      <button class="main-tab" data-panel="dashboard">시장 브리핑 [BETA]</button>
-    </nav>
-    <section id="panel-people-live" class="tab-panel people-panel active">
-      <div class="people-intro card">
-        <span class="eyebrow">MARKET PEOPLE WATCH</span>
-        <h2>증시에 영향을 주는 생존 인물</h2>
-        <p>정책·금리·무역·AI 투자·기업 전략과 관련된 주요 인물을 추적합니다. 인물의 발언 자체보다 <b>정책 변화 → 산업·기업 영향 → 실제 시장 반응</b>의 연결을 확인하세요.</p>
-        <div class="people-caveat">※ 인물 카드마다 최근 기사 제목을 최대 8건 표시합니다. 기사는 Google 뉴스 RSS 기준이며 제목을 누르면 원문으로 이동합니다. 영향력 등급은 시장 파급 범위에 대한 참고 분류입니다.</div>
-      </div>
-<div class="people-tools">
-        <input id="peopleSearch" type="search" placeholder="인물·국가·분야 검색" aria-label="인물 검색">
-        <div class="people-filters">
-          <button class="people-filter active" data-pfilter="all">전체</button>
-          <button class="people-filter" data-pfilter="정책·거시">정책·거시</button>
-          <button class="people-filter" data-pfilter="중앙은행">중앙은행</button>
-          <button class="people-filter" data-pfilter="투자·자금">투자·자금</button>
-          <button class="people-filter" data-pfilter="기술·기업">기술·기업</button>
-        </div>
-      </div>
-      <div class="people-section-head"><div><h3>우선 모니터링 대상</h3><p>시장 파급력이 큰 인물 중심 · 한국 인물 제외</p></div><span id="peopleCount" class="count-badge">0명</span></div>
-      <div id="peopleCards" class="people-cards"></div>
-      <div class="people-bottom-management card">
-        <div class="people-bottom-copy">
-          <h3>인물 목록 관리</h3>
-          <p>새로운 인물을 추가하거나 삭제할 인물을 선택해 목록을 정리할 수 있습니다.</p>
-        </div>
-        <div class="people-management people-management-bottom">
-          <button id="addPersonBtn" class="people-manage-btn primary" type="button">＋ 인물 추가</button>
-          <button id="toggleDeletePeopleBtn" class="people-manage-btn danger" type="button" aria-pressed="false">－ 인물 삭제</button>
-          <button id="cancelPersonBtn" class="people-manage-btn" type="button" hidden>닫기</button>
-        </div>
-      </div>
-<form id="personForm" class="person-form card" hidden>
-        <h3>모니터링 인물 추가</h3>
-        <div class="person-form-grid">
-          <label>이름<input name="name" required placeholder="예: 제롬 파월"></label>
-          <label>국가<input name="country" required placeholder="예: 미국"></label>
-          <label>직책<input name="role" required placeholder="예: 연준 의장"></label>
-          <label>분야<select name="group"><option>정책·거시</option><option>중앙은행</option><option>투자·자금</option><option>기술·기업</option></select></label>
-          <label class="wide">시장 영향<input name="impact" required placeholder="시장에 미치는 영향"></label>
-          <label class="wide">체크할 뉴스<input name="watch" required placeholder="주요 발언·정책·실적 등"></label>
-          <label class="wide">뉴스 검색용 영문 이름<input name="query" required placeholder="예: Jerome Powell"></label>
-        </div>
-        <button class="people-manage-btn primary" type="submit">인물 저장</button>
-      </form>
-      <div class="people-method card">
-        <h3>뉴스를 볼 때 확인할 항목</h3>
-        <div class="method-grid">
-          <div><b>① 발언·사건</b><span>정확한 발언, 발표 시각, 공식 자료 여부</span></div>
-          <div><b>② 영향 경로</b><span>금리·환율·관세·규제·투자·공급망 등</span></div>
-          <div><b>③ 수혜·피해</b><span>영향 업종과 대표 기업, 실적 연결성</span></div>
-          <div><b>④ 시장 검증</b><span>지수·금리·환율·관련 종목의 실제 반응</span></div>
-        </div>
-        <p>뉴스의 논조가 긍정적이어도 주가가 하락할 수 있습니다. <b>뉴스 방향과 가격 반응은 별도로 기록</b>하고, 루머·개인 이슈는 기업의 사업·규제·지배구조에 실질적 영향이 확인될 때만 시장 재료로 분류합니다.</p>
-      </div>
-    </section>
-    <section id="panel-people-history" class="tab-panel history-panel">
-      <div class="history-content">
-        <div class="history-intro">
-          <span class="eyebrow">MARKET PEOPLE · INVESTMENT GUIDE</span>
-          <h2>주식시장에 영향을 미친 인물들</h2>
-          <p>투자 철학부터 금리·정책·AI 산업까지. 시장을 움직이는 주요 인물과 그들이 주식시장에 미친 영향을 한눈에 정리했습니다.</p>
-        </div>
-        <div class="history-summary">
-          <div><b>투자 대가</b><span>기업가치와 투자 원칙</span></div>
-          <div><b>정책 결정자</b><span>금리·유동성·재정정책</span></div>
-          <div><b>거시·기관 투자자</b><span>경기 사이클과 자금 흐름</span></div>
-          <div><b>산업 리더</b><span>기술 혁신과 성장 산업</span></div>
-        </div>
-        <div class="history-content-body"><main class="history-main history-wrap">
-<div class="history-toolbar">
-    <input class="history-search" id="history-search" type="search" placeholder="인물·국가·직업·영향 검색">
-    <div class="history-filters" id="history-filters">
-      <button class="history-filter history-active" data-filter="all">전체</button>
-      <button class="history-filter" data-filter="투자">투자</button>
-      <button class="history-filter" data-filter="정책">정책·경제</button>
-      <button class="history-filter" data-filter="산업">산업·기업</button>
-      <button class="history-filter" data-filter="한국">한국</button>
-    </div>
-  </div>
-
-  <section class="history-section">
-    <div class="history-section-head"><h2>핵심 인물</h2><p>이름을 누르지 않아도 핵심 내용을 바로 확인할 수 있습니다.</p></div>
-    <div class="history-cards" id="history-cards">
-      <article class="history-card" data-cat="투자" data-search="벤저민 그레이엄 미국 경제학자 투자자 가치투자 안전마진">
-        <div class="history-card-top"><div><h3>벤저민 그레이엄</h3><div class="history-meta">미국 · 경제학자·투자자 · 1894–1976</div></div><span class="history-status">사망</span></div>
-        <div class="history-quote">“단기적으로 시장은 투표기계지만, 장기적으로는 저울이다.”</div>
-        <div class="history-impact"><b>시장 영향</b> · 내재가치와 안전마진을 강조해 현대 가치투자의 기초를 세웠습니다.</div><div class="history-tags"><span class="history-tag">가치투자</span><span class="history-tag">안전마진</span></div>
-      </article>
-      <article class="history-card" data-cat="투자" data-search="워런 버핏 미국 투자자 버크셔 해서웨이 장기투자">
-        <div class="history-card-top"><div><h3>워런 버핏</h3><div class="history-meta">미국 · 투자자·기업인 · 1930년생</div></div><span class="history-status history-live">생존</span></div>
-        <div class="history-quote">“다른 사람들이 두려워할 때 탐욕스러워져라.”</div>
-        <div class="history-impact"><b>시장 영향</b> · 장기 보유, 우량기업, 현금흐름과 경쟁우위를 중시하는 투자 철학을 대중화했습니다.</div><div class="history-tags"><span class="history-tag">장기투자</span><span class="history-tag">기업가치</span></div>
-      </article>
-      <article class="history-card" data-cat="투자" data-search="찰리 멍거 미국 투자자 변호사">
-        <div class="history-card-top"><div><h3>찰리 멍거</h3><div class="history-meta">미국 · 투자자·변호사 · 1924–2023</div></div><span class="history-status">사망</span></div>
-        <div class="history-quote">“훌륭한 기업을 적정한 가격에 사는 편이 낫다.”</div>
-        <div class="history-impact"><b>시장 영향</b> · 기업의 질과 장기 경쟁력을 중시하는 버핏의 투자 철학을 발전시켰습니다.</div><div class="history-tags"><span class="history-tag">경쟁우위</span><span class="history-tag">복리</span></div>
-      </article>
-      <article class="history-card" data-cat="투자" data-search="피터 린치 미국 펀드매니저 피델리티">
-        <div class="history-card-top"><div><h3>피터 린치</h3><div class="history-meta">미국 · 펀드매니저 · 1944년생</div></div><span class="history-status history-live">생존</span></div>
-        <div class="history-quote">“무엇을 보유하고 있는지, 왜 보유하는지 알아라.”</div>
-        <div class="history-impact"><b>시장 영향</b> · 기업과 사업에 대한 이해를 바탕으로 투자하는 접근법을 널리 알렸습니다.</div><div class="history-tags"><span class="history-tag">성장주</span><span class="history-tag">기업 분석</span></div>
-      </article>
-      <article class="history-card" data-cat="투자" data-search="조지 소로스 헝가리 미국 헤지펀드 반사성 파운드">
-        <div class="history-card-top"><div><h3>조지 소로스</h3><div class="history-meta">헝가리 출생·미국 활동 · 투자자 · 1930년생</div></div><span class="history-status history-live">생존</span></div>
-        <div class="history-quote">“시장의 인식과 현실은 서로 영향을 주고받는다.”</div>
-        <div class="history-impact"><b>시장 영향</b> · 반사성 이론으로 유명하며, 1992년 파운드화 위기 당시 대규모 매도로 세계적 주목을 받았습니다.</div><div class="history-tags"><span class="history-tag">거시 투자</span><span class="history-tag">환율</span></div>
-      </article>
-      <article class="history-card" data-cat="투자" data-search="레이 달리오 미국 브리지워터 헤지펀드 부채 사이클">
-        <div class="history-card-top"><div><h3>레이 달리오</h3><div class="history-meta">미국 · 헤지펀드 창립자 · 1949년생</div></div><span class="history-status history-live">생존</span></div>
-        <div class="history-quote">“현금은 쓰레기다.” <small>(인플레이션 환경의 현금 보유 위험을 강조한 표현)</small></div>
-        <div class="history-impact"><b>시장 영향</b> · 부채 사이클, 금리, 통화정책을 함께 분석하는 거시 투자 관점을 확산했습니다.</div><div class="history-tags"><span class="history-tag">부채 사이클</span><span class="history-tag">자산배분</span></div>
-      </article>
-      <article class="history-card" data-cat="정책" data-search="폴 볼커 미국 연준 의장 금리 인플레이션">
-        <div class="history-card-top"><div><h3>폴 볼커</h3><div class="history-meta">미국 · Fed 의장 · 1927–2019</div></div><span class="history-status">사망</span></div>
-        <div class="history-quote">물가 안정을 위해 높은 금리의 고통도 감수해야 한다는 정책 철학.</div>
-        <div class="history-impact"><b>시장 영향</b> · 강력한 금리 인상으로 1980년대 미국의 인플레이션을 억제하는 데 핵심 역할을 했습니다.</div><div class="history-tags"><span class="history-tag">금리</span><span class="history-tag">인플레이션</span></div>
-      </article>
-      <article class="history-card" data-cat="정책" data-search="앨런 그린스펀 미국 연준 의장 비이성적 과열">
-        <div class="history-card-top"><div><h3>앨런 그린스펀</h3><div class="history-meta">미국 · Fed 의장 · 1926–2026</div></div><span class="history-status">사망</span></div>
-        <div class="history-quote">“비이성적 과열(Irrational Exuberance)”</div>
-        <div class="history-impact"><b>시장 영향</b> · 장기간 Fed 의장을 맡으며 금리와 유동성 정책으로 글로벌 금융시장에 큰 영향을 미쳤습니다.</div><div class="history-tags"><span class="history-tag">통화정책</span><span class="history-tag">시장 거품</span></div>
-      </article>
-      <article class="history-card" data-cat="정책" data-search="벤 버냉키 미국 연준 의장 양적완화 금융위기">
-        <div class="history-card-top"><div><h3>벤 버냉키</h3><div class="history-meta">미국 · 경제학자·전 Fed 의장 · 1953년생</div></div><span class="history-status history-live">생존</span></div>
-        <div class="history-quote">금융위기 때 중앙은행의 비전통적 정책 대응을 주도.</div>
-        <div class="history-impact"><b>시장 영향</b> · 2008년 금융위기 당시 양적완화와 금융시장 안정 조치를 이끌었습니다.</div><div class="history-tags"><span class="history-tag">양적완화</span><span class="history-tag">금융위기</span></div>
-      </article>
-      <article class="history-card" data-cat="정책" data-search="케빈 워시 미국 연준 의장 2026">
-        <div class="history-card-top"><div><h3>케빈 워시</h3><div class="history-meta">미국 · Fed 의장 · 1970년생</div></div><span class="history-status history-live">생존</span></div>
-        <div class="history-quote">금리와 중앙은행 대차대조표 운용 방향에 주목.</div>
-        <div class="history-impact"><b>시장 영향</b> · 2026년 11월 기준 Fed 의장으로, 금리·유동성 정책과 관련 발언이 글로벌 시장의 핵심 변수입니다.</div><div class="history-tags"><span class="history-tag">Fed</span><span class="history-tag">유동성</span></div>
-      </article>
-      <article class="history-card" data-cat="정책" data-search="존 메이너드 케인스 영국 경제학자 재정정책">
-        <div class="history-card-top"><div><h3>존 메이너드 케인스</h3><div class="history-meta">영국 · 경제학자 · 1883–1946</div></div><span class="history-status">사망</span></div>
-        <div class="history-quote">“장기적으로 우리는 모두 죽는다.”</div>
-        <div class="history-impact"><b>시장 영향</b> · 경기침체 때 정부의 적극적인 재정지출과 경기부양을 강조했습니다.</div><div class="history-tags"><span class="history-tag">재정정책</span><span class="history-tag">경기부양</span></div>
-      </article>
-      <article class="history-card" data-cat="정책" data-search="밀턴 프리드먼 미국 경제학자 통화량 인플레이션">
-        <div class="history-card-top"><div><h3>밀턴 프리드먼</h3><div class="history-meta">미국 · 경제학자 · 1912–2006</div></div><span class="history-status">사망</span></div>
-        <div class="history-quote">“인플레이션은 언제 어디서나 화폐적 현상이다.”</div>
-        <div class="history-impact"><b>시장 영향</b> · 통화량과 물가의 관계를 강조해 중앙은행의 통화정책 논의에 큰 영향을 주었습니다.</div><div class="history-tags"><span class="history-tag">통화량</span><span class="history-tag">물가</span></div>
-      </article>
-      <article class="history-card" data-cat="산업" data-search="젠슨 황 대만 미국 엔비디아 CEO GPU AI 반도체">
-        <div class="history-card-top"><div><h3>젠슨 황</h3><div class="history-meta">대만 출생·미국 활동 · NVIDIA CEO · 1963년생</div></div><span class="history-status history-live">생존</span></div>
-        <div class="history-quote">AI 컴퓨팅과 가속 컴퓨팅의 시대를 강조.</div>
-        <div class="history-impact"><b>시장 영향</b> · GPU와 AI 데이터센터 수요를 키우며 GPU·HBM·네트워크·전력 산업의 투자 흐름에 영향을 줍니다.</div><div class="history-tags"><span class="history-tag">AI</span><span class="history-tag">반도체</span><span class="history-tag">HBM</span></div>
-      </article>
-      <article class="history-card" data-cat="산업" data-search="일론 머스크 남아프리카 미국 테슬라 스페이스X 전기차">
-        <div class="history-card-top"><div><h3>일론 머스크</h3><div class="history-meta">남아공 출생·미국 활동 · 기업가 · 1971년생</div></div><span class="history-status history-live">생존</span></div>
-        <div class="history-quote">“가장 재미있는 결과가 가장 가능성 높은 결과다.”</div>
-        <div class="history-impact"><b>시장 영향</b> · 전기차·자율주행·우주산업의 성장 기대와 관련 기업의 투자심리에 영향을 줍니다.</div><div class="history-tags"><span class="history-tag">전기차</span><span class="history-tag">우주</span><span class="history-tag">자율주행</span></div>
-      </article>
-      <article class="history-card" data-cat="산업" data-search="샘 올트먼 미국 OpenAI CEO 인공지능">
-        <div class="history-card-top"><div><h3>샘 올트먼</h3><div class="history-meta">미국 · 기업가·OpenAI CEO · 1985년생</div></div><span class="history-status history-live">생존</span></div>
-        <div class="history-quote">AI가 생산성과 산업 구조를 바꿀 것이라는 비전.</div>
-        <div class="history-impact"><b>시장 영향</b> · 생성형 AI 확산으로 AI 서버·GPU·HBM·데이터센터·전력 투자 기대를 키웠습니다.</div><div class="history-tags"><span class="history-tag">생성형 AI</span><span class="history-tag">데이터센터</span></div>
-      </article>
-      <article class="history-card" data-cat="한국 산업" data-search="이병철 대한민국 삼성 창업자">
-        <div class="history-card-top"><div><h3>이병철</h3><div class="history-meta">대한민국 · 삼성 창업자 · 1910–1987</div></div><span class="history-status">사망</span></div>
-        <div class="history-quote">“사업보국”</div>
-        <div class="history-impact"><b>시장 영향</b> · 삼성그룹을 창업하고 한국 산업화와 대기업 산업구조 형성에 기여했습니다.</div><div class="history-tags"><span class="history-tag">한국 산업화</span><span class="history-tag">삼성</span></div>
-      </article>
-      <article class="history-card" data-cat="한국 산업" data-search="이건희 대한민국 삼성 회장 반도체">
-        <div class="history-card-top"><div><h3>이건희</h3><div class="history-meta">대한민국 · 삼성 회장 · 1942–2020</div></div><span class="history-status">사망</span></div>
-        <div class="history-quote">“마누라와 자식 빼고 다 바꿔라.”</div>
-        <div class="history-impact"><b>시장 영향</b> · 삼성전자의 반도체·스마트폰 경쟁력 강화와 글로벌 위상 확대를 이끌었습니다.</div><div class="history-tags"><span class="history-tag">삼성전자</span><span class="history-tag">반도체</span></div>
-      </article>
-      <article class="history-card" data-cat="한국 산업" data-search="이재용 대한민국 삼성전자 회장 HBM">
-        <div class="history-card-top"><div><h3>이재용</h3><div class="history-meta">대한민국 · 삼성전자 회장 · 1968년생</div></div><span class="history-status history-live">생존</span></div>
-        <div class="history-quote">반도체와 미래 기술 경쟁력 확보에 주력.</div>
-        <div class="history-impact"><b>시장 영향</b> · 삼성전자의 메모리·파운드리·HBM 사업 방향과 투자 판단에 중요한 경영자입니다.</div><div class="history-tags"><span class="history-tag">삼성전자</span><span class="history-tag">HBM</span></div>
-      </article>
-      <article class="history-card" data-cat="한국 산업" data-search="최태원 대한민국 SK그룹 SK하이닉스 HBM">
-        <div class="history-card-top"><div><h3>최태원</h3><div class="history-meta">대한민국 · SK그룹 회장 · 1960년생</div></div><span class="history-status history-live">생존</span></div>
-        <div class="history-quote">반도체와 AI 인프라를 미래 성장축으로 강조.</div>
-        <div class="history-impact"><b>시장 영향</b> · SK하이닉스의 HBM과 메모리 반도체 투자 방향에 중요한 영향력을 가집니다.</div><div class="history-tags"><span class="history-tag">SK하이닉스</span><span class="history-tag">AI 반도체</span></div>
-      </article>
-      <article class="history-card" data-cat="한국 정책" data-search="이창용 대한민국 한국은행 총재 금리 원화">
-        <div class="history-card-top"><div><h3>이창용</h3><div class="history-meta">대한민국 · 경제학자·전 한국은행 총재 · 1960년생</div></div><span class="history-status history-live">생존</span></div>
-        <div class="history-quote">물가 안정과 금융 안정의 균형을 강조.</div>
-        <div class="history-impact"><b>시장 영향</b> · 재임 기간 한국 기준금리와 원화, 가계부채 및 금융시장 환경에 영향을 미쳤습니다.</div><div class="history-tags"><span class="history-tag">한국은행</span><span class="history-tag">기준금리</span></div>
-      </article>
-      <article class="history-card" data-cat="정책" data-search="도널드 트럼프 미국 대통령 관세 무역정책">
-        <div class="history-card-top"><div><h3>도널드 트럼프</h3><div class="history-meta">미국 · 대통령·정치인 · 1946년생</div></div><span class="history-status history-live">생존</span></div>
-        <div class="history-quote">관세와 미국 우선주의를 핵심 정책 수단으로 활용.</div>
-        <div class="history-impact"><b>시장 영향</b> · 관세·무역·세금·에너지 정책으로 글로벌 공급망과 수출기업의 투자 전망을 흔듭니다.</div><div class="history-tags"><span class="history-tag">관세</span><span class="history-tag">무역</span><span class="history-tag">정책</span></div>
-      </article>
-      <article class="history-card" data-cat="정책" data-search="시진핑 중국 국가주석 산업정책 부동산">
-        <div class="history-card-top"><div><h3>시진핑</h3><div class="history-meta">중국 · 국가주석 · 1953년생</div></div><span class="history-status history-live">생존</span></div>
-        <div class="history-quote">중국의 산업 자립과 기술 경쟁력 강화를 강조.</div>
-        <div class="history-impact"><b>시장 영향</b> · 중국 경기부양·부동산·빅테크 규제·산업정책이 한국 수출과 관련 업종에 영향을 줍니다.</div><div class="history-tags"><span class="history-tag">중국 경기</span><span class="history-tag">산업정책</span></div>
-      </article>
-    </div>
-    <div class="history-empty" id="history-empty">검색 결과가 없습니다.</div>
+<header>
+  <div class="brand"><i></i><div><b>국내 증시 개장 전 분석</b><small>PRE-MARKET ANALYSIS</small></div></div>
+  <div class="tools"><span id="updated">데이터 확인 전</span><button id="theme" aria-label="테마 전환" title="밝기 전환">◐</button><button id="refresh" aria-label="새로고침" title="데이터 새로고침">↻</button></div>
+</header>
+<main>
+  <section class="intro card">
+    <div><span class="eyebrow">MARKET OVERVIEW</span><h1>오늘 장 시작 전, 시장 한눈에 보기</h1></div>
+    <div class="intro-meta"><span class="live-dot"></span><span id="status">데이터 연결 준비 중</span></div>
   </section>
-
-  <section class="history-section">
-    <div class="history-section-head"><h2>투자자가 기억할 문장</h2><p>문장의 취지를 실전 투자 관점으로 간추렸습니다.</p></div>
-    <div class="history-quotes">
-      <div class="history-quote-card"><blockquote>“다른 사람들이 두려워할 때 탐욕스러워져라.”</blockquote><small>워런 버핏 · 시장의 공포와 기회를 구분하기</small></div>
-      <div class="history-quote-card"><blockquote>“무엇을 보유하고 있는지, 왜 보유하는지 알아라.”</blockquote><small>피터 린치 · 투자 근거를 명확히 하기</small></div>
-      <div class="history-quote-card"><blockquote>“단기적으로 시장은 투표기계, 장기적으로는 저울이다.”</blockquote><small>벤저민 그레이엄 · 가격과 가치 구분하기</small></div>
-      <div class="history-quote-card"><blockquote>“장기적으로 우리는 모두 죽는다.”</blockquote><small>존 메이너드 케인스 · 현재의 경기와 정책도 보기</small></div>
-      <div class="history-quote-card"><blockquote>“인플레이션은 언제 어디서나 화폐적 현상이다.”</blockquote><small>밀턴 프리드먼 · 통화량과 물가의 관계 이해하기</small></div>
-      <div class="history-quote-card"><blockquote>“위험을 이해하는 것이 중요하다.”</blockquote><small>하워드 막스의 투자 철학 · 수익보다 손실 가능성 먼저 점검</small></div>
-    </div>
+  <section class="summary card">
+    <div class="section-heading"><div><span class="eyebrow">QUICK CHECK</span><h2>장전 요약</h2></div><small>종가 · 애프터마켓 · 등락률</small></div>
+    <div id="summaryRows" class="summary-rows"></div>
   </section>
-
-  <section class="history-callout">
-    <h2>국내 증시를 읽는 핵심 연결고리</h2>
-    <div class="history-flow">
-      <span>미국 금리·Fed</span><i>→</i><span>달러·원화</span><i>→</i><span>글로벌 자금 흐름</span><i>→</i><span>외국인 수급</span><i>→</i><span>대형주·코스피</span>
-    </div>
-    <p style="font-size:12px;color:#c7d2e5;margin:13px 0 0">여기에 미국·중국의 정책, AI 투자 사이클, 기업 실적을 함께 살펴보면 시장 움직임을 더 입체적으로 해석할 수 있습니다.</p>
-  </section>
-  <footer>인물의 발언은 널리 알려진 번역·요약을 포함하며, 일부는 정확한 원문 인용이 아닌 사상과 투자 철학의 요약입니다. 인물의 생존·직책 및 시장 상황은 기준 시점에 따라 달라질 수 있습니다.</footer>
-</main></div>
-      </div>
-    </section>
-    <section id="panel-dashboard" class="tab-panel">
-    <section class="briefing card">
-      <div class="section-head"><div><span class="eyebrow">DAILY BRIEFING</span><h2>오늘의 브리핑</h2></div><span id="briefingStatus" class="status-pill">불러오는 중</span></div>
-      <div id="briefingSummary" class="briefing-summary"><div class="skeleton"></div><div class="skeleton short"></div></div>
-      <div class="brief-grid">
-        <div class="brief-column positive"><b><i>＋</i> 긍정 요인</b><ul id="positiveList"><li>분석 자료를 불러오는 중입니다.</li></ul></div>
-        <div class="brief-column negative"><b><i>－</i> 부정 요인</b><ul id="negativeList"><li>분석 자료를 불러오는 중입니다.</li></ul></div>
-      </div>
-      <div class="brief-bottom"><span id="marketView">시장 영향 분석을 준비하고 있습니다.</span><span id="eventCount">주요 이슈 —건</span></div>
-    </section>
-
-    <section class="category-section">
-      <div class="section-head"><div><span class="eyebrow">MARKET NEWS</span><h2>뉴스 카테고리</h2></div><span class="muted">카테고리를 선택해 관련 뉴스 확인</span></div>
-      <nav id="categoryNav" class="category-nav">
-        <button class="category active" data-category="all"><b>전체</b><small>ALL</small></button>
-        <button class="category" data-category="global"><b>미국·글로벌 증시</b><small>GLOBAL</small></button>
-        <button class="category" data-category="macro"><b>금리·환율·경제</b><small>MACRO</small></button>
-        <button class="category" data-category="geopolitics"><b>지정학·원자재</b><small>GEOPOLITICS</small></button>
-        <button class="category" data-category="korea"><b>국내 증시·정책</b><small>KOREA</small></button>
-        <button class="category" data-category="industry"><b>산업·기업</b><small>INDUSTRY</small></button>
-      </nav>
-      <div class="news-toolbar"><b id="newsTitle">전체 뉴스</b><span id="newsCount" class="muted">0건</span></div>
-      <div id="newsList" class="news-list"><div class="empty">뉴스를 불러오는 중입니다.</div></div>
-      <button id="moreNews" class="more-btn" hidden>뉴스 더 보기 <span>＋</span></button>
-    </section>
-
-    <section class="issues-section card">
-      <div class="section-head"><div><span class="eyebrow">ONGOING THEMES</span><h2>지속 추적 이슈</h2><p class="section-desc">새로운 뉴스가 기존 이슈와 관련되면 하나의 주제로 이어서 관리합니다.</p></div><span id="issueCount" class="count-badge">0개</span></div>
-      <div class="issue-filters"><button class="issue-filter active" data-status="active">진행 중</button><button class="issue-filter" data-status="long">장기 추적</button><button class="issue-filter" data-status="all">전체 활성</button></div>
-      <div id="issueList" class="issue-list"><div class="empty">추적 이슈를 불러오는 중입니다.</div></div>
-    </section>
-    <section class="archive-section">
-      <div class="section-head"><div><span class="eyebrow">CLOSED TOPICS</span><h2>종료된 이슈</h2><p class="section-desc">재료가 소멸한 이슈는 활성 목록에서 제외하고 이력으로 보관합니다.</p></div><button id="archiveToggle" class="text-btn">종료 이슈 보기⌄</button></div>
-      <div id="archiveList" class="archive-list" hidden></div>
-    </section>
-    </section><!-- /panel-dashboard -->
-
-    <footer><b>MARKET INSIGHT DAILY</b><span>정보 제공 및 시장 참고용 · 투자 판단은 본인의 책임입니다.</span><span>뉴스 원문과 업데이트 시각을 함께 확인하세요.</span></footer>
-  </main>
+  <div class="section-heading chart-section-heading"><div><span class="eyebrow">120-BAR CHARTS</span><h2>시장별 차트</h2></div><small>최근 120개 일봉 · 아래로 스크롤</small></div>
+  <section id="charts" class="charts"></section>
+  <footer>자료는 외부 시세 제공처 기준이며, 거래소·상품별 업데이트 시점이 다를 수 있습니다. 투자 판단 전 원자료를 확인하세요.</footer>
+</main>
 </div>
-<div id="toast" class="toast" role="status"></div>
-<script src="app.js?v=4"></script>
-
-</body></html>
+<script src="./app.js?v=162"></script>
+</body>
+</html>
