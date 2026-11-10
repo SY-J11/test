@@ -323,3 +323,38 @@ html.dark .deleted-person-actions button{background:#202733;color:#e7edf6}html.d
 .history-intro.card h2{font-size:23px;letter-spacing:-.8px;margin:5px 0 8px}
 .history-intro.card p{font-size:12px;color:var(--muted);line-height:1.8;margin:0}
 @media(max-width:680px){.global-market-group{padding:14px}.global-market-grid{grid-template-columns:1fr}.history-intro.card{padding:17px}.history-intro.card h2{font-size:20px}}
+
+
+/* 금융과 시장의 인물들: 항목별 정보 구획을 명확하게 분리 */
+.history-content .history-cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.history-content .history-card{display:flex;flex-direction:column;gap:10px;padding:17px}
+.history-content .history-card-top{padding-bottom:11px;border-bottom:1px solid var(--line)}
+.history-content .history-card-top h3{font-size:18px;line-height:1.35;margin:0 0 5px}
+.history-content .history-field{border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:10px 12px}
+.history-content .history-field-label{display:block;font-size:10px;font-weight:800;letter-spacing:.06em;color:var(--muted);margin-bottom:6px}
+.history-content .history-field-quote .history-quote{margin:0;padding:0;background:transparent;border:0;border-radius:0;font-size:13px;line-height:1.65}
+.history-content .history-field-impact .history-impact{font-size:12px;line-height:1.7;color:var(--ink)}
+.history-content .history-field-impact .history-impact b{display:none}
+.history-content .history-field-tags .history-tags{margin:0}
+.global-bottom-management{margin:4px 0 28px;padding:18px}
+.global-bottom-management h3{font-size:16px;margin:0 0 5px}
+.global-bottom-management p{font-size:12px;color:var(--muted);margin:0;line-height:1.6}
+.global-management-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}
+.global-item-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:15px;padding:14px;background:var(--bg);border:1px solid var(--line);border-radius:12px}
+.global-item-form[hidden]{display:none}
+.global-item-form label{display:flex;flex-direction:column;gap:6px;font-size:11px;font-weight:700;color:var(--muted)}
+.global-item-form input,.global-item-form select{width:100%;min-width:0;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);padding:10px;font:inherit;font-size:12px}
+.global-url-field{grid-column:1/-1}
+.global-deleted-panel{margin-top:16px;padding-top:13px;border-top:1px solid var(--line)}
+.global-deleted-panel h4{font-size:13px;margin:0 0 8px}
+.global-deleted-list{display:grid;gap:7px}
+.global-deleted-list>p{font-size:12px;color:var(--muted)}
+.global-deleted-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:9px;font-size:12px}
+.global-item-delete{display:block;width:100%;margin-top:8px;padding:7px;border:1px solid #e1a0a0;border-radius:7px;background:#fff5f5;color:#b42318;font-size:11px;font-weight:700}
+.dark .global-item-delete{background:#3a2023;color:#ffb4b4;border-color:#75434a}
+@media(max-width:680px){
+ .history-content .history-cards{grid-template-columns:1fr}
+ .global-item-form{grid-template-columns:1fr}
+ .global-url-field{grid-column:auto}
+ .global-management-actions .people-manage-btn{flex:1}
+}

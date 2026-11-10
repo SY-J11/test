@@ -705,3 +705,181 @@ buttons.forEach(btn=>btn.addEventListener('click',()=>{
  active=btn.dataset.filter;buttons.forEach(b=>b.classList.toggle('history-active',b===btn));update();
 }));
 
+
+
+/* ===== 글로벌 시각 항목 추가·삭제·복원 ===== */
+(() => {
+  const root = document.querySelector(".global-perspective-panel");
+  if (!root) return;
+  const storageKey = "marketInsightGlobalItems_v1";
+  const addBtn = document.getElementById("addGlobalItemBtn");
+  const deleteBtn = document.getElementById("toggleDeleteGlobalBtn");
+  const cancelBtn = document.getElementById("cancelGlobalItemBtn");
+  const form = document.getElementById("globalItemForm");
+  const deletedList = document.getElementById("deletedGlobalItems");
+  let deleteMode = false;
+  let deleted = [];
+  let added = [];
+  try {
+    const saved = JSON.parse(localStorage.getItem(storageKey) || "{}");
+    deleted = Array.isArray(saved.deleted) ? saved.deleted : [];
+    added = Array.isArray(saved.added) ? saved.added : [];
+  } catch (_) {}
+  const save = () => localStorage.setItem(storageKey, JSON.stringify({deleted, added}));
+  const groups = [...root.querySelectorAll(".global-market-group")];
+  const marketName = card => card.closest(".global-market-group")?.querySelector(".global-market-heading h2")?.textContent.trim() || "";
+  const cardData = card => ({
+    html: card.outerHTML,
+    market: marketName(card),
+    deletedAt: Date.now()
+  });
+  const ensureDeleteControls = () => {
+    root.querySelectorAll(".global-news-card").forEach(card => {
+      let btn = card.querySelector(".global-item-delete");
+      if (deleteMode && !btn) {
+        btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "global-item-delete";
+        btn.textContent = "항목 삭제";
+        btn.addEventListener("click", () => {
+          deleted.push(cardData(card));
+          const id = card.dataset.customId;
+          if (id) added = added.filter(x => x.id !== id);
+          save();
+          card.remove();
+          renderDeleted();
+        });
+        card.appendChild(btn);
+      } else if (!deleteMode && btn) btn.remove();
+    });
+  };
+  function renderDeleted() {
+    deletedList.innerHTML = "";
+    if (!deleted.length) {
+      deletedList.innerHTML = "<p>복원할 항목이 없습니다.</p>";
+      return;
+    }
+    deleted.forEach((item, index) => {
+      const row = document.createElement("div");
+      row.className = "global-deleted-row";
+      const label = document.createElement("span");
+      const temp = document.createElement("div");
+      temp.innerHTML = item.html || "";
+      label.textContent = `${item.market || "시장"} · ${temp.querySelector(".person-news-head b")?.textContent || "검색 항목"}`;
+      const restore = document.createElement("button");
+      restore.type = "button";
+      restore.className = "people-manage-btn";
+      restore.textContent = "복원";
+      restore.addEventListener("click", () => {
+        const group = groups.find(g => g.querySelector(".global-market-heading h2")?.textContent.trim() === item.market) || groups[0];
+        const grid = group.querySelector(".global-market-grid");
+        const holder = document.createElement("div");
+        holder.innerHTML = item.html || "";
+        const card = holder.firstElementChild;
+        if (card) {
+          card.querySelector(".global-item-delete")?.remove();
+          grid.appendChild(card);
+          if (deleteMode) ensureDeleteControls();
+          loadAddedCard(card);
+        }
+        deleted.splice(index, 1);
+        save();
+        renderDeleted();
+      });
+      row.append(label, restore);
+      deletedList.appendChild(row);
+    });
+  }
+  // 사용자 추가 항목 복원
+  added.forEach(item => {
+    const group = groups.find(g => g.querySelector(".global-market-heading h2")?.textContent.trim() === item.market) || groups[0];
+    const grid = group.querySelector(".global-market-grid");
+    if (!grid || grid.querySelector(`[data-custom-id="${item.id}"]`)) return;
+    const holder = document.createElement("div");
+    holder.innerHTML = item.html;
+    if (holder.firstElementChild) {
+      grid.appendChild(holder.firstElementChild);
+      loadAddedCard(holder.firstElementChild);
+    }
+  });
+  addBtn?.addEventListener("click", () => {
+    form.hidden = false;
+    cancelBtn.hidden = false;
+    addBtn.hidden = true;
+    form.scrollIntoView({behavior:"smooth", block:"center"});
+  });
+  cancelBtn?.addEventListener("click", () => {
+    form.reset(); form.hidden = true; cancelBtn.hidden = true; addBtn.hidden = false;
+  });
+  deleteBtn?.addEventListener("click", () => {
+    deleteMode = !deleteMode;
+    deleteBtn.classList.toggle("active", deleteMode);
+    deleteBtn.setAttribute("aria-pressed", String(deleteMode));
+    deleteBtn.textContent = deleteMode ? "삭제 선택 종료" : "－ 항목 삭제";
+    ensureDeleteControls();
+  });
+  async function loadAddedCard(card) {
+    if (!card || card.dataset.loaded === "1") return;
+    card.dataset.loaded = "1";
+    const list = card.querySelector(".person-news-list");
+    const more = card.querySelector("[data-news-more]");
+    const q = card.dataset.query || "";
+    const src = card.dataset.source || "global";
+    try {
+      const response = await fetch("https://macro.mcraft-tiger-574.workers.dev/api/person-news?q=" +
+        encodeURIComponent(q) + "&source=" + encodeURIComponent(src) + "&limit=10&offset=0");
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "검색 요청 실패");
+      const items = Array.isArray(data.items) ? data.items : [];
+      list.innerHTML = items.map((item, i) =>
+        `<a class="person-news-item" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer"><span class="person-news-number">${i+1}</span><span class="person-news-copy"><b>${esc(item.title)}</b><small>${esc(item.source || data.provider || "검색 결과")}</small></span><span class="person-news-arrow">↗</span></a>`
+      ).join("") || `<div class="person-news-state">${esc(data.error || "검색 결과가 없습니다.")}</div>`;
+      if (more) more.hidden = true;
+    } catch (error) {
+      list.innerHTML = `<div class="person-news-state">검색 결과를 불러오지 못했습니다: ${esc(error.message || error)}</div>`;
+      card.dataset.loaded = "0";
+    }
+  }
+  form?.addEventListener("submit", event => {
+    event.preventDefault();
+    const data = new FormData(form);
+    const market = String(data.get("market") || "KOSPI");
+    const provider = String(data.get("provider") || "").trim();
+    const query = String(data.get("query") || "").trim();
+    const rawSearchUrl = String(data.get("searchUrl") || "").trim();
+    if (!provider || !query) return;
+    const id = "custom-" + Date.now().toString(36);
+    let source = "global";
+    let searchUrl = rawSearchUrl;
+    if (rawSearchUrl) {
+      try {
+        const u = new URL(rawSearchUrl.replace("{query}", encodeURIComponent(query)));
+        if (u.hostname.endsWith("goldmansachs.com")) source = "official-goldman";
+        else if (u.hostname.endsWith("morganstanley.com")) source = "official-morgan";
+        else if (u.hostname.endsWith("jpmorgan.com")) source = "official-jpmorgan";
+        else source = "global";
+        searchUrl = u.href;
+      } catch (_) { alert("검색 URL 형식을 확인해 주세요."); return; }
+    }
+    const group = groups.find(g => g.querySelector(".global-market-heading h2")?.textContent.trim() === market) || groups[0];
+    const grid = group.querySelector(".global-market-grid");
+    const card = document.createElement("section");
+    card.className = "person-news global-news-card";
+    card.dataset.query = query;
+    card.dataset.source = source;
+    card.dataset.customId = id;
+    card.innerHTML = `<div class="person-news-head"><b></b><span class="person-news-actions"><a class="person-news-search-link" target="_blank" rel="noopener noreferrer">공식 검색 보기 ↗</a><span>최신순</span></span></div><div class="person-news-list"><div class="person-news-state">화면에 표시되면 검색 결과를 불러옵니다.</div></div><button type="button" class="person-news-more" data-news-more disabled>기사 10개 더 보기</button>`;
+    card.querySelector(".person-news-head>b").textContent = provider;
+    const link = card.querySelector(".person-news-search-link");
+    if (searchUrl) link.href = searchUrl;
+    else link.href = "https://www.google.com/search?q=" + encodeURIComponent(query + " " + provider);
+    grid.appendChild(card);
+    added.push({id, market, html:card.outerHTML});
+    save();
+    form.reset(); form.hidden = true; cancelBtn.hidden = true; addBtn.hidden = false;
+    ensureDeleteControls();
+    loadAddedCard(card);
+  });
+  renderDeleted();
+  ensureDeleteControls();
+})();
