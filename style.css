@@ -390,3 +390,11 @@ html.dark .history-content .history-field-quote .history-quote,html.dark .histor
 .global-deleted-actions{display:flex;gap:8px;align-items:center}
 .global-deleted-row .permanent-delete{border-color:#b94b54;color:#b94b54}
 .global-market-group.custom-global-group .global-market-grid{grid-template-columns:1fr}
+
+/* v19 requested layout adjustments */
+.history-content .history-cards{grid-template-columns:minmax(0,1fr)!important}
+.global-market-group.custom-global-group .global-market-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media(max-width:680px){
+  .history-content .history-cards{grid-template-columns:minmax(0,1fr)!important}
+  .global-market-group.custom-global-group .global-market-grid{grid-template-columns:1fr}
+}
