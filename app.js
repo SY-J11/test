@@ -345,27 +345,45 @@ $("themeBtn").addEventListener("click", () => {
 
   const STORAGE_KEY = "marketInsightPeople_v1";
   const defaultPeople = new Set(people.map(p => p.name));
-  let removedPeople = [];
+  let deletedPeople = [];
+  let savedOrder = [];
+  const now = () => Date.now();
+  const purgeExpired = () => { deletedPeople = deletedPeople.filter(item => item && item.person && Number(item.deletedAt) + 30*86400000 > now()); };
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
     if (Array.isArray(saved)) {
       saved.forEach(p => { if (p && p.name && !people.some(x => x.name === p.name)) people.push(p); });
     } else {
-      removedPeople = Array.isArray(saved.removed) ? saved.removed : [];
-      people.splice(0, people.length, ...people.filter(p => !removedPeople.includes(p.name)));
-      (Array.isArray(saved.added) ? saved.added : []).forEach(p => {
-        if (p && p.name && !people.some(x => x.name === p.name)) people.push(p);
-      });
+      (Array.isArray(saved.added) ? saved.added : []).forEach(p => { if (p && p.name && !people.some(x => x.name === p.name)) people.push(p); });
+      if (Array.isArray(saved.deleted)) deletedPeople = saved.deleted;
+      else if (Array.isArray(saved.removed)) {
+        // 이전 버전의 삭제 기록(이름만 저장)을 복구 가능한 항목으로 변환
+        deletedPeople = saved.removed.map(name => ({person: people.find(p => p.name === name), deletedAt: now()})).filter(x => x.person);
+      }
+      savedOrder = Array.isArray(saved.order) ? saved.order : [];
     }
   } catch (_) {}
+  purgeExpired();
+  // 이전 버전의 삭제 처리로 목록에서 빠진 기본 인물도 복구함에 보존
+  const deletedNames = new Set(deletedPeople.map(x => x.person && x.person.name));
+  people.splice(0, people.length, ...people.filter(p => !deletedNames.has(p.name)));
+  if (savedOrder.length) {
+    const byName = new Map(people.map(p => [p.name, p]));
+    const ordered = savedOrder.map(n => byName.get(n)).filter(Boolean);
+    people.forEach(p => { if (!savedOrder.includes(p.name)) ordered.push(p); });
+    people.splice(0, people.length, ...ordered);
+  }
+  // 요청한 초기 배치: 케빈 워시를 세 번째에 둠
+  const kevinIndex = people.findIndex(p => p.name === "케빈 워시");
+  if (kevinIndex >= 0) { const [kevin] = people.splice(kevinIndex, 1); people.splice(Math.min(2, people.length), 0, kevin); }
   const savePeople = () => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        removed: removedPeople,
-        added: people.filter(p => !defaultPeople.has(p.name))
-      }));
-    } catch (_) {}
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      deleted: deletedPeople,
+      added: people.filter(p => !defaultPeople.has(p.name)),
+      order: people.map(p => p.name)
+    })); } catch (_) {}
   };
+  savePeople();
   const newsQuery = p => String(p.query || p.name).trim().split(/\s+/).slice(0, 2).join(" ");
 
   const influence = {
@@ -391,13 +409,34 @@ $("themeBtn").addEventListener("click", () => {
   const loadingNews = new Set();
   const newsOffsets = new WeakMap();
   const truthState = { items: [], shown: 0, loading: false, loaded: false };
+  const restoreRoot = document.getElementById("deletedPeopleList");
+  const fmtDate = value => new Date(value).toLocaleString("ko-KR", {year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"});
+  function renderDeleted(){
+    purgeExpired();
+    if (!restoreRoot) return;
+    restoreRoot.innerHTML = deletedPeople.length ? deletedPeople.map((item, i) => {
+      const deadline = Number(item.deletedAt) + 30*86400000;
+      const days = Math.max(0, Math.ceil((deadline-now())/86400000));
+      return `<div class="deleted-person-row"><div class="deleted-person-info"><b>${esc(item.person.name)}</b><small>삭제: ${fmtDate(item.deletedAt)} · 자동 영구 삭제: ${fmtDate(deadline)} · 남은 기간 ${days}일</small></div><div class="deleted-person-actions"><button type="button" data-restore="${i}">복구</button><button type="button" class="permanent" data-permanent="${i}">영구 삭제</button></div></div>`;
+    }).join("") : '<p class="deleted-empty">복구할 인물이 없습니다.</p>';
+    restoreRoot.querySelectorAll('[data-restore]').forEach(btn => btn.addEventListener('click', () => {
+      const item = deletedPeople[Number(btn.dataset.restore)]; if (!item) return;
+      if (people.some(p => p.name === item.person.name)) { alert("이미 목록에 있는 인물입니다."); return; }
+      people.push(item.person); deletedPeople.splice(Number(btn.dataset.restore), 1); savePeople(); render(); renderDeleted();
+    }));
+    restoreRoot.querySelectorAll('[data-permanent]').forEach(btn => btn.addEventListener('click', () => {
+      const i = Number(btn.dataset.permanent), item = deletedPeople[i]; if (!item) return;
+      if (!confirm(`${item.person.name}을(를) 영구 삭제할까요? 삭제 후에는 복구할 수 없습니다.`)) return;
+      deletedPeople.splice(i, 1); savePeople(); renderDeleted();
+    }));
+  }
   function render(){
     const q=(search.value||"").trim().toLowerCase();
     const rows=people.filter(p=>(filter==="all"||p.group===filter)&&(!q||[p.name,p.country,p.role,p.group,p.impact,p.watch].join(" ").toLowerCase().includes(q)));
     count.textContent=rows.length+"명";
     root.innerHTML=rows.map(p=>{
       const grade=influence[p.name]||"B";
-      return `<article class="person-card" data-person="${esc(p.name)}"><div class="person-card-top"><div class="person-heading"><div class="person-name-line"><h3>${esc(p.name)}</h3><div class="person-card-badges"><span class="person-sector">${esc(p.group)}</span><span class="influence-grade grade-${grade}" title="${gradeText[grade]}">영향력 ${grade}</span></div></div><div class="person-meta">${esc(p.country)} · ${esc(p.role)}</div></div><button class="person-delete-btn" type="button" data-delete="${esc(p.name)}" aria-label="${esc(p.name)} 삭제">삭제</button></div><p class="person-impact">${esc(p.impact)}</p><div class="person-watch"><b>체크할 뉴스</b><br>${esc(p.watch)}</div>${p.name==="도널드 트럼프"?`<section class="truth-posts"><div class="person-news-head"><b>Truth Social 최신 게시물</b><span>최신순 · 처음 5개</span></div><div class="truth-post-list"><div class="person-news-state">최신 게시물을 불러오는 중…</div></div></section>`:""}<section class="person-news" data-query="${esc(newsQuery(p))}" data-source="global"><div class="person-news-head"><b>최근 기사 [해외]</b><span>최신순 · 처음 3개</span></div><div class="person-news-list"><div class="person-news-state">화면에 표시되면 최신 기사를 불러옵니다.</div></div></section><section class="person-news" data-query="${esc(p.name)}" data-source="naver"><div class="person-news-head"><b>최근 기사 [NAVER]</b><span>최신순 · 처음 3개</span></div><div class="person-news-list"><div class="person-news-state">화면에 표시되면 NAVER 뉴스를 불러옵니다.</div></div></section><div class="person-search-links"><a class="person-link" href="https://news.google.com/search?q=${encodeURIComponent(newsQuery(p))}&hl=ko&gl=KR&ceid=KR%3Ako" target="_blank" rel="noopener noreferrer">뉴스 검색 결과 전체 보기 ↗</a><a class="person-link" href="https://search.naver.com/search.naver?where=news&query=${encodeURIComponent(p.name)}" target="_blank" rel="noopener noreferrer">NAVER 뉴스 검색 결과 전체 보기 ↗</a></div></article>`;
+      return `<article class="person-card" data-person="${esc(p.name)}" draggable="${window.matchMedia && window.matchMedia("(min-width: 900px)").matches}"><div class="person-card-top"><div class="person-heading"><div class="person-name-line"><h3>${esc(p.name)}</h3><div class="person-card-badges"><span class="person-sector">${esc(p.group)}</span><span class="influence-grade grade-${grade}" title="${gradeText[grade]}">영향력 ${grade}</span></div></div><div class="person-meta">${esc(p.country)} · ${esc(p.role)}</div></div><button class="person-delete-btn" type="button" data-delete="${esc(p.name)}" aria-label="${esc(p.name)} 삭제">삭제</button></div><p class="person-impact">${esc(p.impact)}</p><div class="person-watch"><b>체크할 뉴스</b><br>${esc(p.watch)}</div>${p.name==="도널드 트럼프"?`<section class="truth-posts"><div class="person-news-head"><b>Truth Social 최신 게시물</b><span>최신순 · 처음 5개</span></div><div class="truth-post-list"><div class="person-news-state">최신 게시물을 불러오는 중…</div></div></section>`:""}<section class="person-news" data-query="${esc(newsQuery(p))}" data-source="global"><div class="person-news-head"><b>최근 기사 [해외]</b><span>최신순 · 처음 3개</span></div><div class="person-news-list"><div class="person-news-state">화면에 표시되면 최신 기사를 불러옵니다.</div></div></section><section class="person-news" data-query="${esc(p.name)}" data-source="naver"><div class="person-news-head"><b>최근 기사 [NAVER]</b><span>최신순 · 처음 3개</span></div><div class="person-news-list"><div class="person-news-state">화면에 표시되면 NAVER 뉴스를 불러옵니다.</div></div></section><div class="person-search-links"><a class="person-link" href="https://news.google.com/search?q=${encodeURIComponent(newsQuery(p))}&hl=ko&gl=KR&ceid=KR%3Ako" target="_blank" rel="noopener noreferrer">뉴스 검색 결과 전체 보기 ↗</a><a class="person-link" href="https://search.naver.com/search.naver?where=news&query=${encodeURIComponent(p.name)}" target="_blank" rel="noopener noreferrer">NAVER 뉴스 검색 결과 전체 보기 ↗</a></div></article>`;
     }).join("")||'<div class="empty">검색 조건에 맞는 인물이 없습니다.</div>';
     root.querySelectorAll("[data-delete]").forEach(button => {
       button.hidden = !deleteMode;
@@ -406,12 +445,23 @@ $("themeBtn").addEventListener("click", () => {
       if (!confirm(name + " 인물을 목록에서 삭제할까요?")) return;
       const index = people.findIndex(p => p.name === name);
       if (index >= 0) {
-        people.splice(index, 1);
-        if (defaultPeople.has(name) && !removedPeople.includes(name)) removedPeople.push(name);
-        delete influence[name];
+        const [person] = people.splice(index, 1);
+        deletedPeople.push({person, deletedAt: now()});
         savePeople();
-        render();
+        render(); renderDeleted();
       }
+      });
+    });
+    let dragged = null;
+    root.querySelectorAll('.person-card[draggable="true"]').forEach(card => {
+      card.addEventListener('dragstart', e => { dragged = card.dataset.person; card.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; });
+      card.addEventListener('dragend', () => { card.classList.remove('dragging'); dragged = null; });
+      card.addEventListener('dragover', e => { if (dragged && dragged !== card.dataset.person) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; } });
+      card.addEventListener('drop', e => {
+        e.preventDefault(); if (!dragged || dragged === card.dataset.person) return;
+        const from = people.findIndex(p => p.name === dragged), to = people.findIndex(p => p.name === card.dataset.person);
+        if (from < 0 || to < 0) return;
+        const [moved] = people.splice(from, 1); people.splice(to, 0, moved); savePeople(); render();
       });
     });
     observeNews();
@@ -542,6 +592,8 @@ $("themeBtn").addEventListener("click", () => {
     render();
   });
   render();
+  renderDeleted();
+  window.setInterval(() => { const before = deletedPeople.length; purgeExpired(); if (deletedPeople.length !== before) { savePeople(); renderDeleted(); } }, 60*60*1000);
 })();
 
 

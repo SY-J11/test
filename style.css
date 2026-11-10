@@ -275,3 +275,14 @@ html.dark .influence-grade.grade-A{background:#4b3924;color:#ffd08a}
 html.dark .influence-grade.grade-B{background:#293e5c;color:#a9c8ff}
 .truth-posts{margin:11px 0 0}
 @media(max-width:680px){.person-name-line{gap:5px}.person-name-line h3{font-size:14px}.person-sector,.influence-grade{font-size:8px;padding:3px 4px}}
+
+/* 삭제 인물 보관함 및 PC 드래그 정렬 */
+.deleted-people-panel{margin:14px 0 20px;padding:17px 18px}
+.deleted-people-heading h3{margin:0 0 3px;font-size:14px}.deleted-people-heading p,.deleted-person-info small{margin:0;color:var(--muted);font-size:11px}
+.deleted-people-list{margin-top:12px}.deleted-person-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 0;border-top:1px solid var(--line)}
+.deleted-person-info{display:flex;flex-direction:column;gap:3px;min-width:0}.deleted-person-info b{font-size:12px}.deleted-person-actions{display:flex;gap:7px;flex:none}
+.deleted-person-actions button{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:7px;padding:7px 11px;font-size:11px;font-weight:750}
+.deleted-person-actions button.permanent{color:#bd454c;border-color:#e5a4a8;background:#fff7f7}.deleted-empty{margin:0;color:var(--muted);font-size:11px;padding:9px 0}
+@media(min-width:900px){.person-card[draggable="true"]{cursor:grab}.person-card.dragging{opacity:.42;border:1px dashed var(--blue)}}
+@media(max-width:620px){.deleted-person-row{align-items:flex-start;flex-direction:column}.deleted-person-actions{width:100%}.deleted-person-actions button{flex:1}}
+html.dark .deleted-person-actions button{background:#202733;color:#e7edf6}html.dark .deleted-person-actions button.permanent{background:#38272b;color:#ffb2b8}
