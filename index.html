@@ -2,33 +2,217 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f3f5f9">
-<title>국내 증시 개장 전 분석</title>
-<link rel="apple-touch-icon" href="./Stock.png">
-<link rel="stylesheet" href="./style.css?v=43">
-<script src="https://unpkg.com/lightweight-charts@4.2.2/dist/lightweight-charts.standalone.production.js"></script>
+<title>MARKET INSIGHT</title>
+<link rel="apple-touch-icon" href="./Stock_main.png">
+<style>
+*{box-sizing:border-box}
+:root{--bg:#f3f5f9;--card:#fff;--line:#e6eaf1;--text:#202938;--muted:#929dad;--accent:#263e60;--green:#4ac18a;--tool:#f8f9fb;--tool-line:#edf0f4;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#151a22;--card:#202733;--line:#303a49;--text:#edf1f6;--muted:#9aa6b8;--accent:#38577f;--tool:#202733;--tool-line:#303a49}}
+:root[data-theme="dark"]{--bg:#151a22;--card:#202733;--line:#303a49;--text:#edf1f6;--muted:#9aa6b8;--accent:#38577f;--tool:#202733;--tool-line:#303a49}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;font-size:12px}
+.app{max-width:850px;margin:auto;min-height:100vh}
+header{height:61px;display:flex;align-items:center;justify-content:space-between;padding:0 15px;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+.brand{display:flex;gap:8px;align-items:center}
+.brand i{width:4px;height:19px;background:var(--green);border-radius:4px}
+.brand b{font-size:16px}
+.brand small{display:block;font-size:8px;color:var(--muted);letter-spacing:.7px;margin-top:2px}
+.tools button{border:1px solid var(--tool-line);background:var(--tool);border-radius:10px;width:32px;height:32px;color:var(--muted);font-size:14px;cursor:pointer}
+main{padding:10px}
+.intro{padding:15px;margin-bottom:9px}
+.intro h2{font-size:17px;margin:0 0 4px}
+.intro p{font-size:10px;color:var(--muted);margin:0}
+.group{margin:14px 4px 7px;font-size:10px;font-weight:700;color:var(--muted)}
+.group .ko{font-size:12px;margin-right:3px}
+.list{display:grid;gap:7px}
+a.link{display:flex;align-items:center;gap:12px;padding:14px;background:var(--card);border:1px solid var(--line);border-radius:13px;box-shadow:0 2px 10px #26364f08;color:inherit;text-decoration:none;-webkit-tap-highlight-color:transparent}
+a.link:active{opacity:.65}
+a.link:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.custom-add{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:13px;background:var(--card);border:1px dashed var(--muted);border-radius:13px;color:var(--text);font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+.custom-add:active{opacity:.65}
+.modal-backdrop{position:fixed;inset:0;background:#10182799;display:none;align-items:center;justify-content:center;padding:18px;z-index:20}
+.modal-backdrop.open{display:flex}
+.modal{width:min(100%,420px);background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:0 18px 55px #0003}
+.modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.modal-head h2{font-size:16px;margin:0}
+.modal-close{border:0;background:var(--tool);color:var(--text);width:30px;height:30px;border-radius:9px;font-size:18px;cursor:pointer}
+.field{display:block;margin:12px 0}
+.field label{display:block;font-size:11px;font-weight:700;margin-bottom:6px}
+.field input{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:9px;background:var(--tool);color:var(--text);font:inherit;font-size:13px;outline:none}
+.field input:focus{border-color:var(--green)}
+.icon-picker{display:grid;grid-template-columns:repeat(7,1fr);gap:7px}
+.icon-option{height:39px;border:1px solid var(--line);border-radius:9px;background:var(--tool);font-size:19px;cursor:pointer}
+.icon-option.selected{border:2px solid var(--green);background:var(--card)}
+.modal-actions{display:flex;gap:8px;margin-top:18px}
+.modal-actions button{flex:1;padding:11px;border-radius:9px;border:1px solid var(--line);font:inherit;font-weight:700;cursor:pointer}
+.modal-cancel{background:var(--tool);color:var(--text)}
+.modal-save{background:var(--accent);color:#fff;border-color:var(--accent)!important}
+.form-error{color:#d64b4b;font-size:10px;min-height:14px;margin-top:7px}
+.ico{flex:none;width:40px;height:40px;border-radius:11px;background:var(--tool);border:1px solid var(--tool-line);display:flex;align-items:center;justify-content:center;font-size:19px}
+.txt{flex:1;min-width:0}
+.txt b{display:block;font-size:14px}
+.txt small{display:block;font-size:9px;color:var(--muted);margin-top:3px;letter-spacing:.5px}
+.go{flex:none;font-size:20px;color:var(--muted)}
+hr{border:0;border-top:1px solid var(--line);margin:18px 4px 0}
+footer{text-align:center;color:var(--muted);font-size:8px;padding:18px 3px}
+@media(min-width:600px){.list.two{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
 </head>
 <body>
 <div class="app">
 <header>
-  <div class="brand"><i></i><div><b>국내 증시 개장 전 분석</b><small>PRE-MARKET ANALYSIS</small></div></div>
-  <div class="tools"><span id="updated">데이터 확인 전</span><button id="theme" aria-label="테마 전환" title="밝기 전환">◐</button><button id="refresh" aria-label="새로고침" title="데이터 새로고침">↻</button></div>
+  <div class="brand"><i></i><div><b>마켓 인사이트</b><small>MARKET INSIGHT</small></div></div>
+  <div class="tools"><button id="theme" type="button" aria-label="테마 전환">◐</button></div>
 </header>
 <main>
-  <section class="intro card">
-    <div><span class="eyebrow">MARKET OVERVIEW</span><h1>오늘 장 시작 전, 시장 한눈에 보기</h1></div>
-    <div class="intro-meta"><span class="live-dot"></span><span id="status">데이터 연결 준비 중</span></div>
-  </section>
-  <section class="summary card">
-    <div class="section-heading"><div><span class="eyebrow">QUICK CHECK</span><h2>장전 요약</h2></div><small>종가 · 애프터마켓 · 등락률</small></div>
-    <div id="summaryRows" class="summary-rows"></div>
-  </section>
-  <div class="section-heading chart-section-heading"><div><span class="eyebrow">120-BAR CHARTS</span><h2>시장별 차트</h2></div><small>최근 120개 일봉 · 아래로 스크롤</small></div>
-  <section id="charts" class="charts"></section>
-  <footer>자료는 외부 시세 제공처 기준이며, 거래소·상품별 업데이트 시점이 다를 수 있습니다. 투자 판단 전 원자료를 확인하세요.</footer>
+  <div class="group"><span class="ko">주식시장 분석</span> STOCK MARKET ANALYSIS</div>
+  <nav class="list two" aria-label="주식시장 분석 페이지">
+    <a class="link" href="https://sy-j11.github.io/c/"><span class="ico">🌅</span><span class="txt"><b>국내 증시 개장 전 분석</b><small>PRE-MARKET ANALYSIS</small></span><span class="go">›</span></a>
+    <a class="link" href="https://sy-j11.github.io/t/"><span class="ico">📊</span><span class="txt"><b>시장 수급 분석</b><small>MARKET FLOW ANALYSIS</small></span><span class="go">›</span></a>
+    <a class="link" href="https://sy-j11.github.io/st/"><span class="ico">🔥</span><span class="txt"><b>오늘의 주요 거래 종목</b><small>TODAY'S MOVERS</small></span><span class="go">›</span></a>
+    <a class="link" href="https://sy-j11.github.io/s"><span class="ico">🔎</span><span class="txt"><b>종목 인사이트</b><small>STOCK INSIGHT</small></span><span class="go">›</span></a>
+    <a class="link" href="https://sy-j11.github.io/n/"><span class="ico">📰</span><span class="txt"><b>월가 인사이트</b><small>WALL STREET INSIGHT</small></span><span class="go">›</span></a>
+  </nav>
+
+  <hr>
+  <div class="group"><span class="ko">매크로 경제 분석</span> MACRO ANALYSIS</div>
+  <nav class="list" aria-label="매크로 경제 분석 페이지">
+    <a class="link" href="https://sy-j11.github.io/f/"><span class="ico">🏛️</span><span class="txt"><b>미국 경제지표 분석</b><small>US ECONOMIC INDICATORS ANALYSIS</small></span><span class="go">›</span></a>
+  </nav>
+
+  <hr>
+  <div class="group"><span class="ko">맞춤 메뉴</span> CUSTOMIZED MENU</div>
+  <nav class="list" id="customMenu" aria-label="맞춤 메뉴"></nav>
+  <button class="custom-add" id="addCustomMenu" type="button"><span>＋</span> 추가하기</button>
 </main>
+<footer>투자 판단과 책임은 본인에게 있습니다.</footer>
 </div>
-<script src="./app.js?v=162"></script>
+
+<div class="modal-backdrop" id="customModal" role="dialog" aria-modal="true" aria-labelledby="customModalTitle">
+  <div class="modal">
+    <div class="modal-head">
+      <h2 id="customModalTitle">맞춤 메뉴 추가</h2>
+      <button class="modal-close" id="closeCustomModal" type="button" aria-label="닫기">×</button>
+    </div>
+    <form id="customMenuForm">
+      <div class="field">
+        <label>아이콘 선택</label>
+        <div class="icon-picker" id="iconPicker"></div>
+      </div>
+      <div class="field">
+        <label for="customTitle">제목</label>
+        <input id="customTitle" type="text" maxlength="40" placeholder="예: 글로벌 시장 분석" required>
+      </div>
+      <div class="field">
+        <label for="customEnglish">영문명</label>
+        <input id="customEnglish" type="text" maxlength="60" placeholder="예: GLOBAL MARKET ANALYSIS" required>
+      </div>
+      <div class="field">
+        <label for="customUrl">URL</label>
+        <input id="customUrl" type="url" inputmode="url" placeholder="https://example.com" required>
+      </div>
+      <div class="form-error" id="customFormError" aria-live="polite"></div>
+      <div class="modal-actions">
+        <button class="modal-cancel" id="cancelCustomMenu" type="button">취소</button>
+        <button class="modal-save" type="submit">추가하기</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+(function(){
+  var root=document.documentElement,btn=document.getElementById('theme');
+  try{var t=localStorage.getItem('hub-theme');if(t)root.setAttribute('data-theme',t)}catch(e){}
+  btn.addEventListener('click',function(){
+    var dark=root.getAttribute('data-theme')==='dark'||(!root.getAttribute('data-theme')&&matchMedia('(prefers-color-scheme:dark)').matches);
+    var next=dark?'light':'dark';
+    root.setAttribute('data-theme',next);
+    try{localStorage.setItem('hub-theme',next)}catch(e){}
+  });
+
+  var customMenu=document.getElementById('customMenu');
+  var modal=document.getElementById('customModal');
+  var form=document.getElementById('customMenuForm');
+  var iconPicker=document.getElementById('iconPicker');
+  var selectedIcon='🔗';
+  var iconChoices=['🔗','📈','📊','💹','🌍','🌐','📰','🏦','💰','💵','🪙','📉','📅','🗓️','📌','⭐','🔥','💡','🔍','🧭','🏛️','📚','🧮','⚙️','🎯','🚀','☀️','🌅'];
+  var storageKey='market-insight-custom-menu';
+  function readCustomItems(){
+    try{
+      var value=JSON.parse(localStorage.getItem(storageKey)||'[]');
+      return Array.isArray(value)?value:[];
+    }catch(e){return []}
+  }
+  function renderCustomItems(){
+    customMenu.innerHTML='';
+    readCustomItems().forEach(function(item){
+      var a=document.createElement('a');
+      a.className='link';
+      a.href=item.url;
+      a.target='_blank';
+      a.rel='noopener noreferrer';
+      var ico=document.createElement('span');
+      ico.className='ico';ico.textContent=item.icon;
+      var txt=document.createElement('span');txt.className='txt';
+      var title=document.createElement('b');title.textContent=item.title;
+      var english=document.createElement('small');english.textContent=item.english;
+      txt.appendChild(title);txt.appendChild(english);
+      var go=document.createElement('span');go.className='go';go.textContent='›';
+      a.appendChild(ico);a.appendChild(txt);a.appendChild(go);
+      customMenu.appendChild(a);
+    });
+  }
+  function renderIconPicker(){
+    iconPicker.innerHTML='';
+    iconChoices.forEach(function(icon){
+      var option=document.createElement('button');
+      option.type='button';option.className='icon-option'+(icon===selectedIcon?' selected':'');
+      option.textContent=icon;option.setAttribute('aria-label',icon);
+      option.addEventListener('click',function(){
+        selectedIcon=icon;renderIconPicker();
+      });
+      iconPicker.appendChild(option);
+    });
+  }
+  function openModal(){
+    selectedIcon='🔗';form.reset();
+    document.getElementById('customFormError').textContent='';
+    renderIconPicker();modal.classList.add('open');
+    document.getElementById('customTitle').focus();
+  }
+  function closeModal(){modal.classList.remove('open')}
+  document.getElementById('addCustomMenu').addEventListener('click',openModal);
+  document.getElementById('closeCustomModal').addEventListener('click',closeModal);
+  document.getElementById('cancelCustomMenu').addEventListener('click',closeModal);
+  modal.addEventListener('click',function(e){if(e.target===modal)closeModal()});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&modal.classList.contains('open'))closeModal()});
+  form.addEventListener('submit',function(e){
+    e.preventDefault();
+    var title=document.getElementById('customTitle').value.trim();
+    var english=document.getElementById('customEnglish').value.trim();
+    var rawUrl=document.getElementById('customUrl').value.trim();
+    var error=document.getElementById('customFormError');
+    var parsed;
+    try{parsed=new URL(rawUrl)}catch(e){}
+    if(!title||!english||!parsed||!/^https?:$/.test(parsed.protocol)){
+      error.textContent='제목, 영문명과 올바른 http 또는 https URL을 입력해 주세요.';
+      return;
+    }
+    var items=readCustomItems();
+    items.push({icon:selectedIcon,title:title,english:english,url:parsed.href});
+    try{
+      localStorage.setItem(storageKey,JSON.stringify(items));
+    }catch(e){
+      error.textContent='저장할 수 없습니다. 브라우저 저장 공간을 확인해 주세요.';
+      return;
+    }
+    renderCustomItems();closeModal();
+  });
+  renderCustomItems();
+})();
+</script>
 </body>
 </html>
