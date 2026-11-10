@@ -169,8 +169,8 @@ footer{text-align:center;color:var(--muted);font-size:8px;padding:18px 3px}
       var go=document.createElement('span');go.className='go';go.textContent='›';
       a.appendChild(ico);a.appendChild(txt);a.appendChild(go);
       var del=document.createElement('button');
-      del.type='button';del.className='custom-delete';del.textContent='삭제하기';
-      del.setAttribute('aria-label',item.title+' 삭제하기');
+      del.type='button';del.className='custom-delete';del.textContent='삭제';
+      del.setAttribute('aria-label',item.title+' 삭제');
       del.addEventListener('click',function(){
         var items=readCustomItems();
         items.splice(index,1);
