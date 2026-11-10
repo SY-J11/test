@@ -391,10 +391,38 @@ html.dark .history-content .history-field-quote .history-quote,html.dark .histor
 .global-deleted-row .permanent-delete{border-color:#b94b54;color:#b94b54}
 .global-market-group.custom-global-group .global-market-grid{grid-template-columns:1fr}
 
-/* v19 requested layout adjustments */
-.history-content .history-cards{grid-template-columns:minmax(0,1fr)!important}
-.global-market-group.custom-global-group .global-market-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
-@media(max-width:680px){
-  .history-content .history-cards{grid-template-columns:minmax(0,1fr)!important}
-  .global-market-group.custom-global-group .global-market-grid{grid-template-columns:1fr}
+
+/* v20 layout and group management refinements */
+.history-content,
+.history-content-body,
+.history-content .history-intro,
+.history-content .history-summary,
+.history-content .history-content-body,
+.history-content .history-main,
+.history-content .history-wrap,
+.history-content .history-toolbar,
+.history-content .history-section,
+.history-content .history-cards {
+  width:100%;
+  max-width:none;
 }
+.history-content .history-wrap { margin:0; padding-left:0; padding-right:0; }
+.history-content .history-toolbar { box-sizing:border-box; }
+.global-group-delete {
+  display:inline-flex; align-items:center; justify-content:center;
+  margin:12px 0 0; padding:5px 9px; min-height:28px;
+  border:1px solid #e3a1a5; border-radius:7px;
+  background:#fff7f7; color:#b83c45;
+  font-size:11px; font-weight:700; cursor:pointer;
+}
+.global-group-delete:hover { background:#ffecec; }
+.global-item-form .people-manage-btn,
+.global-bottom-management .people-manage-btn {
+  min-height:30px; padding:6px 10px; font-size:11px;
+}
+.global-bottom-management .people-manage-btn.primary { padding:6px 11px; }
+/* v21: compact one-field group creation and paired restore/permanent-delete actions */
+.global-item-form{grid-template-columns:minmax(180px,1fr) auto;align-items:end;max-width:620px;padding:12px}
+.global-item-form .people-manage-btn{white-space:nowrap;min-width:88px}
+.global-deleted-row .people-manage-btn{min-height:28px;padding:5px 10px;font-size:11px;white-space:nowrap}
+@media(max-width:680px){.global-item-form{grid-template-columns:1fr}.global-item-form .people-manage-btn{width:max-content}}
