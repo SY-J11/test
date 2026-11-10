@@ -557,7 +557,7 @@ $("themeBtn").addEventListener("click", () => {
     const html=visible.map((item,i)=>{
       const date=item.publishedAt?new Date(item.publishedAt):null;
       const dateText=date&&!Number.isNaN(date.getTime())?date.toLocaleDateString('ko-KR',{month:'2-digit',day:'2-digit'}):'';
-      return `<a class="person-news-item" href="${escGlobal(item.url)}" target="_blank" rel="noopener noreferrer"><span class="person-news-number">${i+1}</span><span class="person-news-copy"><b>${escGlobal(item.title)}</b><small>${esc(item.source||newsProviders.get(section)||'뉴스')}${dateText?' · '+dateText:''}</small></span><span class="person-news-arrow">↗</span></a>`;
+      return `<a class="person-news-item" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer"><span class="person-news-number">${i+1}</span><span class="person-news-copy"><b>${esc(item.title)}</b><small>${esc(item.source||newsProviders.get(section)||'뉴스')}${dateText?' · '+dateText:''}</small></span><span class="person-news-arrow">↗</span></a>`;
     }).join('');
     list.insertAdjacentHTML('afterbegin',html);
     if(loadingNews.has(section)){
@@ -730,184 +730,48 @@ buttons.forEach(btn=>btn.addEventListener('click',()=>{
 
 /* ===== 글로벌 시각 항목 추가·삭제·복원 ===== */
 (() => {
-  const root = document.querySelector(".global-perspective-panel");
+  const root = document.getElementById("panel-global-perspective");
   if (!root) return;
   const storageKey = "marketInsightGlobalItems_v1";
-  const addBtn = document.getElementById("addGlobalItemBtn");
-  const deleteBtn = document.getElementById("toggleDeleteGlobalBtn");
-  const cancelBtn = document.getElementById("cancelGlobalItemBtn");
-  const form = document.getElementById("globalItemForm");
-  const deletedList = document.getElementById("deletedGlobalItems");
-  const groupsContainer = root.querySelector(".global-perspective-groups");
+  const addBtn = root.querySelector("#addGlobalItemBtn"), deleteBtn = root.querySelector("#toggleDeleteGlobalBtn");
+  const cancelBtn = root.querySelector("#cancelGlobalItemBtn"), form = root.querySelector("#globalItemForm");
+  const deletedList = root.querySelector("#deletedGlobalItems"), groupsContainer = root.querySelector(".global-perspective-groups");
+  if (!addBtn || !deleteBtn || !cancelBtn || !form || !deletedList || !groupsContainer) return;
   let deleteMode = false, deleted = [], added = [];
   try {
     const saved = JSON.parse(localStorage.getItem(storageKey) || "{}");
     deleted = Array.isArray(saved.deleted) ? saved.deleted : [];
     added = Array.isArray(saved.added) ? saved.added : [];
-    // 이전 버전의 카드 단위 저장값은 그룹으로 묶어 호환한다.
-    const legacy = added.filter(x => !x.type || x.type !== "group");
-    added = added.filter(x => x.type === "group");
-    legacy.forEach((x, i) => {
-      const market = x.market || "추가 항목";
-      let group = added.find(g => g.market === market);
-      if (!group) { group = {type:"group", id:"legacy-" + i, market, cards:[]}; added.push(group); }
-      group.cards.push(x.html);
-    });
-  } catch (_) {}
-  const escGlobal = value => String(value ?? "").replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
-  const purgeExpired = () => { const cutoff = Date.now() - 30 * 86400000; deleted = deleted.filter(item => Number(item.deletedAt || 0) > cutoff); };
-  purgeExpired();
-  const save = () => { purgeExpired(); localStorage.setItem(storageKey, JSON.stringify({deleted, added})); };
-  const groups = () => [...root.querySelectorAll(".global-market-group")];
-  const marketName = group => group.querySelector(".global-market-heading h2")?.textContent.trim() || "추가 항목";
-  const createPeerGroup = (name, id) => {
-    const group = document.createElement("section");
-    group.className = "global-market-group card custom-global-group";
-    if (id) group.dataset.groupId = id;
-    const heading = document.createElement("div"); heading.className = "global-market-heading";
-    heading.innerHTML = '<span class="eyebrow">GLOBAL MARKET WATCH · CUSTOM</span>';
-    const h2 = document.createElement("h2"); h2.textContent = name; heading.appendChild(h2);
-    const grid = document.createElement("div"); grid.className = "global-market-grid";
-    group.append(heading, grid); groupsContainer.appendChild(group);
-    return group;
+    const legacy = added.filter(x => x.type !== "group"); added = added.filter(x => x.type === "group");
+    legacy.forEach((x,i) => { const market=x.market||"추가 항목"; let g=added.find(v=>v.market===market); if(!g){g={type:"group",id:"legacy-"+i,market,cards:[]};added.push(g);} if(x.html)g.cards.push(x.html); });
+  } catch (_) { deleted=[]; added=[]; }
+  const escGlobal = v => String(v ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const purgeExpired = () => { const limit=Date.now()-30*86400000; deleted=deleted.filter(x=>Number(x.deletedAt||0)>limit); };
+  const save = () => { purgeExpired(); localStorage.setItem(storageKey,JSON.stringify({deleted,added})); };
+  const marketName = g => g.querySelector(".global-market-heading h2")?.textContent.trim()||"추가 항목";
+  const providers=[{name:"Google",source:"global",domain:"news.google.com"},{name:"Goldman Sachs",source:"official-goldman",domain:"goldmansachs.com"},{name:"Morgan Stanley",source:"official-morgan",domain:"morganstanley.com"}];
+  const makeCard=(query,p,id)=>{
+    const card=document.createElement("section");card.className="person-news global-news-card";card.dataset.query=query;card.dataset.source=p.source;card.dataset.customId=id;
+    const href=p.source==="global"?"https://news.google.com/search?q="+encodeURIComponent(query)+"&hl=en-US&gl=US&ceid=US:en":p.source==="official-goldman"?"https://www.goldmansachs.com/search?query="+encodeURIComponent(query):"https://www.morganstanley.com/search?text="+encodeURIComponent(query);
+    card.innerHTML=`<div class="person-news-head"><b></b><span class="person-news-actions"><a class="person-news-search-link" href="${href}" target="_blank" rel="noopener noreferrer">전체 기사 보기 ↗</a><span>최신순</span></span></div><div class="person-news-list"><div class="person-news-state">기사를 불러오는 중입니다.</div></div><button type="button" class="person-news-more" data-news-more disabled>기사 10개 더 보기</button>`;
+    const b=card.querySelector(".person-news-head>b");b.textContent=p.name;if(p.domain!=="news.google.com"){b.classList.add("provider-brand");const img=document.createElement("img");img.src="https://www.google.com/s2/favicons?domain="+p.domain+"&sz=64";img.alt="";img.loading="lazy";b.prepend(img);}return card;
   };
-  const providers = [
-    {name:"Google", source:"global", domain:"news.google.com"},
-    {name:"Goldman Sachs", source:"official-goldman", domain:"goldmansachs.com"},
-    {name:"Morgan Stanley", source:"official-morgan", domain:"morganstanley.com"}
-  ];
-  const makeCard = (query, provider, id) => {
-    const card = document.createElement("section");
-    card.className = "person-news global-news-card";
-    card.dataset.query = query; card.dataset.source = provider.source;
-    card.dataset.customId = id;
-    const link = provider.source === "global"
-      ? "https://news.google.com/search?q=" + encodeURIComponent(query) + "&hl=en-US&gl=US&ceid=US:en"
-      : provider.source === "official-goldman"
-        ? "https://www.goldmansachs.com/search?query=" + encodeURIComponent(query)
-        : "https://www.morganstanley.com/search?text=" + encodeURIComponent(query);
-    card.innerHTML = `<div class="person-news-head"><b></b><span class="person-news-actions"><a class="person-news-search-link" href="${link}" target="_blank" rel="noopener noreferrer">전체 기사 보기 ↗</a><span>최신순</span></span></div><div class="person-news-list"><div class="person-news-state">화면에 표시되면 검색 결과를 불러옵니다.</div></div><button type="button" class="person-news-more" data-news-more disabled>기사 10개 더 보기</button>`;
-    const b = card.querySelector(".person-news-head>b"); b.textContent = provider.name;
-    if (provider.domain !== "news.google.com") {
-      b.classList.add("provider-brand"); const img = document.createElement("img");
-      img.src = "https://www.google.com/s2/favicons?domain=" + provider.domain + "&sz=64";
-      img.alt = ""; img.loading = "lazy"; b.prepend(img);
-    }
-    return card;
-  };
-  async function loadAddedCard(card) {
-    if (!card || card.dataset.loaded === "1") return;
-    card.dataset.loaded = "1";
-    const list = card.querySelector(".person-news-list"), more = card.querySelector("[data-news-more]");
-    try {
-      const response = await fetch("https://macro.mcraft-tiger-574.workers.dev/api/person-news?q=" +
-        encodeURIComponent(card.dataset.query || "") + "&source=" + encodeURIComponent(card.dataset.source || "global") + "&limit=10&offset=0");
-      const data = await response.json(); if (!response.ok) throw new Error(data.error || "검색 요청 실패");
-      const items = Array.isArray(data.items) ? data.items : [];
-      list.innerHTML = items.map((item, i) =>
-        `<a class="person-news-item" href="${escGlobal(item.url)}" target="_blank" rel="noopener noreferrer"><span class="person-news-number">${i+1}</span><span class="person-news-copy"><b>${escGlobal(item.title)}</b><small>${escGlobal(item.source || data.provider || "검색 결과")}</small></span><span class="person-news-arrow">↗</span></a>`
-      ).join("") || `<div class="person-news-state">${escGlobal(data.error || "검색 결과가 없습니다.")}</div>`;
-      if (more) more.hidden = true;
-    } catch (error) { list.innerHTML = `<div class="person-news-state">검색 결과를 불러오지 못했습니다: ${escGlobal(error.message || error)}</div>`; card.dataset.loaded = "0"; }
+  async function loadCard(card){
+    if(!card||card.dataset.loaded==="1")return;card.dataset.loaded="1";const list=card.querySelector(".person-news-list");
+    try{const url=API_BASE+"/api/person-news?q="+encodeURIComponent(card.dataset.query||"")+"&source="+encodeURIComponent(card.dataset.source||"global")+"&limit=10&offset=0";const r=await fetch(url,{headers:{Accept:"application/json"},cache:"no-store"});const data=await r.json();if(!r.ok)throw new Error(data.error||"검색 요청 실패");const items=Array.isArray(data.items)?data.items:[];list.innerHTML=items.map((it,i)=>`<a class="person-news-item" href="${escGlobal(it.url)}" target="_blank" rel="noopener noreferrer"><span class="person-news-number">${i+1}</span><span class="person-news-copy"><b>${escGlobal(it.title)}</b><small>${escGlobal(it.source||data.provider||"검색 결과")}</small></span><span class="person-news-arrow">↗</span></a>`).join("")||`<div class="person-news-state">${escGlobal(data.error||"검색 결과가 없습니다.")}</div>`;card.dataset.loaded="1";}
+    catch(e){list.innerHTML=`<div class="person-news-state">검색 결과를 불러오지 못했습니다: ${escGlobal(e.message||e)}</div><button type="button" class="person-news-retry">다시 불러오기</button>`;card.dataset.loaded="0";}
   }
-  const addedNewsObserver = "IntersectionObserver" in window
-    ? new IntersectionObserver(entries => entries.forEach(entry => {
-        if (entry.isIntersecting) { loadAddedCard(entry.target); addedNewsObserver.unobserve(entry.target); }
-      }), {rootMargin:"220px 0px"})
-    : null;
-  const observeAddedCard = card => {
-    if (!card) return;
-    if (addedNewsObserver) addedNewsObserver.observe(card);
-    else loadAddedCard(card);
-  };
-  const renderGroup = (record, shouldLoad = true) => {
-    const group = createPeerGroup(record.market, record.id);
-    const grid = group.querySelector(".global-market-grid");
-    const cards = record.cards?.length ? record.cards : providers.map((p, i) => makeCard(record.market, p, record.id + "-" + i).outerHTML);
-    cards.forEach((html, i) => {
-      const holder = document.createElement("div"); holder.innerHTML = html;
-      const card = holder.firstElementChild; if (!card) return;
-      card.dataset.customId = record.id + "-" + i; grid.appendChild(card);
-      if (shouldLoad) observeAddedCard(card);
-    });
-    return group;
-  };
-  const ensureDeleteControls = () => {
-    root.querySelectorAll(".global-market-group.custom-global-group").forEach(group => {
-      let btn = group.querySelector(":scope > .global-group-delete");
-      if (deleteMode && !btn) {
-        btn = document.createElement("button"); btn.type = "button"; btn.className = "global-group-delete";
-        btn.textContent = "삭제";
-        btn.addEventListener("click", () => {
-          const id = group.dataset.groupId;
-          const record = added.find(x => x.id === id);
-          deleted.push({type:"group", id, market:marketName(group), html:group.outerHTML, deletedAt:Date.now()});
-          added = added.filter(x => x.id !== id); save(); group.remove(); renderDeleted();
-        });
-        group.appendChild(btn);
-      } else if (!deleteMode && btn) btn.remove();
-    });
-  };
-  function renderDeleted() {
-    purgeExpired(); save();
-    deletedList.innerHTML = "";
-    if (!deleted.length) { deletedList.innerHTML = "<p>복원할 항목이 없습니다.</p>"; return; }
-    deleted.forEach((item, index) => {
-      const row = document.createElement("div"); row.className = "global-deleted-row";
-      const label = document.createElement("span");
-      const deadline = Number(item.deletedAt || Date.now()) + 30 * 86400000;
-      const daysLeft = Math.max(0, Math.ceil((deadline - Date.now()) / 86400000));
-      label.textContent = `${item.market || "추가 항목"} · 자동 영구 삭제까지 ${daysLeft}일`;
-      const restore = document.createElement("button"); restore.type = "button"; restore.className = "people-manage-btn"; restore.textContent = "복원";
-      restore.addEventListener("click", () => {
-        const holder = document.createElement("div"); holder.innerHTML = item.html || "";
-        const restored = holder.firstElementChild;
-        if (restored) {
-          restored.querySelector(":scope > .global-group-delete")?.remove();
-          restored.classList.add("custom-global-group"); restored.dataset.groupId = item.id || ("restored-" + Date.now().toString(36));
-          groupsContainer.appendChild(restored);
-          restored.querySelectorAll(".global-news-card").forEach(loadAddedCard);
-          const cards = [...restored.querySelectorAll(".global-news-card")].map(c => c.outerHTML);
-          added.push({type:"group", id:restored.dataset.groupId, market:item.market || marketName(restored), cards});
-          if (deleteMode) ensureDeleteControls();
-        }
-        deleted.splice(index, 1); save(); renderDeleted();
-      });
-      const permanent = document.createElement("button"); permanent.type = "button"; permanent.className = "people-manage-btn danger"; permanent.textContent = "삭제";
-      permanent.addEventListener("click", () => { deleted.splice(index, 1); save(); renderDeleted(); });
-      const actions = document.createElement("div"); actions.className = "global-deleted-actions";
-      actions.append(restore, permanent);
-      row.append(label, actions); deletedList.appendChild(row);
-    });
-  }
-  // Render persisted custom groups as complete, three-card sets.
-  added.forEach(record => renderGroup(record));
-  document.querySelectorAll(".main-tab[data-panel=\"global-perspective\"]").forEach(button => {
-    button.addEventListener("click", () => {
-      root.querySelectorAll(".custom-global-group .global-news-card").forEach(observeAddedCard);
-    });
-  });
-  addBtn?.addEventListener("click", () => {
-    form.hidden = false; cancelBtn.hidden = false; addBtn.hidden = true;
-    form.scrollIntoView({behavior:"smooth", block:"center"});
-    form.querySelector('input[name="market"]')?.focus();
-  });
-  cancelBtn?.addEventListener("click", () => { form.reset(); form.hidden = true; cancelBtn.hidden = true; addBtn.hidden = false; });
-  deleteBtn?.addEventListener("click", () => {
-    deleteMode = !deleteMode; deleteBtn.classList.toggle("active", deleteMode);
-    deleteBtn.setAttribute("aria-pressed", String(deleteMode));
-    deleteBtn.textContent = deleteMode ? "삭제 선택 종료" : "－ 항목 삭제"; ensureDeleteControls();
-  });
-  form?.addEventListener("submit", event => {
-    event.preventDefault(); const market = String(new FormData(form).get("market") || "").trim();
-    if (!market) return;
-    const id = "custom-" + Date.now().toString(36);
-    const record = {type:"group", id, market, cards:providers.map((p, i) => makeCard(market, p, id + "-" + i).outerHTML)};
-    added.push(record); const group = renderGroup(record); save();
-    form.reset(); form.hidden = true; cancelBtn.hidden = true; addBtn.hidden = false;
-    ensureDeleteControls(); group.scrollIntoView({behavior:"smooth", block:"start"});
-  });
-  renderDeleted(); ensureDeleteControls();
-  window.setInterval(() => { const before = deleted.length; purgeExpired(); if (deleted.length !== before) { save(); renderDeleted(); } }, 60 * 60 * 1000);
+  const observeCard=card=>{if(!card)return;if("IntersectionObserver"in window){if(card.dataset.observing==="1")return;card.dataset.observing="1";const obs=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){obs.unobserve(e.target);e.target.dataset.observing="0";loadCard(e.target);}}),{rootMargin:"220px 0px"});obs.observe(card);}else loadCard(card);};
+  const createGroup=(name,id)=>{const g=document.createElement("section");g.className="global-market-group card custom-global-group";g.dataset.groupId=id;const head=document.createElement("div");head.className="global-market-heading";head.innerHTML='<span class="eyebrow">GLOBAL MARKET WATCH · CUSTOM</span>';const h=document.createElement("h2");h.textContent=name;head.appendChild(h);const grid=document.createElement("div");grid.className="global-market-grid";g.append(head,grid);providers.forEach((p,i)=>{const c=makeCard(name,p,id+"-"+i);grid.appendChild(c);observeCard(c);});groupsContainer.appendChild(g);return g;};
+  const syncDelete=()=>root.querySelectorAll(".custom-global-group").forEach(g=>{let b=g.querySelector(":scope > .global-group-delete");if(deleteMode&&!b){b=document.createElement("button");b.type="button";b.className="global-group-delete";b.textContent="삭제";b.dataset.deleteGroup=g.dataset.groupId||"";g.appendChild(b);}else if(!deleteMode&&b)b.remove();});
+  function renderDeleted(){purgeExpired();deletedList.replaceChildren();if(!deleted.length){const p=document.createElement("p");p.textContent="복원할 항목이 없습니다.";deletedList.appendChild(p);}else deleted.forEach((item,i)=>{const row=document.createElement("div");row.className="global-deleted-row";const label=document.createElement("span");const left=Math.max(0,Math.ceil((Number(item.deletedAt||Date.now())+30*86400000-Date.now())/86400000));label.textContent=`${item.market||"추가 항목"} · 자동 영구 삭제까지 ${left}일`;const actions=document.createElement("div");actions.className="global-deleted-actions";const restore=document.createElement("button");restore.type="button";restore.className="people-manage-btn";restore.textContent="복원";restore.dataset.restoreGroup=i;const remove=document.createElement("button");remove.type="button";remove.className="people-manage-btn danger";remove.textContent="삭제";remove.dataset.permanentGroup=i;actions.append(restore,remove);row.append(label,actions);deletedList.appendChild(row);});save();}
+  function restoreGroup(i){const item=deleted[i];if(!item)return;const holder=document.createElement("div");holder.innerHTML=item.html||"";let g=holder.firstElementChild;if(!g){g=createGroup(item.market||"추가 항목",item.id||("restored-"+Date.now().toString(36)));}else{g.classList.add("custom-global-group");g.dataset.groupId=item.id||("restored-"+Date.now().toString(36));g.querySelector(":scope > .global-group-delete")?.remove();groupsContainer.appendChild(g);g.querySelectorAll(".global-news-card").forEach(c=>{c.dataset.loaded="0";observeCard(c);});}const id=g.dataset.groupId;const cards=[...g.querySelectorAll(".global-news-card")].map(c=>c.outerHTML);if(!added.some(x=>x.id===id))added.push({type:"group",id,market:item.market||marketName(g),cards});deleted.splice(i,1);save();renderDeleted();syncDelete();}
+  // Load saved custom groups; never replace or mutate the built-in KOSPI/KOSDAQ groups.
+  added.forEach(record=>{const g=createGroup(record.market||"추가 항목",record.id||("custom-"+Date.now().toString(36)));if(Array.isArray(record.cards)&&record.cards.length){const grid=g.querySelector(".global-market-grid");grid.replaceChildren();record.cards.forEach((html,i)=>{const holder=document.createElement("div");holder.innerHTML=html;const c=holder.firstElementChild;if(c){c.dataset.customId=(record.id||"custom")+"-"+i;c.dataset.loaded="0";grid.appendChild(c);observeCard(c);}});}});
+  addBtn.addEventListener("click",e=>{e.preventDefault();form.hidden=false;cancelBtn.hidden=false;addBtn.hidden=true;form.scrollIntoView({behavior:"smooth",block:"center"});form.querySelector('input[name="market"]')?.focus();});
+  cancelBtn.addEventListener("click",e=>{e.preventDefault();form.reset();form.hidden=true;cancelBtn.hidden=true;addBtn.hidden=false;});
+  deleteBtn.addEventListener("click",e=>{e.preventDefault();deleteMode=!deleteMode;deleteBtn.classList.toggle("active",deleteMode);deleteBtn.setAttribute("aria-pressed",String(deleteMode));deleteBtn.textContent=deleteMode?"삭제 선택 종료":"－ 항목 삭제";syncDelete();});
+  form.addEventListener("submit",e=>{e.preventDefault();const input=form.querySelector('input[name="market"]');const name=String(input?.value||"").trim();if(!name){input?.focus();return;}const id="custom-"+Date.now().toString(36);const record={type:"group",id,market:name,cards:[]};added.push(record);const g=createGroup(name,id);record.cards=[...g.querySelectorAll(".global-news-card")].map(c=>c.outerHTML);save();form.reset();form.hidden=true;cancelBtn.hidden=true;addBtn.hidden=false;syncDelete();g.scrollIntoView({behavior:"smooth",block:"start"});});
+  root.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;if(b.dataset.deleteGroup!==undefined){const g=b.closest(".custom-global-group");if(!g)return;const id=g.dataset.groupId;deleted.push({type:"group",id,market:marketName(g),html:g.outerHTML,deletedAt:Date.now()});added=added.filter(x=>x.id!==id);g.remove();save();renderDeleted();}else if(b.dataset.restoreGroup!==undefined)restoreGroup(Number(b.dataset.restoreGroup));else if(b.dataset.permanentGroup!==undefined){deleted.splice(Number(b.dataset.permanentGroup),1);save();renderDeleted();}else if(b.classList.contains("person-news-retry")){const c=b.closest(".global-news-card");if(c){c.dataset.loaded="0";loadCard(c);}}});
+  renderDeleted();syncDelete();window.setInterval(()=>{const before=deleted.length;purgeExpired();if(before!==deleted.length){save();renderDeleted();}},60*60*1000);
 })();
-
