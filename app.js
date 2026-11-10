@@ -377,6 +377,9 @@ $("themeBtn").addEventListener("click", () => {
   // 요청한 초기 배치: 케빈 워시를 세 번째에 둠
   const kevinIndex = people.findIndex(p => p.name === "케빈 워시");
   if (kevinIndex >= 0) { const [kevin] = people.splice(kevinIndex, 1); people.splice(Math.min(2, people.length), 0, kevin); }
+  // 우에다 가즈오는 저장된 사용자 정렬보다 우선해 항상 마지막에 배치
+  const uedaIndex = people.findIndex(p => p.name === "우에다 가즈오");
+  if (uedaIndex >= 0) { const [ueda] = people.splice(uedaIndex, 1); people.push(ueda); }
   const savePeople = () => {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify({
       deleted: deletedPeople,
@@ -385,11 +388,19 @@ $("themeBtn").addEventListener("click", () => {
     })); } catch (_) {}
   };
   savePeople();
-  // 해외 검색어는 기존 검색 문구에서 인물 이름 두 단어만 사용
-  const newsQuery = p => {
-    const query = String(p.query || "").trim();
-    return query ? query.split(/\s+/).slice(0, 2).join(" ") : String(p.name).trim();
+  // 해외 뉴스/전체 기사 검색에는 인물 이름만 전달한다(분야·보조 키워드 제외).
+  const overseasNames = {
+    "도널드 트럼프":"Donald Trump", "스콧 베선트":"Scott Bessent", "제이미슨 그리어":"Jamieson Greer",
+    "하워드 러트닉":"Howard Lutnick", "시진핑":"Xi Jinping", "케빈 워시":"Kevin Warsh",
+    "리사 쿡":"Lisa Cook", "크리스토퍼 월러":"Christopher Waller", "베스 해맥":"Beth Hammack",
+    "토머스 바킨":"Thomas Barkin", "우에다 가즈오":"Kazuo Ueda", "크리스틴 라가르드":"Christine Lagarde",
+    "제이미 다이먼":"Jamie Dimon", "래리 핑크":"Larry Fink", "스탠리 드러켄밀러":"Stanley Druckenmiller",
+    "빌 애크먼":"Bill Ackman", "데이비드 테퍼":"David Tepper", "캐시 우드":"Cathie Wood",
+    "마이클 버리":"Michael Burry", "하워드 막스":"Howard Marks", "마크 미너비니":"Mark Minervini",
+    "젠슨 황":"Jensen Huang", "샘 올트먼":"Sam Altman", "사티아 나델라":"Satya Nadella",
+    "순다르 피차이":"Sundar Pichai", "마크 저커버그":"Mark Zuckerberg", "일론 머스크":"Elon Musk", "리사 수":"Lisa Su"
   };
+  const newsQuery = p => overseasNames[p.name] || String(p.query || p.name).trim().split(/\s+/).slice(0, 2).join(" ");
 
   const influence = {
     "도널드 트럼프":"S", "스콧 베선트":"S", "제이미슨 그리어":"A", "하워드 러트닉":"A", "시진핑":"S",
@@ -445,7 +456,8 @@ $("themeBtn").addEventListener("click", () => {
     count.textContent=rows.length+"명";
     root.innerHTML=rows.map(p=>{
       const grade=influence[p.name]||"B";
-      return `<article class="person-card" data-person="${esc(p.name)}" draggable="${window.matchMedia && window.matchMedia("(min-width: 900px)").matches}"><div class="person-card-top"><div class="person-heading"><div class="person-name-line"><h3>${esc(p.name)}</h3><div class="person-card-badges"><span class="person-sector">${esc(p.group)}</span><span class="influence-grade grade-${grade}" title="${gradeText[grade]}">영향력 ${grade}</span></div></div><div class="person-meta">${esc(p.country)} · ${esc(p.role)}</div></div><button class="person-delete-btn" type="button" data-delete="${esc(p.name)}" aria-label="${esc(p.name)} 삭제">삭제</button></div><p class="person-impact">${esc(p.impact)}</p><div class="person-watch"><b>체크할 뉴스</b><br>${esc(p.watch)}</div>${p.name==="도널드 트럼프"?`<section class="truth-posts"><div class="person-news-head truth-posts-head"><a class="truth-brand-link" href="https://www.trumpstruth.org/" target="_blank" rel="noopener noreferrer" aria-label="Trump’s Truth 사이트 열기"><img src="https://www.trumpstruth.org/img/logo.svg" alt="Trump’s Truth"></a><span>최신순</span></div><div class="truth-post-list"><div class="person-news-state">최신 게시물을 불러오는 중…</div></div></section>`:""}<section class="person-news" data-query="${esc(newsQuery(p))}" data-source="global"><div class="person-news-head"><b>최근 기사 [해외]</b><span class="person-news-actions"><a class="person-news-search-link" href="https://news.google.com/search?q=${encodeURIComponent(newsQuery(p))}&hl=en-US&gl=US&ceid=US%3Aen" target="_blank" rel="noopener noreferrer">전체 기사 보기 ↗</a><span>최신순</span></span></div><div class="person-news-list"><div class="person-news-state">화면에 표시되면 최신 기사를 불러옵니다.</div></div><button type="button" class="person-news-more" data-news-more disabled>기사 10개 더 보기</button></section><section class="person-news" data-query="${esc(p.name)}" data-source="naver"><div class="person-news-head"><b>최근 기사 [NAVER]</b><span class="person-news-actions"><a class="person-news-search-link" href="https://search.naver.com/search.naver?where=news&query=${encodeURIComponent(p.name)}&sort=1" target="_blank" rel="noopener noreferrer">전체 기사 보기 ↗</a><span>최신순</span></span></div><div class="person-news-list"><div class="person-news-state">화면에 표시되면 최신 기사를 불러옵니다.</div></div><button type="button" class="person-news-more" data-news-more disabled>기사 10개 더 보기</button></section></article>`;
+      const overseasName = newsQuery(p);
+      return `<article class="person-card" data-person="${esc(p.name)}" draggable="${window.matchMedia && window.matchMedia("(min-width: 900px)").matches}"><div class="person-card-top"><div class="person-heading"><div class="person-name-line"><h3>${esc(p.name)}</h3><div class="person-card-badges"><span class="person-sector">${esc(p.group)}</span><span class="influence-grade grade-${grade}" title="${gradeText[grade]}">영향력 ${grade}</span></div></div><div class="person-meta">${esc(p.country)} · ${esc(p.role)}</div></div><button class="person-delete-btn" type="button" data-delete="${esc(p.name)}" aria-label="${esc(p.name)} 삭제">삭제</button></div><p class="person-impact">${esc(p.impact)}</p><div class="person-watch"><b>체크할 뉴스</b><br>${esc(p.watch)}</div>${p.name==="도널드 트럼프"?`<section class="truth-posts"><div class="person-news-head truth-posts-head"><a class="truth-brand-link" href="https://www.trumpstruth.org/" target="_blank" rel="noopener noreferrer" aria-label="Trump’s Truth 사이트 열기"><img src="https://www.trumpstruth.org/img/logo.svg" alt="Trump’s Truth"></a><span>최신순</span></div><div class="truth-post-list"><div class="person-news-state">최신 게시물을 불러오는 중…</div></div></section>`:""}<section class="person-news" data-query="${esc(overseasName)}" data-source="global"><div class="person-news-head"><b>최근 기사 [해외]</b><span class="person-news-actions"><a class="person-news-search-link" href="https://news.google.com/search?q=${encodeURIComponent(overseasName)}&hl=en-US&gl=US&ceid=US%3Aen" target="_blank" rel="noopener noreferrer">전체 기사 보기 ↗</a><span>최신순</span></span></div><div class="person-news-list"><div class="person-news-state">화면에 표시되면 최신 기사를 불러옵니다.</div></div><button type="button" class="person-news-more" data-news-more disabled>기사 10개 더 보기</button></section><section class="person-news" data-query="${esc(p.name)}" data-source="naver"><div class="person-news-head"><b>최근 기사 [NAVER]</b><span class="person-news-actions"><a class="person-news-search-link" href="https://search.naver.com/search.naver?where=news&query=${encodeURIComponent(p.name)}&sort=1" target="_blank" rel="noopener noreferrer">전체 기사 보기 ↗</a><span>최신순</span></span></div><div class="person-news-list"><div class="person-news-state">화면에 표시되면 최신 기사를 불러옵니다.</div></div><button type="button" class="person-news-more" data-news-more disabled>기사 10개 더 보기</button></section></article>`;
     }).join("")||'<div class="empty">검색 조건에 맞는 인물이 없습니다.</div>';
     root.querySelectorAll("[data-delete]").forEach(button => {
       button.hidden = !deleteMode;
