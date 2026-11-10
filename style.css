@@ -325,17 +325,29 @@ html.dark .deleted-person-actions button{background:#202733;color:#e7edf6}html.d
 @media(max-width:680px){.global-market-group{padding:14px}.global-market-grid{grid-template-columns:1fr}.history-intro.card{padding:17px}.history-intro.card h2{font-size:20px}}
 
 
-/* 금융과 시장의 인물들: 항목별 정보 구획을 명확하게 분리 */
-.history-content .history-cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
-.history-content .history-card{display:flex;flex-direction:column;gap:10px;padding:17px}
-.history-content .history-card-top{padding-bottom:11px;border-bottom:1px solid var(--line)}
-.history-content .history-card-top h3{font-size:18px;line-height:1.35;margin:0 0 5px}
-.history-content .history-field{border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:10px 12px}
-.history-content .history-field-label{display:block;font-size:10px;font-weight:800;letter-spacing:.06em;color:var(--muted);margin-bottom:6px}
-.history-content .history-field-quote .history-quote{margin:0;padding:0;background:transparent;border:0;border-radius:0;font-size:13px;line-height:1.65}
-.history-content .history-field-impact .history-impact{font-size:12px;line-height:1.7;color:var(--ink)}
+/* 금융과 시장의 인물들: 첫 번째 탭과 같은 독립형 인물 카드로 재구성 */
+.history-content{margin:0 0 30px;overflow:visible;border:0;border-radius:0;background:transparent;color:var(--ink)}
+.history-content-body{border:0}
+.history-content .history-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.history-content .history-card{display:flex;flex-direction:column;align-items:stretch;gap:12px;min-width:0;padding:18px;background:#fff;border:1px solid #e4e8ef;border-radius:15px;box-shadow:0 3px 12px rgba(26,42,68,.045)}
+.history-content .history-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:0 0 12px;border:0;border-bottom:1px solid #e8edf4}
+.history-content .history-card-top h3{font-size:17px;line-height:1.35;margin:0 0 5px;color:#172033}
+.history-content .history-field{display:block;width:100%;padding:0 0 11px;border:0;border-radius:0;border-bottom:1px solid #edf0f5;background:transparent}
+.history-content .history-field:last-child{padding-bottom:0;border-bottom:0}
+.history-content .history-field-label{display:block;width:max-content;max-width:100%;font-size:10px;font-weight:800;letter-spacing:.03em;color:#63738b;margin:0 0 5px;padding:3px 7px;border-radius:5px;background:#f0f4f9}
+.history-content .history-field-quote .history-quote{margin:0;padding:0;background:transparent;border:0;border-radius:0;font-size:13px;line-height:1.7;color:#25334a;font-weight:600}
+.history-content .history-field-impact .history-impact{font-size:12px;line-height:1.75;color:#465168}
 .history-content .history-field-impact .history-impact b{display:none}
-.history-content .history-field-tags .history-tags{margin:0}
+.history-content .history-field-tags .history-tags{display:flex;gap:6px;flex-wrap:wrap;margin:0}
+.history-content .history-field-tags .history-tag{font-size:10px;padding:4px 8px;border-radius:6px;background:#edf2ff;color:#3853a6}
+.history-content .history-summary{margin:0 0 18px;padding:0;gap:9px}
+.history-content .history-summary>div{background:#fff;border:1px solid #e4e8ef;border-radius:11px;padding:12px 14px}
+html.dark .history-content .history-card,html.dark .history-content .history-summary>div{background:#202733;border-color:#303a49}
+html.dark .history-content .history-card-top{border-bottom-color:#303a49}
+html.dark .history-content .history-card-top h3{color:#edf1f6}
+html.dark .history-content .history-field{border-bottom-color:#303a49}
+html.dark .history-content .history-field-label{background:#303b4c;color:#b7c5d8}
+html.dark .history-content .history-field-quote .history-quote,html.dark .history-content .history-field-impact .history-impact{color:#d2d9e4}
 .global-bottom-management{margin:4px 0 28px;padding:18px}
 .global-bottom-management h3{font-size:16px;margin:0 0 5px}
 .global-bottom-management p{font-size:12px;color:var(--muted);margin:0;line-height:1.6}
@@ -360,16 +372,14 @@ html.dark .deleted-person-actions button{background:#202733;color:#e7edf6}html.d
 }
 
 
-/* 금융 인물 탭: 첫 번째 탭과 동일한 카드형 그리드 보장 */
-.history-content .history-cards{
-  display:grid!important;
-  grid-template-columns:repeat(2,minmax(0,1fr))!important;
-  gap:12px!important;
-}
-.history-content .history-card{display:block!important;min-width:0}
+/* 금융 인물 탭: 카드 내부를 표/열 형태로 되돌리지 않도록 고정 */
+.history-content .history-cards{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:14px!important}
+.history-content .history-card{display:flex!important;flex-direction:column!important;min-width:0!important}
+.history-content .history-field{display:block!important;width:100%!important}
 .history-content .history-content-body{display:block}
 .provider-brand{display:inline-flex;align-items:center;gap:7px}
 .provider-brand img{width:18px;height:18px;object-fit:contain;border-radius:4px;background:#fff;flex:none}
 @media(max-width:700px){
   .history-content .history-cards{grid-template-columns:1fr!important}
+  .history-content .history-card{padding:15px}
 }
