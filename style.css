@@ -436,7 +436,6 @@ html.dark .history-content .history-field-quote .history-quote,html.dark .histor
   .global-deleted-actions{margin-left:auto;justify-content:flex-end;flex:none;}
 }
 
-/* 금융·시장 인물 이름: 네이버 검색 링크 */
-.history-content .history-person-search{color:inherit;text-decoration:none;border-bottom:1px solid transparent;transition:border-color .15s,color .15s}
-.history-content .history-person-search:hover{color:#315ee8;border-bottom-color:currentColor}
-.history-content .history-card-top{justify-content:flex-start}
+/* Naver search links retain the original profile-card typography */
+.history-card-top h3 a.history-person-search{color:inherit;text-decoration:none;border-bottom:1px solid transparent}
+.history-card-top h3 a.history-person-search:hover{color:#315ee8;border-bottom-color:currentColor}

@@ -682,7 +682,30 @@ $("themeBtn").addEventListener("click", () => {
 })();
 
 
-/* 인물 이름은 네이버 검색 링크로 직접 연결됩니다. */
+/* ===== 영향력 있는 인물 검색 ===== */
+
+const search=document.getElementById('history-search');
+const cards=[...document.querySelectorAll('.history-card')];
+const buttons=[...document.querySelectorAll('.history-filter')];
+let active='all';
+function update(){
+ const q=search.value.trim().toLowerCase();let count=0;
+ cards.forEach(card=>{
+  const text=(card.innerText+' '+card.dataset.search+' '+card.dataset.cat).toLowerCase();
+  const category=card.dataset.cat||'';
+  const matchText=!q||text.includes(q);
+  const matchCat=active==='all'||(active==='한국'?category.includes('한국'):active==='정책'?category.includes('정책'):category.includes(active));
+  card.style.display=matchText&&matchCat?'':'none';
+  if(matchText&&matchCat)count++;
+ });
+ document.getElementById('history-empty').style.display=count?'none':'block';
+}
+search.addEventListener('input',update);
+buttons.forEach(btn=>btn.addEventListener('click',()=>{
+ active=btn.dataset.filter;buttons.forEach(b=>b.classList.toggle('history-active',b===btn));update();
+}));
+
+
 
 /* ===== 글로벌 시각 항목 추가·삭제·복원 ===== */
 (() => {
