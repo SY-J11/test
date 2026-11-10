@@ -726,7 +726,17 @@ buttons.forEach(btn=>btn.addEventListener('click',()=>{
     added = Array.isArray(saved.added) ? saved.added : [];
   } catch (_) {}
   const save = () => localStorage.setItem(storageKey, JSON.stringify({deleted, added}));
-  const groups = [...root.querySelectorAll(".global-market-group")];
+  const groupsContainer = root.querySelector(".global-perspective-groups");
+  const groups = () => [...root.querySelectorAll(".global-market-group")];
+  const createPeerGroup = (name) => {
+    const group = document.createElement("section");
+    group.className = "global-market-group card custom-global-group";
+    const heading = document.createElement("div"); heading.className = "global-market-heading";
+    heading.innerHTML = '<span class="eyebrow">GLOBAL MARKET WATCH · CUSTOM</span>';
+    const h2 = document.createElement("h2"); h2.textContent = name; heading.appendChild(h2);
+    const grid = document.createElement("div"); grid.className = "global-market-grid";
+    group.append(heading, grid); groupsContainer.appendChild(group); return group;
+  };
   const marketName = card => card.closest(".global-market-group")?.querySelector(".global-market-heading h2")?.textContent.trim() || "";
   const cardData = card => ({
     html: card.outerHTML,
@@ -746,7 +756,9 @@ buttons.forEach(btn=>btn.addEventListener('click',()=>{
           const id = card.dataset.customId;
           if (id) added = added.filter(x => x.id !== id);
           save();
+          const parentGroup = card.closest(".global-market-group");
           card.remove();
+          if (parentGroup?.classList.contains("custom-global-group") && !parentGroup.querySelector(".global-news-card")) parentGroup.remove();
           renderDeleted();
         });
         card.appendChild(btn);
@@ -771,7 +783,7 @@ buttons.forEach(btn=>btn.addEventListener('click',()=>{
       restore.className = "people-manage-btn";
       restore.textContent = "복원";
       restore.addEventListener("click", () => {
-        const group = groups.find(g => g.querySelector(".global-market-heading h2")?.textContent.trim() === item.market) || groups[0];
+        const group = createPeerGroup(item.market || "추가 항목");
         const grid = group.querySelector(".global-market-grid");
         const holder = document.createElement("div");
         holder.innerHTML = item.html || "";
@@ -792,7 +804,7 @@ buttons.forEach(btn=>btn.addEventListener('click',()=>{
   }
   // 사용자 추가 항목 복원
   added.forEach(item => {
-    const group = groups.find(g => g.querySelector(".global-market-heading h2")?.textContent.trim() === item.market) || groups[0];
+    const group = createPeerGroup(item.market || "추가 항목");
     const grid = group.querySelector(".global-market-grid");
     if (!grid || grid.querySelector(`[data-custom-id="${item.id}"]`)) return;
     const holder = document.createElement("div");
@@ -856,12 +868,12 @@ buttons.forEach(btn=>btn.addEventListener('click',()=>{
         const u = new URL(rawSearchUrl.replace("{query}", encodeURIComponent(query)));
         if (u.hostname.endsWith("goldmansachs.com")) source = "official-goldman";
         else if (u.hostname.endsWith("morganstanley.com")) source = "official-morgan";
-        else if (u.hostname.endsWith("jpmorgan.com")) source = "official-jpmorgan";
         else source = "global";
         searchUrl = u.href;
       } catch (_) { alert("검색 URL 형식을 확인해 주세요."); return; }
     }
-    const group = groups.find(g => g.querySelector(".global-market-heading h2")?.textContent.trim() === market) || groups[0];
+    const groupName = market;
+    const group = createPeerGroup(groupName);
     const grid = group.querySelector(".global-market-grid");
     const card = document.createElement("section");
     card.className = "person-news global-news-card";
@@ -875,8 +887,7 @@ buttons.forEach(btn=>btn.addEventListener('click',()=>{
     const providerHeading = card.querySelector(".person-news-head>b");
     providerHeading.textContent = normalizedProvider;
     const logoDomain = /goldman/i.test(normalizedProvider) ? "goldmansachs.com"
-      : /morgan stanley/i.test(normalizedProvider) ? "morganstanley.com"
-      : /j\.p\.morgan/i.test(normalizedProvider) ? "jpmorgan.com" : "";
+      : /morgan stanley/i.test(normalizedProvider) ? "morganstanley.com" : "";
     if (logoDomain) {
       providerHeading.classList.add("provider-brand");
       const logo = document.createElement("img");

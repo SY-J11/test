@@ -383,3 +383,10 @@ html.dark .history-content .history-field-quote .history-quote,html.dark .histor
   .history-content .history-cards{grid-template-columns:1fr!important}
   .history-content .history-card{padding:15px}
 }
+
+/* 사용자 추가 글로벌 그룹은 KOSPI/KOSDAQ과 동일한 독립 카드로 표시 */
+.global-market-group.custom-global-group{grid-column:1 / -1;margin:0}
+.global-deleted-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.global-deleted-actions{display:flex;gap:8px;align-items:center}
+.global-deleted-row .permanent-delete{border-color:#b94b54;color:#b94b54}
+.global-market-group.custom-global-group .global-market-grid{grid-template-columns:1fr}
