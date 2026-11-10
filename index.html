@@ -147,7 +147,18 @@ footer{text-align:center;color:var(--muted);font-size:8px;padding:18px 3px}
   function readCustomItems(){
     try{
       var value=JSON.parse(localStorage.getItem(storageKey)||'[]');
-      return Array.isArray(value)?value:[];
+      var items=Array.isArray(value)?value:[];
+      var defaultItem={
+        icon:'📈',
+        title:'네이버 Npay 증권',
+        english:'NAVER Npay STOCK',
+        url:'https://stock.naver.com/'
+      };
+      if(!items.some(function(item){return item&&item.url==='https://stock.naver.com/'})){
+        items.unshift(defaultItem);
+        localStorage.setItem(storageKey,JSON.stringify(items));
+      }
+      return items;
     }catch(e){return []}
   }
   function renderCustomItems(){
@@ -169,8 +180,8 @@ footer{text-align:center;color:var(--muted);font-size:8px;padding:18px 3px}
       var go=document.createElement('span');go.className='go';go.textContent='›';
       a.appendChild(ico);a.appendChild(txt);a.appendChild(go);
       var del=document.createElement('button');
-      del.type='button';del.className='custom-delete';del.textContent='삭제';
-      del.setAttribute('aria-label',item.title+' 삭제');
+      del.type='button';del.className='custom-delete';del.textContent='삭제하기';
+      del.setAttribute('aria-label',item.title+' 삭제하기');
       del.addEventListener('click',function(){
         var items=readCustomItems();
         items.splice(index,1);
