@@ -334,6 +334,7 @@ $("themeBtn").addEventListener("click", () => {
     {name:"캐시 우드",country:"미국",role:"ARK Invest CEO",group:"투자·자금",impact:"혁신기술·성장주 투자심리와 테마별 자금 흐름을 파악하는 데 참고할 수 있습니다.",watch:"AI·로봇·자율주행·바이오 투자, ETF 자금 흐름",query:"Cathie Wood ARK investment AI"},
     {name:"마이클 버리",country:"미국",role:"투자자",group:"투자·자금",impact:"시장 과열·밸류에이션·신용 위험에 대한 경고가 투자심리와 변동성 논의에 영향을 줍니다.",watch:"공개 포지션, 밸류에이션 경고, 신용·부동산 위험",query:"Michael Burry market warning"},
     {name:"하워드 막스",country:"미국",role:"Oaktree 공동창립자",group:"투자·자금",impact:"신용 사이클과 위험 프리미엄에 대한 분석이 채권·하이일드·위험자산 판단에 유용합니다.",watch:"신용 스프레드, 부실채권, 시장 사이클, 위험 선호",query:"Howard Marks Oaktree memo credit markets"},
+    {name:"마크 미너비니",country:"미국",role:"전문 트레이더·투자 교육자",group:"투자·자금",impact:"SEPA(특정 진입점 분석)와 추세·모멘텀 기반 성장주 매매 전략으로 알려져 있으며, 강세장 주도주와 시장 추세에 대한 관점을 파악하는 데 참고할 수 있습니다.",watch:"SEPA 전략, 추세 템플릿, 주도주·모멘텀 종목, 손절·리스크 관리, 시장 국면 분석",query:"Mark Minervini SEPA stock market trading"},
     {name:"젠슨 황",country:"미국",role:"NVIDIA CEO",group:"기술·기업",impact:"AI 가속기 수요와 데이터센터 투자 사이클을 대표하며 GPU·HBM·네트워크·전력 관련 공급망에 큰 영향을 줍니다.",watch:"GPU 수요·공급, 차세대 제품, 데이터센터 투자, 중국 수출",query:"Jensen Huang Nvidia AI demand"},
     {name:"샘 올트먼",country:"미국",role:"OpenAI CEO",group:"기술·기업",impact:"AI 모델·서비스 확장과 데이터센터 투자 계획이 AI 인프라와 소프트웨어 생태계의 기대를 움직입니다.",watch:"모델 출시, 컴퓨팅 투자, 데이터센터·전력 계약, 수익화",query:"Sam Altman OpenAI AI infrastructure"},
     {name:"사티아 나델라",country:"미국",role:"Microsoft CEO",group:"기술·기업",impact:"클라우드·AI 서비스의 매출화와 설비투자 규모가 빅테크 실적 및 AI 투자 사이클의 핵심 지표입니다.",watch:"Azure 성장률, AI 매출, CAPEX, 기업용 AI 수요",query:"Satya Nadella Microsoft AI earnings"},
@@ -390,7 +391,7 @@ $("themeBtn").addEventListener("click", () => {
     "도널드 트럼프":"S", "스콧 베선트":"S", "제이미슨 그리어":"A", "하워드 러트닉":"A", "시진핑":"S",
     "케빈 워시":"S", "리사 쿡":"A", "크리스토퍼 월러":"A", "베스 해맥":"B", "토머스 바킨":"B",
     "우에다 가즈오":"S", "크리스틴 라가르드":"S", "제이미 다이먼":"S", "래리 핑크":"S",
-    "스탠리 드러켄밀러":"A", "빌 애크먼":"B", "데이비드 테퍼":"B", "캐시 우드":"B", "마이클 버리":"B", "하워드 막스":"A",
+    "스탠리 드러켄밀러":"A", "빌 애크먼":"B", "데이비드 테퍼":"B", "캐시 우드":"B", "마이클 버리":"B", "하워드 막스":"A", "마크 미너비니":"A",
     "젠슨 황":"S", "샘 올트먼":"A", "사티아 나델라":"A", "순다르 피차이":"A", "마크 저커버그":"A", "일론 머스크":"S", "리사 수":"A"
   };
   const gradeText = {S:"글로벌 핵심 변수", A:"높은 영향력", B:"분야별 영향력"};
@@ -523,6 +524,7 @@ $("themeBtn").addEventListener("click", () => {
     if(expanded && (visible.length < items.length || newsHasMore.get(section) !== false)){
       const more=document.createElement('button');more.type='button';more.className='person-news-more';more.textContent='기사 10개 더 보기';
       more.addEventListener('click',()=>{
+        if (loadingNews.has(section)) return;
         const target=visibleCount+10;
         newsVisibleCounts.set(section,target);
         if((newsItems.get(section)||[]).length < target && newsHasMore.get(section) !== false){
@@ -546,8 +548,7 @@ $("themeBtn").addEventListener("click", () => {
     else if(section.dataset.expanded==='true') { const state=document.createElement('div');state.className='person-news-state';state.textContent='기사를 더 불러오는 중…';list.appendChild(state); }
     try{
       const source=section.dataset.source||'global';
-      const provider=newsProviders.get(section)||'';
-      const url='https://macro.mcraft-tiger-574.workers.dev/api/person-news?q='+encodeURIComponent(section.dataset.query)+'&source='+encodeURIComponent(source)+'&limit=10&offset='+offset+(provider?'&provider='+encodeURIComponent(provider):'');
+      const url='https://macro.mcraft-tiger-574.workers.dev/api/person-news?q='+encodeURIComponent(section.dataset.query)+'&source='+encodeURIComponent(source)+'&limit=10&offset='+offset;
       const controller=new AbortController();
       const timeout=setTimeout(()=>controller.abort(),20000);
       let response;
@@ -574,7 +575,7 @@ $("themeBtn").addEventListener("click", () => {
       });
       newsItems.set(section,merged);
       newsOffsets.set(section,offset+incoming.length);
-      newsHasMore.set(section, data.hasMore === true || (typeof data.total === 'number' && offset+incoming.length < data.total) || incoming.length >= 10);
+      newsHasMore.set(section, typeof data.hasMore === 'boolean' ? data.hasMore : (typeof data.total === 'number' ? offset+incoming.length < data.total : incoming.length >= 10));
       loadedNews.add(section);
       list.querySelectorAll('.person-news-state').forEach(el=>el.remove());
       renderNewsItems(section);
