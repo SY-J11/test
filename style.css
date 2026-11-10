@@ -296,3 +296,12 @@ html.dark .deleted-person-actions button{background:#202733;color:#e7edf6}html.d
 /* 앱 내부 뉴스 전체 보기 */
 .person-news-expand{border:0;background:transparent;color:var(--blue);font-size:9px;font-weight:800;cursor:pointer;padding:3px 5px;margin-left:auto}
 .person-news-head .person-news-expand + span{margin-left:6px}
+
+/* 최근 기사 검색 링크와 펼침 버튼을 항상 노출 */
+.person-news-head{gap:8px;flex-wrap:wrap}
+.person-news-actions{display:inline-flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.person-news-search-link{display:inline-flex;align-items:center;color:var(--blue);font-size:9px;font-weight:850;text-decoration:none;white-space:nowrap}
+.person-news-search-link:hover{text-decoration:underline}
+.person-news-expand{display:inline-flex;align-items:center;white-space:nowrap}
+.person-news-more{min-height:36px}
+@media(max-width:620px){.person-news-actions{gap:6px}.person-news-head{align-items:flex-start}.person-news-head> b{padding-top:3px}}

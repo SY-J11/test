@@ -440,7 +440,7 @@ $("themeBtn").addEventListener("click", () => {
     count.textContent=rows.length+"명";
     root.innerHTML=rows.map(p=>{
       const grade=influence[p.name]||"B";
-      return `<article class="person-card" data-person="${esc(p.name)}" draggable="${window.matchMedia && window.matchMedia("(min-width: 900px)").matches}"><div class="person-card-top"><div class="person-heading"><div class="person-name-line"><h3>${esc(p.name)}</h3><div class="person-card-badges"><span class="person-sector">${esc(p.group)}</span><span class="influence-grade grade-${grade}" title="${gradeText[grade]}">영향력 ${grade}</span></div></div><div class="person-meta">${esc(p.country)} · ${esc(p.role)}</div></div><button class="person-delete-btn" type="button" data-delete="${esc(p.name)}" aria-label="${esc(p.name)} 삭제">삭제</button></div><p class="person-impact">${esc(p.impact)}</p><div class="person-watch"><b>체크할 뉴스</b><br>${esc(p.watch)}</div>${p.name==="도널드 트럼프"?`<section class="truth-posts"><div class="person-news-head truth-posts-head"><a class="truth-brand-link" href="https://www.trumpstruth.org/" target="_blank" rel="noopener noreferrer" aria-label="Trump’s Truth 사이트 열기"><img src="https://www.trumpstruth.org/img/logo.svg" alt="Trump’s Truth"></a><span>최신순</span></div><div class="truth-post-list"><div class="person-news-state">최신 게시물을 불러오는 중…</div></div></section>`:""}<section class="person-news" data-query="${esc(newsQuery(p))}" data-source="global"><div class="person-news-head"><b>최근 기사 [해외]</b><button type="button" class="person-news-expand" data-news-expand>기사 10개 펼치기</button><span>최신순</span></div><div class="person-news-list"><div class="person-news-state">화면에 표시되면 최신 기사를 불러옵니다.</div></div></section><section class="person-news" data-query="${esc(p.name)}" data-source="naver"><div class="person-news-head"><b>최근 기사 [NAVER]</b><button type="button" class="person-news-expand" data-news-expand>기사 10개 펼치기</button><span>최신순</span></div><div class="person-news-list"><div class="person-news-state">화면에 표시되면 NAVER 뉴스를 불러옵니다.</div></div></section></article>`;
+      return `<article class="person-card" data-person="${esc(p.name)}" draggable="${window.matchMedia && window.matchMedia("(min-width: 900px)").matches}"><div class="person-card-top"><div class="person-heading"><div class="person-name-line"><h3>${esc(p.name)}</h3><div class="person-card-badges"><span class="person-sector">${esc(p.group)}</span><span class="influence-grade grade-${grade}" title="${gradeText[grade]}">영향력 ${grade}</span></div></div><div class="person-meta">${esc(p.country)} · ${esc(p.role)}</div></div><button class="person-delete-btn" type="button" data-delete="${esc(p.name)}" aria-label="${esc(p.name)} 삭제">삭제</button></div><p class="person-impact">${esc(p.impact)}</p><div class="person-watch"><b>체크할 뉴스</b><br>${esc(p.watch)}</div>${p.name==="도널드 트럼프"?`<section class="truth-posts"><div class="person-news-head truth-posts-head"><a class="truth-brand-link" href="https://www.trumpstruth.org/" target="_blank" rel="noopener noreferrer" aria-label="Trump’s Truth 사이트 열기"><img src="https://www.trumpstruth.org/img/logo.svg" alt="Trump’s Truth"></a><span>최신순</span></div><div class="truth-post-list"><div class="person-news-state">최신 게시물을 불러오는 중…</div></div></section>`:""}<section class="person-news" data-query="${esc(newsQuery(p))}" data-source="global"><div class="person-news-head"><b>최근 기사 [해외]</b><span class="person-news-actions"><a class="person-news-search-link" href="https://news.google.com/search?q=${encodeURIComponent(newsQuery(p))}&hl=en-US&gl=US&ceid=US%3Aen" target="_blank" rel="noopener noreferrer">전체 기사 보기 ↗</a><button type="button" class="person-news-expand" data-news-expand>기사 10개 펼치기</button><span>최신순</span></span></div><div class="person-news-list"><div class="person-news-state">화면에 표시되면 최신 기사를 불러옵니다.</div></div></section><section class="person-news" data-query="${esc(p.name)}" data-source="naver"><div class="person-news-head"><b>최근 기사 [NAVER]</b><span class="person-news-actions"><a class="person-news-search-link" href="https://search.naver.com/search.naver?where=news&query=${encodeURIComponent(p.name)}&sort=1" target="_blank" rel="noopener noreferrer">전체 기사 보기 ↗</a><button type="button" class="person-news-expand" data-news-expand>기사 10개 펼치기</button><span>최신순</span></span></div><div class="person-news-list"><div class="person-news-state">화면에 표시되면 최신 기사를 불러옵니다.</div></div></section></article>`;
     }).join("")||'<div class="empty">검색 조건에 맞는 인물이 없습니다.</div>';
     root.querySelectorAll("[data-delete]").forEach(button => {
       button.hidden = !deleteMode;
@@ -520,13 +520,17 @@ $("themeBtn").addEventListener("click", () => {
     }).join('');
     list.insertAdjacentHTML('afterbegin',html);
     list.querySelector('.person-news-more')?.remove();
-    if(expanded && (visible.length < items.length || newsHasMore.get(section) === true)){
+    if(expanded && (visible.length < items.length || newsHasMore.get(section) !== false)){
       const more=document.createElement('button');more.type='button';more.className='person-news-more';more.textContent='기사 10개 더 보기';
       more.addEventListener('click',()=>{
         const target=visibleCount+10;
         newsVisibleCounts.set(section,target);
-        renderNewsItems(section);
-        if((newsItems.get(section)||[]).length < target && newsHasMore.get(section) !== false) loadNews(section);
+        if((newsItems.get(section)||[]).length < target && newsHasMore.get(section) !== false){
+          renderNewsItems(section);
+          loadNews(section);
+        }else{
+          renderNewsItems(section);
+        }
       });
       list.appendChild(more);
     }
@@ -570,7 +574,7 @@ $("themeBtn").addEventListener("click", () => {
       });
       newsItems.set(section,merged);
       newsOffsets.set(section,offset+incoming.length);
-      newsHasMore.set(section, data.hasMore === true || (typeof data.total === 'number' && offset+incoming.length < data.total));
+      newsHasMore.set(section, data.hasMore === true || (typeof data.total === 'number' && offset+incoming.length < data.total) || incoming.length >= 10);
       loadedNews.add(section);
       list.querySelectorAll('.person-news-state').forEach(el=>el.remove());
       renderNewsItems(section);
