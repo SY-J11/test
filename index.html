@@ -181,10 +181,13 @@ footer{text-align:center;color:var(--muted);font-size:8px;padding:18px 3px}
       english:'NAVER Npay STOCK',
       url:'https://stock.naver.com/'
     };
-    // 최초 방문에만 기본 메뉴를 한 번 추가합니다.
-    // 사용자가 삭제해 빈 목록이 되더라도 이후 자동으로 다시 생성하지 않습니다.
+    // 기존 저장 데이터도 지원하며, 휴지통에 있거나 영구 삭제한 메뉴는 재생성하지 않습니다.
     try{
-      if(localStorage.getItem(storageKey)===null){
+      var trash=readStorage(trashStorageKey);
+      var wasPermanentlyDeleted=localStorage.getItem('market-insight-naver-default-permanently-deleted')==='1';
+      var exists=items.some(function(item){return item&&item.url===defaultItem.url});
+      var inTrash=trash.some(function(item){return item&&item.url===defaultItem.url});
+      if(!exists&&!inTrash&&!wasPermanentlyDeleted){
         items.unshift(defaultItem);
         writeStorage(storageKey,items);
       }
@@ -239,6 +242,9 @@ footer{text-align:center;color:var(--muted);font-size:8px;padding:18px 3px}
     if(!window.confirm('"' + item.title + '" 메뉴를 영구 삭제할까요? 이 작업은 되돌릴 수 없습니다.'))return;
     trash.splice(index,1);
     try{
+      if(item.url==='https://stock.naver.com/'){
+        localStorage.setItem('market-insight-naver-default-permanently-deleted','1');
+      }
       writeStorage(trashStorageKey,trash);
       renderCustomItems();
     }catch(e){
