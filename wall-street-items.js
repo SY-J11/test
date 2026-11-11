@@ -88,7 +88,7 @@
         return panel.querySelector(`.ws-toc-category[data-toc-group="${CSS.escape(groupKey)}"] .ws-toc-keywords`);
       }
       const subgroup = panel.querySelector(`.ws-toc-subgroup[data-toc-group="${CSS.escape(groupKey)}"]`);
-      return subgroup?.querySelector('span') || null;
+      return subgroup?.querySelector('.ws-toc-keywords') || null;
     }
 
     function syncCustomToc() {

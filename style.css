@@ -513,13 +513,13 @@ html.dark .influence-grade.grade-D{background:#30343c;color:#aeb6c2}
 .ws-keyword-link:hover{color:var(--accent);border-color:var(--accent)}
 .ws-toc-dot{color:var(--muted);padding:0 2px}
 .ws-toc-keywords-stacked{display:grid;gap:5px}
-.ws-toc-subgroup{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
-.ws-toc-subgroup>b{min-width:92px;color:var(--muted);font-size:11px}
+.ws-toc-subgroup{display:grid;gap:0;padding:13px 0;border-bottom:1px solid var(--line)}
+.ws-toc-subgroup:last-child{border-bottom:0}
 .wall-street-term-subgroup{display:grid;gap:9px}
 .wall-street-term-subgroup>h3{font-size:14px;margin:12px 0 0;padding:0 0 7px;border-bottom:1px solid var(--line)}
 .wall-street-stock-terms{gap:12px}
 .wall-street-term h3{scroll-margin-top:20px}
-@media(max-width:620px){.wall-street-toc{padding:14px}.ws-toc-title{font-size:13px}.ws-toc-title>span{font-size:10px}.ws-toc-keywords{font-size:11px}.ws-toc-subgroup{gap:5px}.ws-toc-subgroup>b{min-width:100%;}}
+@media(max-width:620px){.wall-street-toc{padding:14px}.ws-toc-title{font-size:13px}.ws-toc-title>span{font-size:10px}.ws-toc-keywords{font-size:11px}}
 
 /* WALL STREET INSIGHT 05: 핵심 용어 분류 및 나만의 검색어 */
 .wall-street-term-group{display:grid;gap:12px;margin:0 0 22px}
@@ -555,8 +555,9 @@ html.dark .influence-grade.grade-D{background:#30343c;color:#aeb6c2}
 .global-perspective-toc{margin:0 0 16px;padding:18px 20px}
 .global-perspective-toc .section-head{margin-bottom:12px}
 .global-perspective-toc .section-head h2{font-size:19px;letter-spacing:-.5px;margin:4px 0 0}
-.global-toc-list{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px}
-.global-toc-link{color:var(--blue);font-size:13px;font-weight:800;text-decoration:none;padding:3px 0;border-bottom:1px solid transparent}
-.global-toc-link:hover{border-bottom-color:currentColor}
+.global-toc-list{display:flex;flex-wrap:wrap;align-items:center;gap:6px 9px}
+.global-toc-link{color:var(--ink);font-size:13px;font-weight:800;text-decoration:none;padding:3px 0;border-bottom:1px dotted var(--muted)}
+.global-toc-link:hover{color:var(--accent);border-bottom-color:var(--accent)}
+.global-toc-dot{color:var(--muted);font-size:13px;padding:0 1px}
 .global-market-group[id]{scroll-margin-top:90px}
-@media(max-width:680px){.global-perspective-toc{padding:14px}.global-toc-list{gap:8px 14px}.global-toc-link{font-size:12px}}
+@media(max-width:680px){.global-perspective-toc{padding:14px}.global-toc-list{gap:6px 7px}.global-toc-link,.global-toc-dot{font-size:12px}}

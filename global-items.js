@@ -141,6 +141,12 @@
           const stable = group.dataset.globalGroupId || group.dataset.groupId || title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
           group.id = "global-group-" + stable;
         }
+        if (contentsList.children.length) {
+          const dot = document.createElement("span");
+          dot.className = "global-toc-dot";
+          dot.textContent = "·";
+          contentsList.appendChild(dot);
+        }
         const link = document.createElement("a");
         link.className = "global-toc-link";
         link.href = "#" + group.id;
