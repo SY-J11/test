@@ -531,7 +531,7 @@ html.dark .influence-grade.grade-D{background:#30343c;color:#aeb6c2}
 /* WALL STREET INSIGHT v8: wider category selector on desktop and compact one-row mobile controls */
 @media (min-width: 901px) {
   .wall-street-term-form {
-    grid-template-columns: 270px minmax(180px, 1fr) minmax(180px, 1fr) auto;
+    grid-template-columns: 297px minmax(180px, 1fr) minmax(180px, 1fr) auto;
   }
 }
 @media (max-width: 620px) {
