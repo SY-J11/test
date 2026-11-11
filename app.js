@@ -589,7 +589,7 @@ $("themeBtn").addEventListener("click", () => {
     }
   }
 
-  async function loadNews(section, minimumVisible=0){
+  async function loadNews(section){
     if(!section || loadingNews.has(section) || newsHasMore.get(section) === false) return;
     loadingNews.add(section);
     const list=section.querySelector('.person-news-list');
@@ -605,43 +605,33 @@ $("themeBtn").addEventListener("click", () => {
       const controller=new AbortController();
       const timeout=setTimeout(()=>controller.abort(),12000);
       let response;
-      try { response=await fetch(url,{signal:controller.signal,headers:{'Accept':'application/json'},cache:'no-store'}); }
+      try { response=await fetch(url,{signal:controller.signal,headers:{'Accept':'application/json'},cache:'force-cache'}); }
       finally { clearTimeout(timeout); }
-      let pageOffset=offset;
-      let merged=newsItems.get(section)||[];
-      let keepFetching=true;
-      while(keepFetching && (minimumVisible<=0 || merged.length<minimumVisible)){
-        const pageUrl='https://macro.mcraft-tiger-574.workers.dev/api/person-news?q='+encodeURIComponent(section.dataset.query)+'&source='+encodeURIComponent(source)+'&limit=10&offset='+pageOffset;
-        const pageResponse=pageOffset===offset?response:await fetch(pageUrl,{headers:{'Accept':'application/json'},cache:'no-store'});
-        const data=await pageResponse.json();
-        if(!pageResponse.ok) throw new Error(data.error||('뉴스 서버 응답 오류 (HTTP '+pageResponse.status+')'));
-        if(data.error && (!Array.isArray(data.items)||!data.items.length)) throw new Error(data.error);
-        const incoming=Array.isArray(data.items)?data.items:[];
-        if(data.provider && !newsProviders.has(section)) newsProviders.set(section,data.provider);
-        const seenUrls=new Set(merged.map(x=>x.url));
-        const seenTitles=new Set(merged.map(x=>String(x.title||'').toLowerCase().replace(/\s+/g,' ').trim()));
-        const fresh=incoming.filter(x=>{
-          if(!x || !x.url || !x.title || seenUrls.has(x.url)) return false;
-          const title=String(x.title).toLowerCase().replace(/\s+/g,' ').trim();
-          if(seenTitles.has(title)) return false;
-          seenUrls.add(x.url); seenTitles.add(title); return true;
-        });
-        merged=merged.concat(fresh).sort((a,b)=>{
-          const da=a.publishedAt?Date.parse(a.publishedAt):0;
-          const db=b.publishedAt?Date.parse(b.publishedAt):0;
-          return (Number.isFinite(db)?db:0)-(Number.isFinite(da)?da:0);
-        });
-        pageOffset+=incoming.length;
-        const hasMore=typeof data.hasMore==='boolean'?data.hasMore:(typeof data.total==='number'?pageOffset<data.total:incoming.length>=10);
-        newsHasMore.set(section,hasMore);
-        keepFetching=hasMore && incoming.length>0 && pageOffset>offset;
-        if(!incoming.length) newsHasMore.set(section,false);
-        if(!minimumVisible || merged.length>=minimumVisible) break;
-      }
+      const data=await response.json();
+      if(!response.ok) throw new Error(data.error||('뉴스 서버 응답 오류 (HTTP '+response.status+')'));
+      if(data.error && (!Array.isArray(data.items)||!data.items.length)) throw new Error(data.error);
+      const incoming=Array.isArray(data.items)?data.items:[];
+      if(data.provider && !newsProviders.has(section)) newsProviders.set(section,data.provider);
+      const existing=newsItems.get(section)||[];
+      const seenUrls=new Set(existing.map(x=>x.url));
+      const seenTitles=new Set(existing.map(x=>String(x.title||'').toLowerCase().replace(/\s+/g,' ').trim()));
+      const fresh=incoming.filter(x=>{
+        if(!x || !x.url || !x.title || seenUrls.has(x.url)) return false;
+        const title=String(x.title).toLowerCase().replace(/\s+/g,' ').trim();
+        if(seenTitles.has(title)) return false;
+        seenUrls.add(x.url); seenTitles.add(title); return true;
+      });
+      const merged=existing.concat(fresh).sort((a,b)=>{
+        const da=a.publishedAt?Date.parse(a.publishedAt):0;
+        const db=b.publishedAt?Date.parse(b.publishedAt):0;
+        return (Number.isFinite(db)?db:0)-(Number.isFinite(da)?da:0);
+      });
       newsItems.set(section,merged);
-      newsOffsets.set(section,pageOffset);
+      newsOffsets.set(section,offset+incoming.length);
+      newsHasMore.set(section, typeof data.hasMore === 'boolean' ? data.hasMore : (typeof data.total === 'number' ? offset+incoming.length < data.total : incoming.length >= 10));
       loadedNews.add(section);
       list.querySelectorAll('.person-news-state,.person-news-retry').forEach(el=>el.remove());
+      if(!incoming.length) newsHasMore.set(section,false);
       requestSucceeded=true;
       renderNewsItems(section);
     }catch(error){
@@ -685,7 +675,7 @@ $("themeBtn").addEventListener("click", () => {
       const items = newsItems.get(section) || [];
       if (items.length < targetVisible && newsHasMore.get(section) !== false) {
         renderNewsItems(section);
-        loadNews(section,targetVisible);
+        loadNews(section);
       } else {
         renderNewsItems(section);
       }

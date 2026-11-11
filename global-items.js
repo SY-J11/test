@@ -64,70 +64,46 @@
       list.appendChild(state);
     }
 
-    async function loadCard(card, targetCount = 10) {
+    async function loadCard(card) {
       const list = card.querySelector(".person-news-list");
-      if (!list || card.dataset.loading === "1") return;
-      const items = JSON.parse(card.dataset.items || "[]");
-      let offset = Number(card.dataset.offset || 0);
-      let hasMore = card.dataset.hasMore !== "0";
-      if (items.length >= targetCount || !hasMore) { renderCardItems(card); return; }
+      if (!list || card.dataset.loading === "1" || card.dataset.loaded === "1") return;
       card.dataset.loading = "1";
-      if (!items.length) setStateMessage(list, "최신 기사를 불러오는 중…");
-      else {
-        let state = list.querySelector(".person-news-state");
-        if (!state) { state = document.createElement("div"); state.className = "person-news-state"; list.appendChild(state); }
-        state.textContent = "기사를 더 불러오는 중…";
-      }
+      setStateMessage(list, "최신 기사를 불러오는 중…");
       try {
-        while (items.length < targetCount && hasMore) {
-          const params = new URLSearchParams({ q: card.dataset.query || "", source: card.dataset.source || "global", limit: "10", offset: String(offset) });
-          const response = await fetch(worker + "/api/person-news?" + params.toString(), { headers: { Accept: "application/json" }, cache: "no-store" });
-          const data = await response.json();
-          if (!response.ok) throw new Error(data.error || ("HTTP " + response.status));
-          const incoming = Array.isArray(data.items) ? data.items : [];
-          const seen = new Set(items.map(item => String(item.url || "").split("?")[0]));
-          incoming.forEach(item => {
-            const key = String(item.url || "").split("?")[0];
-            if (key && item.title && !seen.has(key)) { seen.add(key); items.push(item); }
+        const params = new URLSearchParams({ q: card.dataset.query || "", source: card.dataset.source || "global", limit: "10", offset: "0" });
+        const response = await fetch(worker + "/api/person-news?" + params.toString(), { headers: { Accept: "application/json" }, cache: "no-store" });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || ("HTTP " + response.status));
+        const items = Array.isArray(data.items) ? data.items : [];
+        list.replaceChildren();
+        if (!items.length) {
+          setStateMessage(list, data.error || "검색 결과가 없습니다.");
+        } else {
+          items.forEach((item, index) => {
+            const link = document.createElement("a");
+            link.className = "person-news-item";
+            link.href = item.url || "#";
+            link.target = "_blank";
+            link.rel = "noopener noreferrer";
+            const number = document.createElement("span"); number.className = "person-news-number"; number.textContent = String(index + 1);
+            const copy = document.createElement("span"); copy.className = "person-news-copy";
+            const title = document.createElement("b"); title.textContent = item.title || "제목 없음";
+            const source = document.createElement("small"); source.textContent = item.source || data.provider || card.dataset.provider || "검색 결과";
+            copy.append(title, source);
+            const arrow = document.createElement("span"); arrow.className = "person-news-arrow"; arrow.textContent = "↗";
+            link.append(number, copy, arrow); list.appendChild(link);
           });
-          offset += incoming.length;
-          hasMore = typeof data.hasMore === "boolean" ? data.hasMore : (typeof data.total === "number" ? offset < data.total : incoming.length >= 10);
-          if (!incoming.length) hasMore = false;
         }
-        card.dataset.items = JSON.stringify(items);
-        card.dataset.offset = String(offset);
-        card.dataset.hasMore = hasMore ? "1" : "0";
         card.dataset.loaded = "1";
-        renderCardItems(card);
       } catch (error) {
         setStateMessage(list, "검색 결과를 불러오지 못했습니다: " + (error.message || error));
         const retry = document.createElement("button");
         retry.type = "button"; retry.className = "person-news-retry"; retry.textContent = "다시 불러오기";
-        retry.addEventListener("click", () => loadCard(card, targetCount));
+        retry.addEventListener("click", () => { card.dataset.loaded = "0"; loadCard(card); });
         list.appendChild(retry);
-      } finally { card.dataset.loading = "0"; }
-    }
-
-    function renderCardItems(card) {
-      const list = card.querySelector(".person-news-list");
-      const items = JSON.parse(card.dataset.items || "[]");
-      const shown = Number(card.dataset.shown || 3);
-      list.replaceChildren();
-      items.slice(0, shown).forEach((item, index) => {
-        const link = document.createElement("a"); link.className = "person-news-item"; link.href = item.url || "#"; link.target = "_blank"; link.rel = "noopener noreferrer";
-        const number = document.createElement("span"); number.className = "person-news-number"; number.textContent = String(index + 1);
-        const copy = document.createElement("span"); copy.className = "person-news-copy";
-        const title = document.createElement("b"); title.textContent = item.title || "제목 없음";
-        const source = document.createElement("small"); source.textContent = item.source || card.dataset.provider || "검색 결과";
-        copy.append(title, source); const arrow = document.createElement("span"); arrow.className = "person-news-arrow"; arrow.textContent = "↗";
-        link.append(number, copy, arrow); list.appendChild(link);
-      });
-      let more = card.querySelector("[data-news-more]");
-      if (more) {
-        more.hidden = items.length <= shown && card.dataset.hasMore === "0";
-        more.disabled = card.dataset.loading === "1" || (items.length <= shown && card.dataset.hasMore === "0");
+      } finally {
+        card.dataset.loading = "0";
       }
-      if (!items.length && card.dataset.loaded === "1") setStateMessage(list, "검색 결과가 없습니다.");
     }
 
     function makeCard(query, provider, id) {
@@ -152,15 +128,6 @@
       const more = document.createElement("button");
       more.type = "button"; more.className = "person-news-more"; more.dataset.newsMore = ""; more.disabled = true; more.textContent = "기사 10개 더 보기";
       card.appendChild(more);
-      more.addEventListener("click", () => {
-        const shown = Number(card.dataset.shown || 3) + 10;
-        card.dataset.shown = String(shown);
-        loadCard(card, shown);
-      });
-      card.dataset.shown = "3";
-      card.dataset.items = "[]";
-      card.dataset.offset = "0";
-      card.dataset.hasMore = "1";
       return card;
     }
 
