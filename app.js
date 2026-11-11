@@ -444,7 +444,16 @@ $("themeBtn").addEventListener("click", () => {
   const newsProviders = new WeakMap();
   const newsVisibleCounts = new WeakMap();
   const newsHasMore = new WeakMap();
+  const newsExpanded = new WeakSet();
   const truthState = { items: [], shown: 0, loading: false, loaded: false };
+  // 날짜는 대시보드 데이터 로딩 여부와 관계없이 항상 한국시간으로 표시합니다.
+  const updateKoreaDate = () => {
+    const dateLabel = document.getElementById("dateLabel");
+    if (dateLabel) dateLabel.textContent = new Intl.DateTimeFormat("ko-KR", {
+      timeZone: "Asia/Seoul", year: "numeric", month: "long", day: "numeric", weekday: "short"
+    }).format(new Date());
+  };
+  updateKoreaDate();
   const restoreRoot = document.getElementById("deletedPeopleList");
   const fmtDate = value => new Date(value).toLocaleString("ko-KR", {year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"});
   function renderDeleted(){
@@ -581,11 +590,23 @@ $("themeBtn").addEventListener("click", () => {
       const state=document.createElement('div');state.className='person-news-state';state.textContent='최근 기사를 찾지 못했습니다.';list.appendChild(state);
     }
     if(more){
-      const hasHiddenItems=visible.length<items.length;
-      const canFetchMore=newsHasMore.get(section)!==false;
-      more.hidden=!hasHiddenItems&&!canFetchMore&&loadedNews.has(section);
-      more.disabled=loadingNews.has(section)||!loadedNews.has(section)||(!hasHiddenItems&&!canFetchMore);
-      more.textContent='기사 10개 더 보기';
+      if(newsExpanded.has(section)){
+        const source=section.dataset.source||'global';
+        const query=section.dataset.query||'';
+        let href;
+        if(source==='official-goldman') href='https://www.goldmansachs.com/search?query='+encodeURIComponent(query);
+        else if(source==='official-morgan') href='https://www.morganstanley.com/search?text='+encodeURIComponent(query);
+        else href='https://news.google.com/search?q='+encodeURIComponent(query)+'&hl=en-US&gl=US&ceid=US%3Aen';
+        const link=document.createElement('a'); link.className=more.className; link.href=href;
+        link.target='_blank'; link.rel='noopener noreferrer'; link.textContent='전체 기사 보기';
+        more.replaceWith(link);
+      } else {
+        const hasHiddenItems=visible.length<items.length;
+        const canFetchMore=newsHasMore.get(section)!==false;
+        more.hidden=!hasHiddenItems&&!canFetchMore&&loadedNews.has(section);
+        more.disabled=loadingNews.has(section)||!loadedNews.has(section)||(!hasHiddenItems&&!canFetchMore);
+        more.textContent='기사 10개 더 보기';
+      }
     }
   }
 
@@ -672,13 +693,10 @@ $("themeBtn").addEventListener("click", () => {
       const currentVisible = newsVisibleCounts.get(section) || 3;
       const targetVisible = currentVisible + 10;
       newsVisibleCounts.set(section, targetVisible);
+      newsExpanded.add(section);
+      renderNewsItems(section);
       const items = newsItems.get(section) || [];
-      if (items.length < targetVisible && newsHasMore.get(section) !== false) {
-        renderNewsItems(section);
-        loadNews(section);
-      } else {
-        renderNewsItems(section);
-      }
+      if (items.length < targetVisible && newsHasMore.get(section) !== false) loadNews(section);
     });
   }
   document.querySelectorAll(".people-filter").forEach(b=>b.addEventListener("click",()=>{
