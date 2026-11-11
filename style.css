@@ -594,3 +594,11 @@ html.dark #dateLabel.date-weekday{color:#edf1f6!important}
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
+
+
+/* 글로벌 코리아 인사이트: PC에서는 Google / Goldman Sachs / Morgan Stanley를 한 줄 3열로 */
+@media (min-width: 901px) {
+  #panel-global-perspective .global-market-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
