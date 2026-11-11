@@ -15,7 +15,7 @@
     '02': { id: 'ws-cat-02', title: '투자 주체 및 자금 운용' },
     '03': { id: 'ws-cat-03', title: '시장 전문가 및 투자 전략' },
     '04': { id: 'ws-cat-04', title: '금융시장 및 거래 동향' },
-    '05': { id: 'ws-cat-05', title: '주식 시장 핵심 용어' }
+    '05': { id: 'ws-cat-05', title: '나만의 검색 키워드', host: '#ws-custom-terms' }
   };
   const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[ch]));
   const enc = encodeURIComponent;
@@ -23,13 +23,28 @@
 
   try {
     const saved = JSON.parse(localStorage.getItem(key) || '{}');
-    added = Array.isArray(saved.added) ? saved.added.filter(x => x && x.term && x.id) : [];
+    added = Array.isArray(saved.added) ? saved.added.filter(x => x && x.term && x.id).map(x => ({ ...x, category: '05' })) : [];
     deleted = Array.isArray(saved.deleted) ? saved.deleted.filter(x => x && x.term && x.id) : [];
   } catch (error) { console.warn('월가 검색어 저장 내용을 읽지 못했습니다.', error); }
 
   function save() {
     try { localStorage.setItem(key, JSON.stringify({ added, deleted })); }
     catch (error) { console.error('월가 검색어 저장 실패', error); }
+  }
+
+  function syncCustomPlaceholder() {
+    const host = root.querySelector('#ws-custom-terms');
+    if (!host) return;
+    const hasTerms = !!host.querySelector('.wall-street-term');
+    let placeholder = host.querySelector('.wall-street-empty-keywords');
+    if (!hasTerms && !placeholder) {
+      placeholder = document.createElement('p');
+      placeholder.className = 'wall-street-empty-keywords';
+      placeholder.textContent = '-';
+      host.appendChild(placeholder);
+    } else if (hasTerms && placeholder) {
+      placeholder.remove();
+    }
   }
 
   function card(term, name, source) {
@@ -43,7 +58,7 @@
 
   function make(item, custom = false) {
     const cat = cats[item.category] || cats['01'];
-    const host = root.querySelector(`#${cat.id} .wall-street-terms`);
+    const host = cat.host ? root.querySelector(cat.host) : root.querySelector(`#${cat.id} .wall-street-terms`);
     if (!host || root.querySelector(`[data-term-id="${CSS.escape(item.id)}"]`)) return null;
     const el = document.createElement('section');
     el.className = 'wall-street-term' + (custom ? ' is-custom' : '');
@@ -53,6 +68,7 @@
     el.dataset.meaning = item.meaning || '';
     el.dataset.category = item.category;
     el.innerHTML = `<div class="wall-street-term-heading"><div><h3>${esc(item.term)}</h3><p class="wall-street-meaning">${esc(item.meaning || '추가한 검색어')} · Google News, Goldman Sachs, Morgan Stanley 검색 결과</p></div><button class="wall-street-delete-term" type="button" data-delete-wall-term="${esc(item.id)}">삭제</button></div><div class="wall-street-provider-grid">${card(item.term, 'Google', 'global')}${card(item.term, 'Goldman Sachs', 'official-goldman')}${card(item.term, 'Morgan Stanley', 'official-morgan')}</div>`;
+    host.querySelector('.wall-street-empty-keywords')?.remove();
     host.appendChild(el);
     return el;
   }
@@ -88,7 +104,8 @@
         if (index < 0) return;
         const [restored] = deleted.splice(index, 1);
         if (restored.isCustom) {
-          added.push({ id: restored.id, term: restored.term, meaning: restored.meaning, category: restored.category });
+          restored.category = '05';
+          added.push({ id: restored.id, term: restored.term, meaning: restored.meaning, category: '05' });
           make(restored, true);
         } else {
           const host = root.querySelector(`#${(cats[restored.category] || cats['01']).id} .wall-street-terms`);
@@ -98,7 +115,7 @@
             if (template.content.firstElementChild) host.appendChild(template.content.firstElementChild);
           }
         }
-        save(); renderDeleted();
+        syncCustomPlaceholder(); save(); renderDeleted();
         if (window.refreshPersonNewsObserver) window.refreshPersonNewsObserver();
       });
       const permanent = document.createElement('button');
@@ -136,7 +153,7 @@
   });
   del.addEventListener('click', () => { deleteMode = !deleteMode; sync(); });
   reset.addEventListener('click', () => {
-    if (confirm('월가 인사이트 검색어를 기본 40개로 초기화할까요? 추가·삭제한 검색어와 복원 대기 내역이 모두 사라집니다.')) {
+    if (confirm('월가 인사이트 검색어를 기본 120개(기존 20개 분야 용어와 핵심 용어 100개)로 초기화할까요? 추가·삭제한 검색어와 복원 대기 내역이 모두 사라집니다.')) {
       localStorage.removeItem(key); location.reload();
     }
   });
@@ -145,7 +162,7 @@
     const data = new FormData(form);
     const term = String(data.get('term') || '').trim();
     const meaning = String(data.get('meaning') || '').trim();
-    const category = String(data.get('category') || '01');
+    const category = '05';
     if (!term) return;
     if ([...root.querySelectorAll('.wall-street-term h3')].some(h => h.textContent.trim().toLowerCase() === term.toLowerCase())) {
       alert('이미 등록된 검색어입니다.'); return;
@@ -173,8 +190,9 @@
     if (item.isCustom) added = added.filter(x => x.id !== item.id);
     deleted = deleted.filter(x => x.id !== item.id);
     deleted.push(item);
-    el.remove(); save(); renderDeleted();
+    el.remove(); syncCustomPlaceholder(); save(); renderDeleted();
   });
+  syncCustomPlaceholder();
   renderDeleted(); sync();
   if (window.refreshPersonNewsObserver) window.refreshPersonNewsObserver();
 })();

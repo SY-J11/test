@@ -520,3 +520,10 @@ html.dark .influence-grade.grade-D{background:#30343c;color:#aeb6c2}
 .wall-street-stock-terms{gap:12px}
 .wall-street-term h3{scroll-margin-top:20px}
 @media(max-width:620px){.wall-street-toc{padding:14px}.ws-toc-title{font-size:13px}.ws-toc-title>span{font-size:10px}.ws-toc-keywords{font-size:11px}.ws-toc-subgroup{gap:5px}.ws-toc-subgroup>b{min-width:100%;}}
+
+/* WALL STREET INSIGHT 05: 핵심 용어 분류 및 나만의 검색어 */
+.wall-street-term-group{display:grid;gap:12px;margin:0 0 22px}
+.wall-street-term-group:last-child{margin-bottom:0}
+.wall-street-term-group-title{margin:0;padding:11px 13px;border-left:3px solid var(--accent);border-radius:7px;background:var(--bg);font-size:14px;line-height:1.45;font-weight:800}
+.wall-street-custom-group{padding-top:4px}
+.wall-street-empty-keywords{margin:0;padding:14px 4px;color:var(--muted);font-size:13px}
