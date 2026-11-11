@@ -586,3 +586,11 @@ html.dark #dateLabel.date-weekday{color:#edf1f6!important}
   #panel-global-perspective .global-management-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
   #panel-global-perspective .global-management-actions .people-manage-btn{width:100%;min-width:0;padding-left:4px;padding-right:4px;font-size:10px;white-space:nowrap}
 }
+
+
+/* PC: 인물 모니터 카드의 검색 영역을 다른 탭과 동일하게 3열로 정렬 */
+@media (min-width: 981px) {
+  .people-cards {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
