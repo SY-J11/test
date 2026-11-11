@@ -4,6 +4,7 @@
     const root = document.getElementById("panel-global-perspective");
     if (!root || root.dataset.customManagerReady === "1") return;
     const groupsContainer = root.querySelector(".global-perspective-groups");
+    const contentsList = root.querySelector("#globalPerspectiveTocList");
     const addBtn = root.querySelector("#addGlobalItemBtn");
     const deleteBtn = root.querySelector("#toggleDeleteGlobalBtn");
     const resetBtn = root.querySelector("#resetGlobalItemsBtn");
@@ -129,6 +130,25 @@
       return card;
     }
 
+    function renderContents() {
+      if (!contentsList) return;
+      contentsList.replaceChildren();
+      const groups = [...groupsContainer.querySelectorAll(":scope > .global-market-group")];
+      groups.forEach(group => {
+        const title = groupTitle(group);
+        if (!title) return;
+        if (!group.id) {
+          const stable = group.dataset.globalGroupId || group.dataset.groupId || title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+          group.id = "global-group-" + stable;
+        }
+        const link = document.createElement("a");
+        link.className = "global-toc-link";
+        link.href = "#" + group.id;
+        link.textContent = title;
+        contentsList.appendChild(link);
+      });
+    }
+
     function groupTitle(group) {
       return group.querySelector(".global-market-heading h2")?.textContent.trim() || "추가 항목";
     }
@@ -136,6 +156,7 @@
       const group = document.createElement("section");
       group.className = "global-market-group card custom-global-group";
       group.dataset.groupId = id;
+      group.id = "global-group-" + String(id).replace(/[^a-zA-Z0-9_-]/g, "-");
       const heading = document.createElement("div"); heading.className = "global-market-heading";
       const eyebrow = document.createElement("span"); eyebrow.className = "eyebrow"; eyebrow.textContent = "GLOBAL MARKET WATCH · CUSTOM";
       const title = document.createElement("h2"); title.textContent = name;
@@ -144,6 +165,7 @@
       providers.forEach((provider, index) => grid.appendChild(makeCard(name, provider, id + "-" + index)));
       group.append(heading, grid);
       groupsContainer.appendChild(group);
+      renderContents();
       group.querySelectorAll(".global-news-card").forEach(loadCard);
       if (deleteMode) addDeleteButton(group);
       return group;
@@ -170,7 +192,7 @@
       const id = group.dataset.groupId;
       deleted.push({ type: "group", id, market: groupTitle(group), deletedAt: Date.now() });
       added = added.filter(item => item.id !== id);
-      group.remove(); save(); renderDeleted();
+      group.remove(); renderContents(); save(); renderDeleted();
     }
     function renderDeleted() {
       purgeExpired();
@@ -208,11 +230,13 @@
       const id = item.id || ("custom-" + Date.now().toString(36));
       added.push({ type: "group", id, market: item.market || "추가 항목" });
       createGroup(item.market || "추가 항목", id);
+      renderContents();
       deleted.splice(index, 1); save(); renderDeleted(); syncDeleteMode();
     }
     function resetCustomGroups() {
       if (!confirm("글로벌 시각을 처음 상태로 초기화할까요? 직접 추가한 항목과 삭제 내역이 모두 사라집니다.")) return;
       groupsContainer.querySelectorAll(":scope > .custom-global-group").forEach(group => group.remove());
+      renderContents();
       added = []; deleted = []; deleteMode = false;
       try { localStorage.removeItem(storageKey); } catch (error) { console.error(error); }
       form.reset(); form.hidden = true; cancelBtn.hidden = true; addBtn.hidden = false;
@@ -220,6 +244,7 @@
     }
 
     purgeExpired();
+    renderContents();
     added.forEach(item => {
       if (!item || !item.market) return;
       const id = String(item.id || ("custom-" + Date.now().toString(36)));
@@ -269,7 +294,7 @@
       added.push({ type: "group", id, market: name });
       const group = createGroup(name, id);
       save(); form.reset(); form.hidden = true; cancelBtn.hidden = true; addBtn.hidden = false;
-      syncDeleteMode(); group.scrollIntoView({ behavior: "smooth", block: "start" });
+      syncDeleteMode(); renderContents(); group.scrollIntoView({ behavior: "smooth", block: "start" });
     });
     renderDeleted();
     syncDeleteMode();

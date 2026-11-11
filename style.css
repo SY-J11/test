@@ -550,3 +550,13 @@ html.dark .influence-grade.grade-D{background:#30343c;color:#aeb6c2}
     white-space: nowrap;
   }
 }
+
+/* Global Perspective contents navigation */
+.global-perspective-toc{margin:0 0 16px;padding:18px 20px}
+.global-perspective-toc .section-head{margin-bottom:12px}
+.global-perspective-toc .section-head h2{font-size:19px;letter-spacing:-.5px;margin:4px 0 0}
+.global-toc-list{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px}
+.global-toc-link{color:var(--blue);font-size:13px;font-weight:800;text-decoration:none;padding:3px 0;border-bottom:1px solid transparent}
+.global-toc-link:hover{border-bottom-color:currentColor}
+.global-market-group[id]{scroll-margin-top:90px}
+@media(max-width:680px){.global-perspective-toc{padding:14px}.global-toc-list{gap:8px 14px}.global-toc-link{font-size:12px}}
