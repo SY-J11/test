@@ -527,3 +527,26 @@ html.dark .influence-grade.grade-D{background:#30343c;color:#aeb6c2}
 .wall-street-term-group-title{margin:0;padding:11px 13px;border-left:3px solid var(--accent);border-radius:7px;background:var(--bg);font-size:14px;line-height:1.45;font-weight:800}
 .wall-street-custom-group{padding-top:4px}
 .wall-street-empty-keywords{margin:0;padding:14px 4px;color:var(--muted);font-size:13px}
+
+/* WALL STREET INSIGHT v8: wider category selector on desktop and compact one-row mobile controls */
+@media (min-width: 901px) {
+  .wall-street-term-form {
+    grid-template-columns: 270px minmax(180px, 1fr) minmax(180px, 1fr) auto;
+  }
+}
+@media (max-width: 620px) {
+  .wall-street-management-head .global-management-actions {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    width: 100%;
+    gap: 6px;
+  }
+  .wall-street-management-head .global-management-actions .people-manage-btn {
+    flex: 1 1 0;
+    width: auto;
+    min-width: 0;
+    padding: 8px 3px;
+    font-size: 10px;
+    white-space: nowrap;
+  }
+}
