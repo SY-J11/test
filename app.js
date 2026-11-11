@@ -224,12 +224,13 @@ async function load() {
       ? `최근 업데이트 ${dateText(data.briefing.updatedAt)}`
       : "데이터 연결 완료";
 
-    $("dateLabel").textContent = new Date().toLocaleDateString("ko-KR", {
+    $("dateLabel").textContent = new Intl.DateTimeFormat("ko-KR", {
+      timeZone: "Asia/Seoul",
       year: "numeric",
       month: "long",
       day: "numeric",
       weekday: "short"
-    });
+    }).format(new Date());
 
     renderNews();
     renderIssues();
@@ -449,9 +450,29 @@ $("themeBtn").addEventListener("click", () => {
   // 날짜는 대시보드 데이터 로딩 여부와 관계없이 항상 한국시간으로 표시합니다.
   const updateKoreaDate = () => {
     const dateLabel = document.getElementById("dateLabel");
-    if (dateLabel) dateLabel.textContent = new Intl.DateTimeFormat("ko-KR", {
+    if (!dateLabel) return;
+    const now = new Date();
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Seoul", year: "numeric", month: "2-digit", day: "2-digit", weekday: "short"
+    }).formatToParts(now).reduce((out, part) => (out[part.type] = part.value, out), {});
+    const key = `${parts.year}-${parts.month}-${parts.day}`;
+    // 대한민국 주요 법정공휴일 및 설·추석 연휴(대체공휴일 포함)
+    const koreanHolidays = new Set([
+      "2025-01-01","2025-01-28","2025-01-29","2025-01-30","2025-03-01","2025-03-03","2025-05-05","2025-05-06","2025-06-06","2025-08-15","2025-10-03","2025-10-05","2025-10-06","2025-10-07","2025-10-08","2025-10-09","2025-12-25",
+      "2026-01-01","2026-05-01","2026-02-16","2026-02-17","2026-02-18","2026-03-01","2026-03-02","2026-05-05","2026-05-24","2026-05-25","2026-06-06","2026-08-15","2026-08-17","2026-09-24","2026-09-25","2026-09-26","2026-10-03","2026-10-05","2026-10-09","2026-12-25",
+      "2027-01-01","2027-05-01","2027-02-05","2027-02-06","2027-02-07","2027-03-01","2027-05-05","2027-05-13","2027-06-06","2027-08-15","2027-09-14","2027-09-15","2027-09-16","2027-10-03","2027-10-04","2027-10-09","2027-12-25",
+      "2028-01-01","2028-05-01","2028-01-25","2028-01-26","2028-01-27","2028-03-01","2028-05-02","2028-05-05","2028-06-06","2028-08-15","2028-10-02","2028-10-03","2028-10-04","2028-10-09","2028-12-25",
+      "2029-01-01","2029-05-01","2029-02-12","2029-02-13","2029-02-14","2029-03-01","2029-05-05","2029-05-07","2029-06-06","2029-08-15","2029-09-21","2029-09-22","2029-09-23","2029-10-03","2029-10-09","2029-12-25",
+      "2030-01-01","2030-05-01","2030-02-02","2030-02-03","2030-02-04","2030-03-01","2030-05-05","2030-05-06","2030-06-06","2030-08-15","2030-09-11","2030-09-12","2030-09-13","2030-10-03","2030-10-09","2030-12-25"
+    ]);
+    const weekday = parts.weekday;
+    const isSunday = weekday === "Sun";
+    const isSaturday = weekday === "Sat";
+    dateLabel.classList.remove("date-holiday", "date-saturday", "date-weekday");
+    dateLabel.classList.add(koreanHolidays.has(key) || isSunday ? "date-holiday" : isSaturday ? "date-saturday" : "date-weekday");
+    dateLabel.textContent = new Intl.DateTimeFormat("ko-KR", {
       timeZone: "Asia/Seoul", year: "numeric", month: "long", day: "numeric", weekday: "short"
-    }).format(new Date());
+    }).format(now);
   };
   updateKoreaDate();
   const restoreRoot = document.getElementById("deletedPeopleList");
@@ -591,16 +612,12 @@ $("themeBtn").addEventListener("click", () => {
     }
     if(more){
       if(newsExpanded.has(section)){
-        const source=section.dataset.source||'global';
-        const query=section.dataset.query||'';
-        let href;
-        if(source==='official-goldman') href='https://www.goldmansachs.com/search?query='+encodeURIComponent(query);
-        else if(source==='official-morgan') href='https://www.morganstanley.com/search?text='+encodeURIComponent(query);
-        else href='https://news.google.com/search?q='+encodeURIComponent(query)+'&hl=en-US&gl=US&ceid=US%3Aen';
-        const link=document.createElement('a'); link.className=more.className; link.href=href;
-        link.target='_blank'; link.rel='noopener noreferrer'; link.textContent='전체 기사 보기';
-        more.replaceWith(link);
+        more.hidden=false;
+        more.disabled=false;
+        more.textContent='전체 기사 보기';
+        more.setAttribute('data-news-all', '');
       } else {
+        more.removeAttribute('data-news-all');
         const hasHiddenItems=visible.length<items.length;
         const canFetchMore=newsHasMore.get(section)!==false;
         more.hidden=!hasHiddenItems&&!canFetchMore&&loadedNews.has(section);
@@ -690,6 +707,17 @@ $("themeBtn").addEventListener("click", () => {
       if (!button) return;
       const section = button.closest('.person-news');
       if (!section || loadingNews.has(section) || !loadedNews.has(section)) return;
+      if (newsExpanded.has(section)) {
+        const source=section.dataset.source||'global';
+        const query=section.dataset.query||'';
+        let href;
+        if(source==='official-goldman') href='https://www.goldmansachs.com/search?query='+encodeURIComponent(query);
+        else if(source==='official-morgan') href='https://www.morganstanley.com/search?text='+encodeURIComponent(query);
+        else if(source==='naver') href='https://search.naver.com/search.naver?where=news&query='+encodeURIComponent(query)+'&sort=1';
+        else href='https://news.google.com/search?q='+encodeURIComponent(query)+'&hl=en-US&gl=US&ceid=US%3Aen';
+        window.open(href, '_blank', 'noopener,noreferrer');
+        return;
+      }
       const currentVisible = newsVisibleCounts.get(section) || 3;
       const targetVisible = currentVisible + 10;
       newsVisibleCounts.set(section, targetVisible);

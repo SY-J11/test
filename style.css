@@ -571,3 +571,18 @@ html.dark .influence-grade.grade-D{background:#30343c;color:#aeb6c2}
 .people-toc .ws-toc-keywords{margin-top:7px}
 .person-toc-empty{color:var(--muted)}
 @media(max-width:620px){.people-toc .ws-toc-title>strong{font-size:13px}}
+
+/* 요청 반영: 날짜 색상, 용어 탭 정리, 글로벌 코리아 인사이트 관리 UI */
+#dateLabel.date-holiday{color:#d12f36!important}
+#dateLabel.date-saturday{color:#2874d0!important}
+#dateLabel.date-weekday{color:#202938!important}
+html.dark #dateLabel.date-weekday{color:#edf1f6!important}
+#panel-stock-essentials .ws-toc-subgroup[data-toc-group="custom"]{display:none!important}
+#panel-stock-essentials .ws-toc-subgroup:has(+ .ws-toc-subgroup[data-toc-group="custom"]){border-bottom:0}
+@media (min-width:901px){
+  #wallStreetEssentialsManagement .wall-street-term-form{grid-template-columns:297px minmax(180px,1fr) minmax(180px,1fr) auto}
+}
+@media(max-width:680px){
+  #panel-global-perspective .global-management-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+  #panel-global-perspective .global-management-actions .people-manage-btn{width:100%;min-width:0;padding-left:4px;padding-right:4px;font-size:10px;white-space:nowrap}
+}

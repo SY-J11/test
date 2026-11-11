@@ -12,7 +12,7 @@
     const form = root.querySelector("#globalItemForm");
     const deletedList = root.querySelector("#deletedGlobalItems");
     if (!groupsContainer || !addBtn || !deleteBtn || !resetBtn || !cancelBtn || !form || !deletedList) {
-      console.error("글로벌 시각 항목 관리 요소를 찾지 못했습니다.");
+      console.error("글로벌 코리아 인사이트 항목 관리 요소를 찾지 못했습니다.");
       return;
     }
     root.dataset.customManagerReady = "1";
@@ -241,7 +241,7 @@
       deleted.splice(index, 1); save(); renderDeleted(); syncDeleteMode();
     }
     function resetCustomGroups() {
-      if (!confirm("글로벌 시각을 처음 상태로 초기화할까요? 직접 추가한 항목과 삭제 내역이 모두 사라집니다.")) return;
+      if (!confirm("글로벌 코리아 인사이트를 처음 상태로 초기화할까요? 직접 추가한 항목과 삭제 내역이 모두 사라집니다.")) return;
       groupsContainer.querySelectorAll(":scope > .custom-global-group").forEach(group => group.remove());
       renderContents();
       added = []; deleted = []; deleteMode = false;
