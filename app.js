@@ -643,7 +643,7 @@ $("themeBtn").addEventListener("click", () => {
       const source=section.dataset.source||'global';
       const url='https://macro.mcraft-tiger-574.workers.dev/api/person-news?q='+encodeURIComponent(section.dataset.query)+'&source='+encodeURIComponent(source)+'&limit=10&offset='+offset+'&_ts='+Date.now();
       const controller=new AbortController();
-      const timeout=setTimeout(()=>controller.abort(),25000);
+      const timeout=setTimeout(()=>controller.abort(),30000);
       let response;
       try { response=await fetch(url,{signal:controller.signal,headers:{'Accept':'application/json'},cache:'no-store'}); }
       finally { clearTimeout(timeout); }
