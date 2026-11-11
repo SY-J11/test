@@ -620,8 +620,10 @@ $("themeBtn").addEventListener("click", () => {
         more.removeAttribute('data-news-all');
         const hasHiddenItems=visible.length<items.length;
         const canFetchMore=newsHasMore.get(section)!==false;
-        more.hidden=!hasHiddenItems&&!canFetchMore&&loadedNews.has(section);
-        more.disabled=loadingNews.has(section)||!loadedNews.has(section)||(!hasHiddenItems&&!canFetchMore);
+        // 결과가 적거나 서버가 hasMore=false를 반환해도 버튼을 숨기지 않습니다.
+        // 첫 클릭은 현재 확보된 기사를 펼치고, 이후에는 전체 검색 결과 버튼으로 전환합니다.
+        more.hidden=false;
+        more.disabled=loadingNews.has(section)||!loadedNews.has(section);
         more.textContent='기사 10개 더 보기';
       }
     }
@@ -639,11 +641,11 @@ $("themeBtn").addEventListener("click", () => {
     let requestSucceeded=false;
     try{
       const source=section.dataset.source||'global';
-      const url='https://macro.mcraft-tiger-574.workers.dev/api/person-news?q='+encodeURIComponent(section.dataset.query)+'&source='+encodeURIComponent(source)+'&limit=10&offset='+offset;
+      const url='https://macro.mcraft-tiger-574.workers.dev/api/person-news?q='+encodeURIComponent(section.dataset.query)+'&source='+encodeURIComponent(source)+'&limit=10&offset='+offset+'&_ts='+Date.now();
       const controller=new AbortController();
       const timeout=setTimeout(()=>controller.abort(),12000);
       let response;
-      try { response=await fetch(url,{signal:controller.signal,headers:{'Accept':'application/json'},cache:'force-cache'}); }
+      try { response=await fetch(url,{signal:controller.signal,headers:{'Accept':'application/json','Cache-Control':'no-cache'},cache:'no-store'}); }
       finally { clearTimeout(timeout); }
       const data=await response.json();
       if(!response.ok) throw new Error(data.error||('뉴스 서버 응답 오류 (HTTP '+response.status+')'));
