@@ -614,7 +614,7 @@ $("themeBtn").addEventListener("click", () => {
       if(newsExpanded.has(section)){
         more.hidden=false;
         more.disabled=false;
-        more.textContent='전체 기사 보기';
+        more.textContent='전체 기사 검색';
         more.setAttribute('data-news-all', '');
       } else {
         more.removeAttribute('data-news-all');
@@ -733,10 +733,21 @@ $("themeBtn").addEventListener("click", () => {
       // 요청 중 중복 클릭을 막고, 새 기사가 도착하면 최대 10개를 추가 노출한다.
       if (items.length < targetVisible && newsHasMore.get(section) !== false) {
         newsVisibleCounts.set(section, targetVisible);
-        loadNews(section).then(() => {
+        (async () => {
+          // 한 번의 응답이 10개 미만이어도 목표 노출 수(기본 3개 + 10개)에
+          // 도달하거나 서버가 더 이상 결과가 없다고 할 때까지 다음 페이지를 이어 받습니다.
+          while ((newsItems.get(section) || []).length < targetVisible &&
+                 newsHasMore.get(section) !== false &&
+                 !loadingNews.has(section)) {
+            const before = (newsItems.get(section) || []).length;
+            await loadNews(section);
+            const after = (newsItems.get(section) || []).length;
+            if (after <= before) break;
+          }
+          newsVisibleCounts.set(section, Math.min(targetVisible, (newsItems.get(section) || []).length));
           newsExpanded.add(section);
           renderNewsItems(section);
-        });
+        })();
       } else {
         newsVisibleCounts.set(section, Math.min(targetVisible, items.length));
         newsExpanded.add(section);
