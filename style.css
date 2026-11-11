@@ -476,3 +476,12 @@ html.dark .history-content .history-field-quote .history-quote,html.dark .histor
 .influence-grade.grade-D{background:#e7e9ed;color:#687080}
 html.dark .influence-grade.grade-C{background:#343d49;color:#c0cad8}
 html.dark .influence-grade.grade-D{background:#30343c;color:#aeb6c2}
+
+/* v33: 글로벌 시각 초기화 버튼 및 모바일 관리 컨트롤 */
+#resetGlobalItemsBtn{border-color:var(--line);color:var(--muted)}
+#resetGlobalItemsBtn:hover{border-color:var(--accent);color:var(--accent)}
+.global-management-actions{align-items:center}
+@media(max-width:680px){
+  .global-management-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+  .global-management-actions .people-manage-btn{width:100%;min-width:0}
+}
