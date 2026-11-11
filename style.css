@@ -602,3 +602,12 @@ html.dark #dateLabel.date-weekday{color:#edf1f6!important}
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   }
 }
+
+
+/* 글로벌 코리아 인사이트: 실제 두 번째 탭의 뉴스 카드 3개를 PC 한 줄에 배치 */
+@media (min-width: 681px) {
+  #panel-global-perspective .global-market-grid,
+  .global-perspective-panel .global-market-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
