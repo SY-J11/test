@@ -561,3 +561,13 @@ html.dark .influence-grade.grade-D{background:#30343c;color:#aeb6c2}
 .global-toc-dot{color:var(--muted);font-size:13px;padding:0 1px}
 .global-market-group[id]{scroll-margin-top:90px}
 @media(max-width:680px){.global-perspective-toc{padding:14px}.global-toc-list{gap:6px 7px}.global-toc-link,.global-toc-dot{font-size:12px}}
+
+
+/* v12: 두 번째 탭 목차의 중복 상단 여백 제거 및 인물 탭 CONTENTS */
+#panel-stock-essentials .ws-essentials-toc-wrapper{padding:0;border-bottom:0}
+.people-toc{margin:0 0 18px}
+.people-toc .ws-toc-category:last-child{border-bottom:0}
+.people-toc .ws-toc-title>strong{font-size:14px}
+.people-toc .ws-toc-keywords{margin-top:7px}
+.person-toc-empty{color:var(--muted)}
+@media(max-width:620px){.people-toc .ws-toc-title>strong{font-size:13px}}

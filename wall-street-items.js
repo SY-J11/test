@@ -94,13 +94,14 @@
     function syncCustomToc() {
       if (!config.customGroup) return;
       const host = getTocHost('custom');
-      if (!host) return;
-      host.replaceChildren();
       const terms = added.filter(item => item.groupKey === 'custom');
-      const tocCategory = host.closest('.ws-custom-toc-category');
+      const tocCategory = host?.closest('.ws-custom-toc-category');
       const customGroup = panel.querySelector('.wall-street-custom-group');
       if (tocCategory) tocCategory.hidden = terms.length === 0;
       if (customGroup) customGroup.hidden = terms.length === 0;
+      // 두 번째 탭에서는 사용자 검색어 목차 제목을 제거했지만, 추가한 항목의 본문 표시는 유지합니다.
+      if (!host) return;
+      host.replaceChildren();
       terms.forEach((item, index) => {
         if (index) {
           const dot = document.createElement('span');
@@ -280,6 +281,7 @@
     resetBtn.addEventListener('click', () => {
       if (!confirm(config.resetMessage)) return;
       localStorage.removeItem(config.storageKey);
+      try { sessionStorage.setItem('marketInsightRestorePanel', config.panelId); } catch (_) {}
       location.reload();
     });
 

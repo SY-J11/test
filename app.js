@@ -471,12 +471,33 @@ $("themeBtn").addEventListener("click", () => {
     const rows=people.filter(p=>(filter==="all"||p.group===filter)&&(!q||[p.name,p.country,p.role,p.group,p.impact,p.watch].join(" ").toLowerCase().includes(q)));
     count.textContent=rows.length+"명";
     const quickNav=document.getElementById("peopleQuickNav");
+    const peopleGroups=[
+      {key:"정책·거시",title:"01. 정책·거시"},
+      {key:"중앙은행",title:"02. 중앙은행"},
+      {key:"투자·자금",title:"03. 투자·자금"},
+      {key:"기술·기업",title:"04. 기술·기업"}
+    ];
     if(quickNav){
-      quickNav.innerHTML=people.map((p,i)=>`<button type="button" class="people-quick-link" data-jump-person="${esc(p.name)}">${esc(p.name)}</button>`).join("");
-      quickNav.querySelectorAll("[data-jump-person]").forEach(btn=>btn.addEventListener("click",()=>{
-        const target=[...root.querySelectorAll(".person-card")].find(card=>card.dataset.person===btn.dataset.jumpPerson);
+      quickNav.innerHTML=peopleGroups.map(group=>{
+        const members=people.filter(person=>person.group===group.key);
+        const links=members.map(person=>{
+          const index=people.findIndex(item=>item.name===person.name)+1;
+          return `<a class="ws-keyword-link" href="#person-card-${index}" data-jump-person="${esc(person.name)}">${esc(person.name)}</a>`;
+        }).join('<span class="ws-toc-dot"> · </span>');
+        return `<div class="ws-toc-category"><div class="ws-toc-title"><strong>${group.title}</strong></div><div class="ws-toc-keywords">${links||'<span class="person-toc-empty">-</span>'}</div></div>`;
+      }).join("");
+      quickNav.querySelectorAll("[data-jump-person]").forEach(link=>link.addEventListener("click",event=>{
+        event.preventDefault();
+        const name=link.dataset.jumpPerson;
+        let target=[...root.querySelectorAll(".person-card")].find(card=>card.dataset.person===name);
+        if(!target){
+          if(search) search.value="";
+          filter="all";
+          document.querySelectorAll(".people-filter").forEach(button=>button.classList.toggle("active",button.dataset.pfilter==="all"));
+          render();
+          target=[...root.querySelectorAll(".person-card")].find(card=>card.dataset.person===name);
+        }
         if(target){target.scrollIntoView({behavior:"smooth",block:"start"});target.classList.add("person-card-highlight");window.setTimeout(()=>target.classList.remove("person-card-highlight"),1400);}
-        else { if(search) search.value=""; filter="all"; document.querySelectorAll(".people-filter").forEach(b=>b.classList.toggle("active",b.dataset.pfilter==="all")); render(); const found=[...root.querySelectorAll(".person-card")].find(card=>card.dataset.person===btn.dataset.jumpPerson); found?.scrollIntoView({behavior:"smooth",block:"start"}); }
       }));
     }
     root.innerHTML=rows.map(p=>{
@@ -484,7 +505,7 @@ $("themeBtn").addEventListener("click", () => {
       const grade=p.influenceGrade||legacyGrade||influence[p.name]||"B";
       const impactText=legacyGrade?"":(p.impact||"");
       const overseasName = newsQuery(p);
-      return `<article class="person-card" data-person="${esc(p.name)}" draggable="${window.matchMedia && window.matchMedia("(min-width: 900px)").matches}"><div class="person-card-top"><div class="person-heading"><div class="person-name-line"><h3>${esc(p.name)}</h3><div class="person-card-badges"><span class="person-sector">${esc(p.group)}</span><span class="influence-grade grade-${grade}" title="${gradeText[grade]}">인물 영향력 ${grade}</span></div></div><div class="person-meta">${esc(p.country)} · ${esc(p.role)}</div></div><button class="person-delete-btn" type="button" data-delete="${esc(p.name)}" aria-label="${esc(p.name)} 삭제">삭제</button></div><p class="person-impact">${esc(impactText)}</p><div class="person-watch"><b>체크할 뉴스</b><br>${esc(p.watch)}</div>${p.name==="도널드 트럼프"?`<section class="truth-posts"><div class="person-news-head truth-posts-head"><a class="truth-brand-link" href="https://www.trumpstruth.org/" target="_blank" rel="noopener noreferrer" aria-label="Trump’s Truth 사이트 열기"><img src="https://www.trumpstruth.org/img/logo.svg" alt="Trump’s Truth"></a><span>최신순</span></div><div class="truth-post-list"><div class="person-news-state">최신 게시물을 불러오는 중…</div></div></section>`:""}<section class="person-news" data-query="${esc(overseasName)}" data-source="global"><div class="person-news-head"><b>최근 기사 [해외]</b><span class="person-news-actions"><a class="person-news-search-link" href="https://news.google.com/search?q=${encodeURIComponent(overseasName)}&hl=en-US&gl=US&ceid=US%3Aen" target="_blank" rel="noopener noreferrer">전체 기사 보기 ↗</a><span>최신순</span></span></div><div class="person-news-list"><div class="person-news-state">화면에 표시되면 최신 기사를 불러옵니다.</div></div><button type="button" class="person-news-more" data-news-more disabled>기사 10개 더 보기</button></section><section class="person-news" data-query="${esc(p.name)}" data-source="naver"><div class="person-news-head"><b>최근 기사 [NAVER]</b><span class="person-news-actions"><a class="person-news-search-link" href="https://search.naver.com/search.naver?where=news&query=${encodeURIComponent(p.name)}&sort=1" target="_blank" rel="noopener noreferrer">전체 기사 보기 ↗</a><span>최신순</span></span></div><div class="person-news-list"><div class="person-news-state">화면에 표시되면 최신 기사를 불러옵니다.</div></div><button type="button" class="person-news-more" data-news-more disabled>기사 10개 더 보기</button></section></article>`;
+      return `<article class="person-card" id="person-card-${people.findIndex(item=>item.name===p.name)+1}" data-person="${esc(p.name)}" draggable="${window.matchMedia && window.matchMedia("(min-width: 900px)").matches}"><div class="person-card-top"><div class="person-heading"><div class="person-name-line"><h3>${esc(p.name)}</h3><div class="person-card-badges"><span class="person-sector">${esc(p.group)}</span><span class="influence-grade grade-${grade}" title="${gradeText[grade]}">인물 영향력 ${grade}</span></div></div><div class="person-meta">${esc(p.country)} · ${esc(p.role)}</div></div><button class="person-delete-btn" type="button" data-delete="${esc(p.name)}" aria-label="${esc(p.name)} 삭제">삭제</button></div><p class="person-impact">${esc(impactText)}</p><div class="person-watch"><b>체크할 뉴스</b><br>${esc(p.watch)}</div>${p.name==="도널드 트럼프"?`<section class="truth-posts"><div class="person-news-head truth-posts-head"><a class="truth-brand-link" href="https://www.trumpstruth.org/" target="_blank" rel="noopener noreferrer" aria-label="Trump’s Truth 사이트 열기"><img src="https://www.trumpstruth.org/img/logo.svg" alt="Trump’s Truth"></a><span>최신순</span></div><div class="truth-post-list"><div class="person-news-state">최신 게시물을 불러오는 중…</div></div></section>`:""}<section class="person-news" data-query="${esc(overseasName)}" data-source="global"><div class="person-news-head"><b>최근 기사 [해외]</b><span class="person-news-actions"><a class="person-news-search-link" href="https://news.google.com/search?q=${encodeURIComponent(overseasName)}&hl=en-US&gl=US&ceid=US%3Aen" target="_blank" rel="noopener noreferrer">전체 기사 보기 ↗</a><span>최신순</span></span></div><div class="person-news-list"><div class="person-news-state">화면에 표시되면 최신 기사를 불러옵니다.</div></div><button type="button" class="person-news-more" data-news-more disabled>기사 10개 더 보기</button></section><section class="person-news" data-query="${esc(p.name)}" data-source="naver"><div class="person-news-head"><b>최근 기사 [NAVER]</b><span class="person-news-actions"><a class="person-news-search-link" href="https://search.naver.com/search.naver?where=news&query=${encodeURIComponent(p.name)}&sort=1" target="_blank" rel="noopener noreferrer">전체 기사 보기 ↗</a><span>최신순</span></span></div><div class="person-news-list"><div class="person-news-state">화면에 표시되면 최신 기사를 불러옵니다.</div></div><button type="button" class="person-news-more" data-news-more disabled>기사 10개 더 보기</button></section></article>`;
     }).join("")||'<div class="empty">검색 조건에 맞는 인물이 없습니다.</div>';
     root.querySelectorAll("[data-delete]").forEach(button => {
       button.hidden = !deleteMode;
@@ -675,6 +696,15 @@ $("themeBtn").addEventListener("click", () => {
     }
     window.scrollTo({top:0,behavior:"smooth"});
   }));
+  // 초기화 후에도 사용자가 작업하던 탭을 유지합니다.
+  try {
+    const restorePanel = sessionStorage.getItem("marketInsightRestorePanel");
+    if (restorePanel) {
+      sessionStorage.removeItem("marketInsightRestorePanel");
+      const panelKey = restorePanel.replace(/^panel-/, "");
+      document.querySelector(`.main-tab[data-panel="${panelKey}"]`)?.click();
+    }
+  } catch (_) {}
   if (toggleDeleteBtn) toggleDeleteBtn.addEventListener("click", () => {
     deleteMode = !deleteMode;
     toggleDeleteBtn.classList.toggle("active", deleteMode);
