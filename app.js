@@ -354,6 +354,11 @@ $("themeBtn").addEventListener("click", () => {
     {name:"숀 킴",country:"미국",role:"글로벌 금융·시장 분석가",group:"투자·자금",impact:"글로벌 금융시장과 한국 증시에 대한 해외 투자자·기관의 시각을 파악하는 참고 인물입니다.",watch:"한국 증시 전망, 외국인 수급, 글로벌 자금 흐름, 미국 금융기관의 한국 시장 분석",query:"Sean Kim global markets Korea stocks"}
   ];
 
+  const INITIAL_PEOPLE = people.map(p => ({...p}));
+  const initialKevin = INITIAL_PEOPLE.findIndex(p => p.name === "케빈 워시");
+  if (initialKevin >= 0) { const [p] = INITIAL_PEOPLE.splice(initialKevin, 1); INITIAL_PEOPLE.splice(Math.min(2, INITIAL_PEOPLE.length), 0, p); }
+  const initialUeda = INITIAL_PEOPLE.findIndex(p => p.name === "우에다 가즈오");
+  if (initialUeda >= 0) { const [p] = INITIAL_PEOPLE.splice(initialUeda, 1); INITIAL_PEOPLE.push(p); }
   const STORAGE_KEY = "marketInsightPeople_v1";
   const defaultPeople = new Set(people.map(p => p.name));
   let deletedPeople = [];
@@ -426,6 +431,7 @@ $("themeBtn").addEventListener("click", () => {
   const addBtn=document.getElementById("addPersonBtn");
   const cancelBtn=document.getElementById("cancelPersonBtn");
   const toggleDeleteBtn=document.getElementById("toggleDeletePeopleBtn");
+  const resetPeopleBtn=document.getElementById("resetPeopleBtn");
   let deleteMode=false;
   let filter="all";
   const search=document.getElementById("peopleSearch");
@@ -697,6 +703,18 @@ $("themeBtn").addEventListener("click", () => {
     filter = "all";
     render();
   });
+  if (resetPeopleBtn) resetPeopleBtn.addEventListener("click", () => {
+    if (!confirm("인물 목록을 처음 설정된 29명으로 초기화할까요? 추가한 인물과 삭제·복구 대기 중인 내역은 모두 사라집니다.")) return;
+    people.splice(0, people.length, ...INITIAL_PEOPLE.map(p => ({...p})));
+    deletedPeople = []; savedOrder = []; deleteMode = false; filter = "all";
+    if (search) search.value = "";
+    if (toggleDeleteBtn) { toggleDeleteBtn.classList.remove("active"); toggleDeleteBtn.setAttribute("aria-pressed", "false"); toggleDeleteBtn.textContent = "－ 인물 삭제"; }
+    document.querySelectorAll(".people-filter").forEach(x => x.classList.toggle("active", x.dataset.pfilter === "all"));
+    if (form) { form.reset(); form.hidden = true; }
+    if (cancelBtn) cancelBtn.hidden = true;
+    if (addBtn) addBtn.hidden = false;
+    savePeople(); render(); renderDeleted();
+  });
   render();
   renderDeleted();
   window.setInterval(() => { const before = deletedPeople.length; purgeExpired(); if (deletedPeople.length !== before) { savePeople(); renderDeleted(); } }, 60*60*1000);
@@ -728,50 +746,75 @@ buttons.forEach(btn=>btn.addEventListener('click',()=>{
 
 
 
-/* ===== 글로벌 시각 항목 추가·삭제·복원 ===== */
+/* ===== 글로벌 시각 사용자 항목 추가·삭제·복원 ===== */
 (() => {
   const root = document.getElementById("panel-global-perspective");
   if (!root) return;
   const storageKey = "marketInsightGlobalItems_v1";
-  const addBtn = root.querySelector("#addGlobalItemBtn"), deleteBtn = root.querySelector("#toggleDeleteGlobalBtn");
-  const cancelBtn = root.querySelector("#cancelGlobalItemBtn"), form = root.querySelector("#globalItemForm");
-  const deletedList = root.querySelector("#deletedGlobalItems"), groupsContainer = root.querySelector(".global-perspective-groups");
-  if (!addBtn || !deleteBtn || !cancelBtn || !form || !deletedList || !groupsContainer) return;
-  let deleteMode = false, deleted = [], added = [];
+  const addBtn = root.querySelector("#addGlobalItemBtn");
+  const deleteBtn = root.querySelector("#toggleDeleteGlobalBtn");
+  const cancelBtn = root.querySelector("#cancelGlobalItemBtn");
+  const form = root.querySelector("#globalItemForm");
+  const deletedList = root.querySelector("#deletedGlobalItems");
+  const groupsContainer = root.querySelector(".global-perspective-groups");
+  if (![addBtn, deleteBtn, cancelBtn, form, deletedList, groupsContainer].every(Boolean)) return;
+  const worker = "https://macro.mcraft-tiger-574.workers.dev";
+  const providers = [
+    {name:"Google",source:"global",domain:"news.google.com"},
+    {name:"Goldman Sachs",source:"official-goldman",domain:"goldmansachs.com"},
+    {name:"Morgan Stanley",source:"official-morgan",domain:"morganstanley.com"}
+  ];
+  const esc = v => String(v ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  let deleteMode=false, added=[], deleted=[];
   try {
-    const saved = JSON.parse(localStorage.getItem(storageKey) || "{}");
-    deleted = Array.isArray(saved.deleted) ? saved.deleted : [];
-    added = Array.isArray(saved.added) ? saved.added : [];
-    const legacy = added.filter(x => x.type !== "group"); added = added.filter(x => x.type === "group");
-    legacy.forEach((x,i) => { const market=x.market||"추가 항목"; let g=added.find(v=>v.market===market); if(!g){g={type:"group",id:"legacy-"+i,market,cards:[]};added.push(g);} if(x.html)g.cards.push(x.html); });
-  } catch (_) { deleted=[]; added=[]; }
-  const escGlobal = v => String(v ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-  const purgeExpired = () => { const limit=Date.now()-30*86400000; deleted=deleted.filter(x=>Number(x.deletedAt||0)>limit); };
-  const save = () => { purgeExpired(); localStorage.setItem(storageKey,JSON.stringify({deleted,added})); };
-  const marketName = g => g.querySelector(".global-market-heading h2")?.textContent.trim()||"추가 항목";
-  const providers=[{name:"Google",source:"global",domain:"news.google.com"},{name:"Goldman Sachs",source:"official-goldman",domain:"goldmansachs.com"},{name:"Morgan Stanley",source:"official-morgan",domain:"morganstanley.com"}];
-  const makeCard=(query,p,id)=>{
-    const card=document.createElement("section");card.className="person-news global-news-card";card.dataset.query=query;card.dataset.source=p.source;card.dataset.customId=id;
-    const href=p.source==="global"?"https://news.google.com/search?q="+encodeURIComponent(query)+"&hl=en-US&gl=US&ceid=US:en":p.source==="official-goldman"?"https://www.goldmansachs.com/search?query="+encodeURIComponent(query):"https://www.morganstanley.com/search?text="+encodeURIComponent(query);
-    card.innerHTML=`<div class="person-news-head"><b></b><span class="person-news-actions"><a class="person-news-search-link" href="${href}" target="_blank" rel="noopener noreferrer">전체 기사 보기 ↗</a><span>최신순</span></span></div><div class="person-news-list"><div class="person-news-state">기사를 불러오는 중입니다.</div></div><button type="button" class="person-news-more" data-news-more disabled>기사 10개 더 보기</button>`;
-    const b=card.querySelector(".person-news-head>b");b.textContent=p.name;if(p.domain!=="news.google.com"){b.classList.add("provider-brand");const img=document.createElement("img");img.src="https://www.google.com/s2/favicons?domain="+p.domain+"&sz=64";img.alt="";img.loading="lazy";b.prepend(img);}return card;
-  };
+    const saved=JSON.parse(localStorage.getItem(storageKey)||"{}");
+    added=Array.isArray(saved.added)?saved.added:[];
+    deleted=Array.isArray(saved.deleted)?saved.deleted:[];
+    const legacy=added.filter(x=>x&&x.type!=="group");
+    added=added.filter(x=>x&&x.type==="group");
+    legacy.forEach((x,i)=>{const market=String(x.market||"추가 항목");if(!added.some(g=>g.market===market))added.push({type:"group",id:"legacy-"+i,market});});
+  } catch(_){added=[];deleted=[];}
+  const purgeExpired=()=>{const cutoff=Date.now()-30*86400000;deleted=deleted.filter(x=>x&&Number(x.deletedAt)>cutoff);};
+  const save=()=>{purgeExpired();try{localStorage.setItem(storageKey,JSON.stringify({added,deleted}));}catch(e){console.error("글로벌 항목 저장 실패",e);}};
+  const groupTitle=g=>g.querySelector(".global-market-heading h2")?.textContent.trim()||"추가 항목";
+
   async function loadCard(card){
-    if(!card||card.dataset.loaded==="1")return;card.dataset.loaded="1";const list=card.querySelector(".person-news-list");
-    try{const url=API_BASE+"/api/person-news?q="+encodeURIComponent(card.dataset.query||"")+"&source="+encodeURIComponent(card.dataset.source||"global")+"&limit=10&offset=0";const r=await fetch(url,{headers:{Accept:"application/json"},cache:"no-store"});const data=await r.json();if(!r.ok)throw new Error(data.error||"검색 요청 실패");const items=Array.isArray(data.items)?data.items:[];list.innerHTML=items.map((it,i)=>`<a class="person-news-item" href="${escGlobal(it.url)}" target="_blank" rel="noopener noreferrer"><span class="person-news-number">${i+1}</span><span class="person-news-copy"><b>${escGlobal(it.title)}</b><small>${escGlobal(it.source||data.provider||"검색 결과")}</small></span><span class="person-news-arrow">↗</span></a>`).join("")||`<div class="person-news-state">${escGlobal(data.error||"검색 결과가 없습니다.")}</div>`;card.dataset.loaded="1";}
-    catch(e){list.innerHTML=`<div class="person-news-state">검색 결과를 불러오지 못했습니다: ${escGlobal(e.message||e)}</div><button type="button" class="person-news-retry">다시 불러오기</button>`;card.dataset.loaded="0";}
+    const list=card.querySelector(".person-news-list");if(!list||card.dataset.loading==="1")return;
+    card.dataset.loading="1";list.innerHTML='<div class="person-news-state">최신 기사를 불러오는 중…</div>';
+    try{
+      const url=worker+"/api/person-news?q="+encodeURIComponent(card.dataset.query||"")+"&source="+encodeURIComponent(card.dataset.source||"global")+"&limit=10&offset=0";
+      const response=await fetch(url,{headers:{Accept:"application/json"},cache:"no-store"});const data=await response.json();
+      if(!response.ok)throw new Error(data.error||("HTTP "+response.status));
+      const items=Array.isArray(data.items)?data.items:[];
+      list.innerHTML=items.map((it,i)=>`<a class="person-news-item" href="${esc(it.url)}" target="_blank" rel="noopener noreferrer"><span class="person-news-number">${i+1}</span><span class="person-news-copy"><b>${esc(it.title)}</b><small>${esc(it.source||data.provider||card.dataset.provider||"검색 결과")}</small></span><span class="person-news-arrow">↗</span></a>`).join("")||`<div class="person-news-state">${esc(data.error||"검색 결과가 없습니다.")}</div>`;
+      card.dataset.loaded="1";
+    }catch(error){
+      list.innerHTML=`<div class="person-news-state">검색 결과를 불러오지 못했습니다: ${esc(error.message||error)}</div>`;
+      const retry=document.createElement("button");retry.type="button";retry.className="person-news-retry";retry.textContent="다시 불러오기";retry.addEventListener("click",()=>{card.dataset.loading="0";loadCard(card);});list.appendChild(retry);
+    }finally{card.dataset.loading="0";}
   }
-  const observeCard=card=>{if(!card)return;if("IntersectionObserver"in window){if(card.dataset.observing==="1")return;card.dataset.observing="1";const obs=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){obs.unobserve(e.target);e.target.dataset.observing="0";loadCard(e.target);}}),{rootMargin:"220px 0px"});obs.observe(card);}else loadCard(card);};
-  const createGroup=(name,id)=>{const g=document.createElement("section");g.className="global-market-group card custom-global-group";g.dataset.groupId=id;const head=document.createElement("div");head.className="global-market-heading";head.innerHTML='<span class="eyebrow">GLOBAL MARKET WATCH · CUSTOM</span>';const h=document.createElement("h2");h.textContent=name;head.appendChild(h);const grid=document.createElement("div");grid.className="global-market-grid";g.append(head,grid);providers.forEach((p,i)=>{const c=makeCard(name,p,id+"-"+i);grid.appendChild(c);observeCard(c);});groupsContainer.appendChild(g);return g;};
-  const syncDelete=()=>root.querySelectorAll(".custom-global-group").forEach(g=>{let b=g.querySelector(":scope > .global-group-delete");if(deleteMode&&!b){b=document.createElement("button");b.type="button";b.className="global-group-delete";b.textContent="삭제";b.dataset.deleteGroup=g.dataset.groupId||"";g.appendChild(b);}else if(!deleteMode&&b)b.remove();});
-  function renderDeleted(){purgeExpired();deletedList.replaceChildren();if(!deleted.length){const p=document.createElement("p");p.textContent="복원할 항목이 없습니다.";deletedList.appendChild(p);}else deleted.forEach((item,i)=>{const row=document.createElement("div");row.className="global-deleted-row";const label=document.createElement("span");const left=Math.max(0,Math.ceil((Number(item.deletedAt||Date.now())+30*86400000-Date.now())/86400000));label.textContent=`${item.market||"추가 항목"} · 자동 영구 삭제까지 ${left}일`;const actions=document.createElement("div");actions.className="global-deleted-actions";const restore=document.createElement("button");restore.type="button";restore.className="people-manage-btn";restore.textContent="복원";restore.dataset.restoreGroup=i;const remove=document.createElement("button");remove.type="button";remove.className="people-manage-btn danger";remove.textContent="삭제";remove.dataset.permanentGroup=i;actions.append(restore,remove);row.append(label,actions);deletedList.appendChild(row);});save();}
-  function restoreGroup(i){const item=deleted[i];if(!item)return;const holder=document.createElement("div");holder.innerHTML=item.html||"";let g=holder.firstElementChild;if(!g){g=createGroup(item.market||"추가 항목",item.id||("restored-"+Date.now().toString(36)));}else{g.classList.add("custom-global-group");g.dataset.groupId=item.id||("restored-"+Date.now().toString(36));g.querySelector(":scope > .global-group-delete")?.remove();groupsContainer.appendChild(g);g.querySelectorAll(".global-news-card").forEach(c=>{c.dataset.loaded="0";observeCard(c);});}const id=g.dataset.groupId;const cards=[...g.querySelectorAll(".global-news-card")].map(c=>c.outerHTML);if(!added.some(x=>x.id===id))added.push({type:"group",id,market:item.market||marketName(g),cards});deleted.splice(i,1);save();renderDeleted();syncDelete();}
-  // Load saved custom groups; never replace or mutate the built-in KOSPI/KOSDAQ groups.
-  added.forEach(record=>{const g=createGroup(record.market||"추가 항목",record.id||("custom-"+Date.now().toString(36)));if(Array.isArray(record.cards)&&record.cards.length){const grid=g.querySelector(".global-market-grid");grid.replaceChildren();record.cards.forEach((html,i)=>{const holder=document.createElement("div");holder.innerHTML=html;const c=holder.firstElementChild;if(c){c.dataset.customId=(record.id||"custom")+"-"+i;c.dataset.loaded="0";grid.appendChild(c);observeCard(c);}});}});
+  function makeCard(query,provider,id){
+    const card=document.createElement("section");card.className="person-news global-news-card";card.dataset.query=query;card.dataset.source=provider.source;card.dataset.customId=id;card.dataset.provider=provider.name;
+    const href=provider.source==="global"?"https://news.google.com/search?q="+encodeURIComponent(query)+"&hl=en-US&gl=US&ceid=US:en":provider.source==="official-goldman"?"https://www.goldmansachs.com/search?query="+encodeURIComponent(query):"https://www.morganstanley.com/search?text="+encodeURIComponent(query);
+    const head=document.createElement("div");head.className="person-news-head";const brand=document.createElement("b");brand.textContent=provider.name;
+    if(provider.domain!=="news.google.com"){brand.classList.add("provider-brand");const img=document.createElement("img");img.src="https://www.google.com/s2/favicons?domain="+provider.domain+"&sz=64";img.alt="";img.loading="lazy";brand.prepend(img);}
+    const actions=document.createElement("span");actions.className="person-news-actions";const link=document.createElement("a");link.className="person-news-search-link";link.href=href;link.target="_blank";link.rel="noopener noreferrer";link.textContent="전체 기사 보기 ↗";const newest=document.createElement("span");newest.textContent="최신순";actions.append(link,newest);head.append(brand,actions);
+    const list=document.createElement("div");list.className="person-news-list";list.innerHTML='<div class="person-news-state">최신 기사를 불러오는 중…</div>';card.append(head,list);return card;
+  }
+  function createGroup(name,id){
+    const group=document.createElement("section");group.className="global-market-group card custom-global-group";group.dataset.groupId=id;
+    const heading=document.createElement("div");heading.className="global-market-heading";const eyebrow=document.createElement("span");eyebrow.className="eyebrow";eyebrow.textContent="GLOBAL MARKET WATCH · CUSTOM";const title=document.createElement("h2");title.textContent=name;heading.append(eyebrow,title);
+    const grid=document.createElement("div");grid.className="global-market-grid";providers.forEach((provider,i)=>grid.appendChild(makeCard(name,provider,id+"-"+i)));group.append(heading,grid);groupsContainer.appendChild(group);
+    group.querySelectorAll(".global-news-card").forEach(loadCard);return group;
+  }
+  function deleteGroup(group){if(!group?.isConnected)return;const id=group.dataset.groupId;deleted.push({type:"group",id,market:groupTitle(group),deletedAt:Date.now()});added=added.filter(x=>x.id!==id);group.remove();save();renderDeleted();}
+  function syncDelete(){root.querySelectorAll(".custom-global-group").forEach(group=>{let b=group.querySelector(":scope > .global-group-delete");if(deleteMode&&!b){b=document.createElement("button");b.type="button";b.className="global-group-delete";b.textContent="삭제";b.addEventListener("click",()=>deleteGroup(group));group.appendChild(b);}else if(!deleteMode&&b)b.remove();});}
+  function renderDeleted(){purgeExpired();deletedList.replaceChildren();if(!deleted.length){const p=document.createElement("p");p.textContent="복원할 항목이 없습니다.";deletedList.appendChild(p);}else deleted.forEach((item,i)=>{const row=document.createElement("div");row.className="global-deleted-row";const label=document.createElement("span");const days=Math.max(0,Math.ceil((Number(item.deletedAt)+30*86400000-Date.now())/86400000));label.textContent=`${item.market||"추가 항목"} · 자동 영구 삭제까지 ${days}일`;const actions=document.createElement("div");actions.className="global-deleted-actions";const restore=document.createElement("button");restore.type="button";restore.className="people-manage-btn";restore.textContent="복원";restore.addEventListener("click",()=>restoreGroup(i));const remove=document.createElement("button");remove.type="button";remove.className="people-manage-btn danger";remove.textContent="영구 삭제";remove.addEventListener("click",()=>{deleted.splice(i,1);save();renderDeleted();});actions.append(restore,remove);row.append(label,actions);deletedList.appendChild(row);});save();}
+  function restoreGroup(i){const item=deleted[i];if(!item)return;if(added.some(x=>String(x.market).toLowerCase()===String(item.market).toLowerCase())){alert("같은 이름의 항목이 이미 있습니다.");return;}const id=item.id||("custom-"+Date.now().toString(36));added.push({type:"group",id,market:item.market||"추가 항목"});createGroup(item.market||"추가 항목",id);deleted.splice(i,1);save();renderDeleted();syncDelete();}
+  purgeExpired();added.forEach(x=>{if(x&&x.market)createGroup(String(x.market),String(x.id||("custom-"+Date.now().toString(36))));});
   addBtn.addEventListener("click",e=>{e.preventDefault();form.hidden=false;cancelBtn.hidden=false;addBtn.hidden=true;form.scrollIntoView({behavior:"smooth",block:"center"});form.querySelector('input[name="market"]')?.focus();});
   cancelBtn.addEventListener("click",e=>{e.preventDefault();form.reset();form.hidden=true;cancelBtn.hidden=true;addBtn.hidden=false;});
   deleteBtn.addEventListener("click",e=>{e.preventDefault();deleteMode=!deleteMode;deleteBtn.classList.toggle("active",deleteMode);deleteBtn.setAttribute("aria-pressed",String(deleteMode));deleteBtn.textContent=deleteMode?"삭제 선택 종료":"－ 항목 삭제";syncDelete();});
-  form.addEventListener("submit",e=>{e.preventDefault();const input=form.querySelector('input[name="market"]');const name=String(input?.value||"").trim();if(!name){input?.focus();return;}const id="custom-"+Date.now().toString(36);const record={type:"group",id,market:name,cards:[]};added.push(record);const g=createGroup(name,id);record.cards=[...g.querySelectorAll(".global-news-card")].map(c=>c.outerHTML);save();form.reset();form.hidden=true;cancelBtn.hidden=true;addBtn.hidden=false;syncDelete();g.scrollIntoView({behavior:"smooth",block:"start"});});
-  root.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;if(b.dataset.deleteGroup!==undefined){const g=b.closest(".custom-global-group");if(!g)return;const id=g.dataset.groupId;deleted.push({type:"group",id,market:marketName(g),html:g.outerHTML,deletedAt:Date.now()});added=added.filter(x=>x.id!==id);g.remove();save();renderDeleted();}else if(b.dataset.restoreGroup!==undefined)restoreGroup(Number(b.dataset.restoreGroup));else if(b.dataset.permanentGroup!==undefined){deleted.splice(Number(b.dataset.permanentGroup),1);save();renderDeleted();}else if(b.classList.contains("person-news-retry")){const c=b.closest(".global-news-card");if(c){c.dataset.loaded="0";loadCard(c);}}});
-  renderDeleted();syncDelete();window.setInterval(()=>{const before=deleted.length;purgeExpired();if(before!==deleted.length){save();renderDeleted();}},60*60*1000);
+  form.addEventListener("submit",e=>{e.preventDefault();const input=form.querySelector('input[name="market"]');const name=String(input?.value||"").trim();if(!name){input?.focus();return;}if([...groupsContainer.querySelectorAll(":scope > .custom-global-group .global-market-heading h2")].some(h=>h.textContent.trim().toLowerCase()===name.toLowerCase())){alert("이미 추가된 항목입니다.");return;}const id="custom-"+Date.now().toString(36);added.push({type:"group",id,market:name});const group=createGroup(name,id);save();form.reset();form.hidden=true;cancelBtn.hidden=true;addBtn.hidden=false;syncDelete();group.scrollIntoView({behavior:"smooth",block:"start"});});
+  renderDeleted();syncDelete();window.setInterval(()=>{const before=deleted.length;purgeExpired();if(deleted.length!==before){save();renderDeleted();}},60*60*1000);
 })();

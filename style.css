@@ -389,7 +389,6 @@ html.dark .history-content .history-field-quote .history-quote,html.dark .histor
 .global-deleted-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .global-deleted-actions{display:flex;gap:8px;align-items:center}
 .global-deleted-row .permanent-delete{border-color:#b94b54;color:#b94b54}
-.global-market-group.custom-global-group .global-market-grid{grid-template-columns:1fr}
 
 
 /* v20 layout and group management refinements */
@@ -459,3 +458,9 @@ html.dark .history-content .history-field-quote .history-quote,html.dark .histor
 .people-quick-link:hover{border-color:var(--blue);color:var(--blue)}
 .person-card-highlight{outline:2px solid var(--blue);outline-offset:3px;transition:outline .2s}
 @media(max-width:560px){.people-quick-nav{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}.people-quick-link{font-size:10px;padding:8px 2px}}
+
+/* v30: 인물 초기화 및 글로벌 사용자 항목 */
+#resetPeopleBtn{border-color:var(--line);color:var(--muted)}
+#resetPeopleBtn:hover{border-color:var(--accent);color:var(--accent)}
+.custom-global-group>.global-group-delete{display:inline-flex;align-items:center;justify-content:center;margin:12px 0 0;padding:7px 14px;min-height:32px;border:1px solid #e3a1a5;border-radius:8px;background:#fff7f7;color:#b83c45;font-size:12px;font-weight:700;cursor:pointer}
+.global-deleted-actions .people-manage-btn{min-height:30px}
