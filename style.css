@@ -485,3 +485,12 @@ html.dark .influence-grade.grade-D{background:#30343c;color:#aeb6c2}
   .global-management-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
   .global-management-actions .people-manage-btn{width:100%;min-width:0}
 }
+
+/* ===== Wall Street Insight tab ===== */
+.wall-street-groups{display:grid;gap:18px}
+.wall-street-group .global-market-heading{display:flex;flex-direction:column;gap:5px}
+.wall-street-group .global-market-heading h2{margin:0}
+.wall-street-group .global-market-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.wall-street-news-card .person-news-head>b{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.wall-street-korean{font-size:11px;font-weight:500;color:var(--muted)}
+@media(max-width:760px){.wall-street-group .global-market-grid{grid-template-columns:1fr}}

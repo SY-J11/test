@@ -22,12 +22,90 @@
 <div class="hero-date"><span id="todayLabel">TODAY</span><b id="dateLabel">—</b><small>한국시간 기준</small></div>
 </section>
 <nav aria-label="메인 메뉴" class="main-tabs">
-<button class="main-tab active" data-panel="people-live">시장을 움직이는 사람들</button>
+<button class="main-tab active" data-panel="wall-street">월가 인사이트</button>
+<button class="main-tab" data-panel="people-live">시장을 움직이는 사람들</button>
 <button class="main-tab" data-panel="people-history">금융과 시장의 인물들</button>
 <button class="main-tab" data-panel="global-perspective">글로벌 시각</button>
 <button class="main-tab" data-panel="dashboard">시장 브리핑 [BETA]</button>
 </nav>
-<section class="tab-panel people-panel active" id="panel-people-live">
+<section class="tab-panel global-perspective-panel wall-street-panel active" id="panel-wall-street">
+<div class="people-intro card">
+<span class="eyebrow">WALL STREET INSIGHT</span>
+<h2>월가 인사이트</h2>
+<p>월가의 주요 금융기관, 투자 주체, 시장 전문가와 금융시장 동향을 4개 분야로 나누어 최신 해외 뉴스를 추적합니다.</p>
+</div>
+<div class="global-perspective-groups wall-street-groups"><section class="global-market-group card wall-street-group">
+<div class="global-market-heading"><span class="eyebrow">01 · WALL STREET & INSTITUTIONS</span><h2>월가 및 금융기관</h2></div>
+<div class="global-market-grid"><section class="person-news global-news-card wall-street-news-card" data-query="Wall Street" data-source="global" id="wall-street-1">
+<div class="person-news-head"><b>Google News US <small class="wall-street-korean">월가 종합 뉴스</small></b><span class="person-news-actions"><a class="person-news-search-link" href="https://news.google.com/search?q=Wall%20Street&hl=en-US&gl=US&ceid=US%3Aen" rel="noopener noreferrer" target="_blank">전체 기사 보기 ↗</a><span>최신순</span></span></div>
+<div class="person-news-list"><div class="person-news-state">화면에 표시되면 최신 기사를 불러옵니다.</div></div>
+<button class="person-news-more" data-news-more="" disabled="" type="button">기사 10개 더 보기</button></section><section class="person-news global-news-card wall-street-news-card" data-query="Investment Banks" data-source="global" id="wall-street-2">
+<div class="person-news-head"><b>Google News US <small class="wall-street-korean">투자은행</small></b><span class="person-news-actions"><a class="person-news-search-link" href="https://news.google.com/search?q=Investment%20Banks&hl=en-US&gl=US&ceid=US%3Aen" rel="noopener noreferrer" target="_blank">전체 기사 보기 ↗</a><span>최신순</span></span></div>
+<div class="person-news-list"><div class="person-news-state">화면에 표시되면 최신 기사를 불러옵니다.</div></div>
+<button class="person-news-more" data-news-more="" disabled="" type="button">기사 10개 더 보기</button></section><section class="person-news global-news-card wall-street-news-card" data-query="Financial Institutions" data-source="global" id="wall-street-3">
+<div class="person-news-head"><b>Google News US <small class="wall-street-korean">금융기관</small></b><span class="person-news-actions"><a class="person-news-search-link" href="https://news.google.com/search?q=Financial%20Institutions&hl=en-US&gl=US&ceid=US%3Aen" rel="noopener noreferrer" target="_blank">전체 기사 보기 ↗</a><span>최신순</span></span></div>
+<div class="person-news-list"><div class="person-news-state">화면에 표시되면 최신 기사를 불러옵니다.</div></div>
+<button class="person-news-more" data-news-more="" disabled="" type="button">기사 10개 더 보기</button></section><section class="person-news global-news-card wall-street-news-card" data-query="Asset Managers" data-source="global" id="wall-street-4">
+<div class="person-news-head"><b>Google News US <small class="wall-street-korean">자산운용사</small></b><span class="person-news-actions"><a class="person-news-search-link" href="https://news.google.com/search?q=Asset%20Managers&hl=en-US&gl=US&ceid=US%3Aen" rel="noopener noreferrer" target="_blank">전체 기사 보기 ↗</a><span>최신순</span></span></div>
+<div class="person-news-list"><div class="person-news-state">화면에 표시되면 최신 기사를 불러옵니다.</div></div>
+<button class="person-news-more" data-news-more="" disabled="" type="button">기사 10개 더 보기</button></section><section class="person-news global-news-card wall-street-news-card" data-query="Central Banks" data-source="global" id="wall-street-5">
+<div class="person-news-head"><b>Google News US <small class="wall-street-korean">중앙은행</small></b><span class="person-news-actions"><a class="person-news-search-link" href="https://news.google.com/search?q=Central%20Banks&hl=en-US&gl=US&ceid=US%3Aen" rel="noopener noreferrer" target="_blank">전체 기사 보기 ↗</a><span>최신순</span></span></div>
+<div class="person-news-list"><div class="person-news-state">화면에 표시되면 최신 기사를 불러옵니다.</div></div>
+<button class="person-news-more" data-news-more="" disabled="" type="button">기사 10개 더 보기</button></section></div></section><section class="global-market-group card wall-street-group">
+<div class="global-market-heading"><span class="eyebrow">02 · INVESTORS & FUNDS</span><h2>투자 주체 및 자금 운용</h2></div>
+<div class="global-market-grid"><section class="person-news global-news-card wall-street-news-card" data-query="Hedge Funds" data-source="global" id="wall-street-6">
+<div class="person-news-head"><b>Google News US <small class="wall-street-korean">헤지펀드</small></b><span class="person-news-actions"><a class="person-news-search-link" href="https://news.google.com/search?q=Hedge%20Funds&hl=en-US&gl=US&ceid=US%3Aen" rel="noopener noreferrer" target="_blank">전체 기사 보기 ↗</a><span>최신순</span></span></div>
+<div class="person-news-list"><div class="person-news-state">화면에 표시되면 최신 기사를 불러옵니다.</div></div>
+<button class="person-news-more" data-news-more="" disabled="" type="button">기사 10개 더 보기</button></section><section class="person-news global-news-card wall-street-news-card" data-query="Institutional Investors" data-source="global" id="wall-street-7">
+<div class="person-news-head"><b>Google News US <small class="wall-street-korean">기관투자자</small></b><span class="person-news-actions"><a class="person-news-search-link" href="https://news.google.com/search?q=Institutional%20Investors&hl=en-US&gl=US&ceid=US%3Aen" rel="noopener noreferrer" target="_blank">전체 기사 보기 ↗</a><span>최신순</span></span></div>
+<div class="person-news-list"><div class="person-news-state">화면에 표시되면 최신 기사를 불러옵니다.</div></div>
+<button class="person-news-more" data-news-more="" disabled="" type="button">기사 10개 더 보기</button></section><section class="person-news global-news-card wall-street-news-card" data-query="Private Equity" data-source="global" id="wall-street-8">
+<div class="person-news-head"><b>Google News US <small class="wall-street-korean">사모펀드</small></b><span class="person-news-actions"><a class="person-news-search-link" href="https://news.google.com/search?q=Private%20Equity&hl=en-US&gl=US&ceid=US%3Aen" rel="noopener noreferrer" target="_blank">전체 기사 보기 ↗</a><span>최신순</span></span></div>
+<div class="person-news-list"><div class="person-news-state">화면에 표시되면 최신 기사를 불러옵니다.</div></div>
+<button class="person-news-more" data-news-more="" disabled="" type="button">기사 10개 더 보기</button></section><section class="person-news global-news-card wall-street-news-card" data-query="Venture Capital" data-source="global" id="wall-street-9">
+<div class="person-news-head"><b>Google News US <small class="wall-street-korean">벤처캐피털</small></b><span class="person-news-actions"><a class="person-news-search-link" href="https://news.google.com/search?q=Venture%20Capital&hl=en-US&gl=US&ceid=US%3Aen" rel="noopener noreferrer" target="_blank">전체 기사 보기 ↗</a><span>최신순</span></span></div>
+<div class="person-news-list"><div class="person-news-state">화면에 표시되면 최신 기사를 불러옵니다.</div></div>
+<button class="person-news-more" data-news-more="" disabled="" type="button">기사 10개 더 보기</button></section><section class="person-news global-news-card wall-street-news-card" data-query="Sovereign Wealth Funds" data-source="global" id="wall-street-10">
+<div class="person-news-head"><b>Google News US <small class="wall-street-korean">국부펀드</small></b><span class="person-news-actions"><a class="person-news-search-link" href="https://news.google.com/search?q=Sovereign%20Wealth%20Funds&hl=en-US&gl=US&ceid=US%3Aen" rel="noopener noreferrer" target="_blank">전체 기사 보기 ↗</a><span>최신순</span></span></div>
+<div class="person-news-list"><div class="person-news-state">화면에 표시되면 최신 기사를 불러옵니다.</div></div>
+<button class="person-news-more" data-news-more="" disabled="" type="button">기사 10개 더 보기</button></section></div></section><section class="global-market-group card wall-street-group">
+<div class="global-market-heading"><span class="eyebrow">03 · MARKET EXPERTS & STRATEGY</span><h2>시장 전문가 및 투자 전략</h2></div>
+<div class="global-market-grid"><section class="person-news global-news-card wall-street-news-card" data-query="Market Strategists" data-source="global" id="wall-street-11">
+<div class="person-news-head"><b>Google News US <small class="wall-street-korean">시장 전략가</small></b><span class="person-news-actions"><a class="person-news-search-link" href="https://news.google.com/search?q=Market%20Strategists&hl=en-US&gl=US&ceid=US%3Aen" rel="noopener noreferrer" target="_blank">전체 기사 보기 ↗</a><span>최신순</span></span></div>
+<div class="person-news-list"><div class="person-news-state">화면에 표시되면 최신 기사를 불러옵니다.</div></div>
+<button class="person-news-more" data-news-more="" disabled="" type="button">기사 10개 더 보기</button></section><section class="person-news global-news-card wall-street-news-card" data-query="Wall Street Analysts" data-source="global" id="wall-street-12">
+<div class="person-news-head"><b>Google News US <small class="wall-street-korean">월가 애널리스트</small></b><span class="person-news-actions"><a class="person-news-search-link" href="https://news.google.com/search?q=Wall%20Street%20Analysts&hl=en-US&gl=US&ceid=US%3Aen" rel="noopener noreferrer" target="_blank">전체 기사 보기 ↗</a><span>최신순</span></span></div>
+<div class="person-news-list"><div class="person-news-state">화면에 표시되면 최신 기사를 불러옵니다.</div></div>
+<button class="person-news-more" data-news-more="" disabled="" type="button">기사 10개 더 보기</button></section><section class="person-news global-news-card wall-street-news-card" data-query="Fund Managers" data-source="global" id="wall-street-13">
+<div class="person-news-head"><b>Google News US <small class="wall-street-korean">펀드매니저</small></b><span class="person-news-actions"><a class="person-news-search-link" href="https://news.google.com/search?q=Fund%20Managers&hl=en-US&gl=US&ceid=US%3Aen" rel="noopener noreferrer" target="_blank">전체 기사 보기 ↗</a><span>최신순</span></span></div>
+<div class="person-news-list"><div class="person-news-state">화면에 표시되면 최신 기사를 불러옵니다.</div></div>
+<button class="person-news-more" data-news-more="" disabled="" type="button">기사 10개 더 보기</button></section><section class="person-news global-news-card wall-street-news-card" data-query="Portfolio Managers" data-source="global" id="wall-street-14">
+<div class="person-news-head"><b>Google News US <small class="wall-street-korean">포트폴리오 매니저</small></b><span class="person-news-actions"><a class="person-news-search-link" href="https://news.google.com/search?q=Portfolio%20Managers&hl=en-US&gl=US&ceid=US%3Aen" rel="noopener noreferrer" target="_blank">전체 기사 보기 ↗</a><span>최신순</span></span></div>
+<div class="person-news-list"><div class="person-news-state">화면에 표시되면 최신 기사를 불러옵니다.</div></div>
+<button class="person-news-more" data-news-more="" disabled="" type="button">기사 10개 더 보기</button></section><section class="person-news global-news-card wall-street-news-card" data-query="Global Investors" data-source="global" id="wall-street-15">
+<div class="person-news-head"><b>Google News US <small class="wall-street-korean">글로벌 투자자</small></b><span class="person-news-actions"><a class="person-news-search-link" href="https://news.google.com/search?q=Global%20Investors&hl=en-US&gl=US&ceid=US%3Aen" rel="noopener noreferrer" target="_blank">전체 기사 보기 ↗</a><span>최신순</span></span></div>
+<div class="person-news-list"><div class="person-news-state">화면에 표시되면 최신 기사를 불러옵니다.</div></div>
+<button class="person-news-more" data-news-more="" disabled="" type="button">기사 10개 더 보기</button></section></div></section><section class="global-market-group card wall-street-group">
+<div class="global-market-heading"><span class="eyebrow">04 · MARKETS & TRADING</span><h2>금융시장 및 거래 동향</h2></div>
+<div class="global-market-grid"><section class="person-news global-news-card wall-street-news-card" data-query="Market Makers" data-source="global" id="wall-street-16">
+<div class="person-news-head"><b>Google News US <small class="wall-street-korean">시장조성자</small></b><span class="person-news-actions"><a class="person-news-search-link" href="https://news.google.com/search?q=Market%20Makers&hl=en-US&gl=US&ceid=US%3Aen" rel="noopener noreferrer" target="_blank">전체 기사 보기 ↗</a><span>최신순</span></span></div>
+<div class="person-news-list"><div class="person-news-state">화면에 표시되면 최신 기사를 불러옵니다.</div></div>
+<button class="person-news-more" data-news-more="" disabled="" type="button">기사 10개 더 보기</button></section><section class="person-news global-news-card wall-street-news-card" data-query="Quantitative Trading" data-source="global" id="wall-street-17">
+<div class="person-news-head"><b>Google News US <small class="wall-street-korean">퀀트·알고리즘 매매</small></b><span class="person-news-actions"><a class="person-news-search-link" href="https://news.google.com/search?q=Quantitative%20Trading&hl=en-US&gl=US&ceid=US%3Aen" rel="noopener noreferrer" target="_blank">전체 기사 보기 ↗</a><span>최신순</span></span></div>
+<div class="person-news-list"><div class="person-news-state">화면에 표시되면 최신 기사를 불러옵니다.</div></div>
+<button class="person-news-more" data-news-more="" disabled="" type="button">기사 10개 더 보기</button></section><section class="person-news global-news-card wall-street-news-card" data-query="Credit Markets" data-source="global" id="wall-street-18">
+<div class="person-news-head"><b>Google News US <small class="wall-street-korean">신용·채권시장</small></b><span class="person-news-actions"><a class="person-news-search-link" href="https://news.google.com/search?q=Credit%20Markets&hl=en-US&gl=US&ceid=US%3Aen" rel="noopener noreferrer" target="_blank">전체 기사 보기 ↗</a><span>최신순</span></span></div>
+<div class="person-news-list"><div class="person-news-state">화면에 표시되면 최신 기사를 불러옵니다.</div></div>
+<button class="person-news-more" data-news-more="" disabled="" type="button">기사 10개 더 보기</button></section><section class="person-news global-news-card wall-street-news-card" data-query="Family Offices" data-source="global" id="wall-street-19">
+<div class="person-news-head"><b>Google News US <small class="wall-street-korean">패밀리오피스</small></b><span class="person-news-actions"><a class="person-news-search-link" href="https://news.google.com/search?q=Family%20Offices&hl=en-US&gl=US&ceid=US%3Aen" rel="noopener noreferrer" target="_blank">전체 기사 보기 ↗</a><span>최신순</span></span></div>
+<div class="person-news-list"><div class="person-news-state">화면에 표시되면 최신 기사를 불러옵니다.</div></div>
+<button class="person-news-more" data-news-more="" disabled="" type="button">기사 10개 더 보기</button></section><section class="person-news global-news-card wall-street-news-card" data-query="Federal Reserve" data-source="global" id="wall-street-20">
+<div class="person-news-head"><b>Google News US <small class="wall-street-korean">미국 연방준비제도</small></b><span class="person-news-actions"><a class="person-news-search-link" href="https://news.google.com/search?q=Federal%20Reserve&hl=en-US&gl=US&ceid=US%3Aen" rel="noopener noreferrer" target="_blank">전체 기사 보기 ↗</a><span>최신순</span></span></div>
+<div class="person-news-list"><div class="person-news-state">화면에 표시되면 최신 기사를 불러옵니다.</div></div>
+<button class="person-news-more" data-news-more="" disabled="" type="button">기사 10개 더 보기</button></section></div></section></div>
+</section>
+
+<section class="tab-panel people-panel" id="panel-people-live">
 <div class="people-intro card">
 <span class="eyebrow">PEOPLE MOVING MARKETS</span>
 <h2>시장을 움직이는 사람들</h2>
