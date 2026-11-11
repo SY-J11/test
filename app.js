@@ -645,7 +645,7 @@ $("themeBtn").addEventListener("click", () => {
       const controller=new AbortController();
       const timeout=setTimeout(()=>controller.abort(),12000);
       let response;
-      try { response=await fetch(url,{signal:controller.signal,headers:{'Accept':'application/json','Cache-Control':'no-cache'},cache:'no-store'}); }
+      try { response=await fetch(url,{signal:controller.signal,headers:{'Accept':'application/json'},cache:'no-store'}); }
       finally { clearTimeout(timeout); }
       const data=await response.json();
       if(!response.ok) throw new Error(data.error||('뉴스 서버 응답 오류 (HTTP '+response.status+')'));
