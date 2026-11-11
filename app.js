@@ -651,6 +651,7 @@ $("themeBtn").addEventListener("click", () => {
       sections.forEach(section=>{if(!loadedNews.has(section))newsObserver.observe(section);});
     }else sections.forEach(loadNews);
   }
+  window.refreshPersonNewsObserver = observeNews;
   document.querySelectorAll(".people-filter").forEach(b=>b.addEventListener("click",()=>{
     document.querySelectorAll(".people-filter").forEach(x=>x.classList.remove("active"));
     b.classList.add("active");filter=b.dataset.pfilter;render();
