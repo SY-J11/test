@@ -512,20 +512,6 @@ $("themeBtn").addEventListener("click", () => {
         const [moved] = people.splice(from, 1); people.splice(to, 0, moved); savePeople(); render();
       });
     });
-    root.querySelectorAll('[data-news-more]').forEach(button => button.addEventListener('click', () => {
-      const section = button.closest('.person-news');
-      if (!section || loadingNews.has(section) || !loadedNews.has(section)) return;
-      const currentVisible = newsVisibleCounts.get(section) || 3;
-      const targetVisible = currentVisible + 10;
-      newsVisibleCounts.set(section, targetVisible);
-      const items = newsItems.get(section) || [];
-      if (items.length < targetVisible && newsHasMore.get(section) !== false) {
-        renderNewsItems(section);
-        loadNews(section);
-      } else {
-        renderNewsItems(section);
-      }
-    }));
     observeNews();
     if(rows.some(p=>p.name==="도널드 트럼프")) loadTruthSocial();
   }
@@ -652,6 +638,28 @@ $("themeBtn").addEventListener("click", () => {
     }else sections.forEach(loadNews);
   }
   window.refreshPersonNewsObserver = observeNews;
+
+  // One delegated handler powers "기사 10개 더 보기" in all three news tabs,
+  // including cards created dynamically by either keyword manager.
+  if (!window.__allNewsMoreHandlerInstalled) {
+    window.__allNewsMoreHandlerInstalled = true;
+    document.addEventListener('click', event => {
+      const button = event.target.closest('[data-news-more]');
+      if (!button) return;
+      const section = button.closest('.person-news');
+      if (!section || loadingNews.has(section) || !loadedNews.has(section)) return;
+      const currentVisible = newsVisibleCounts.get(section) || 3;
+      const targetVisible = currentVisible + 10;
+      newsVisibleCounts.set(section, targetVisible);
+      const items = newsItems.get(section) || [];
+      if (items.length < targetVisible && newsHasMore.get(section) !== false) {
+        renderNewsItems(section);
+        loadNews(section);
+      } else {
+        renderNewsItems(section);
+      }
+    });
+  }
   document.querySelectorAll(".people-filter").forEach(b=>b.addEventListener("click",()=>{
     document.querySelectorAll(".people-filter").forEach(x=>x.classList.remove("active"));
     b.classList.add("active");filter=b.dataset.pfilter;render();

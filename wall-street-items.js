@@ -97,8 +97,11 @@
       if (!host) return;
       host.replaceChildren();
       const terms = added.filter(item => item.groupKey === 'custom');
-      const links = terms.length ? terms : [{ id: 'ws-custom-terms', term: 'New' }];
-      links.forEach((item, index) => {
+      const tocCategory = host.closest('.ws-custom-toc-category');
+      const customGroup = panel.querySelector('.wall-street-custom-group');
+      if (tocCategory) tocCategory.hidden = terms.length === 0;
+      if (customGroup) customGroup.hidden = terms.length === 0;
+      terms.forEach((item, index) => {
         if (index) {
           const dot = document.createElement('span');
           dot.className = 'ws-toc-dot';
@@ -151,7 +154,8 @@
         : source === 'official-goldman'
           ? `https://www.goldmansachs.com/search?query=${enc(term)}`
           : `https://www.morganstanley.com/search?text=${enc(term)}`;
-      return `<section class="person-news global-news-card wall-street-news-card" data-query="${esc(term)}" data-source="${source}"><div class="person-news-head"><b>${provider}</b><span class="person-news-actions"><a class="person-news-search-link" href="${href}" target="_blank" rel="noopener noreferrer">전체 기사 보기 ↗</a><span>최신순</span></span></div><div class="person-news-list"><div class="person-news-state">화면에 표시되면 최신 기사를 불러옵니다.</div></div><button class="person-news-more" data-news-more disabled type="button">기사 10개 더 보기</button></section>`;
+      const domain = source === 'global' ? 'news.google.com' : source === 'official-goldman' ? 'goldmansachs.com' : 'morganstanley.com';
+      return `<section class="person-news global-news-card wall-street-news-card" data-query="${esc(term)}" data-source="${source}"><div class="person-news-head"><b class="provider-brand"><img src="https://www.google.com/s2/favicons?domain=${domain}&sz=64" alt="" loading="lazy">${provider}</b><span class="person-news-actions"><a class="person-news-search-link" href="${href}" target="_blank" rel="noopener noreferrer">전체 기사 보기 ↗</a><span>최신순</span></span></div><div class="person-news-list"><div class="person-news-state">화면에 표시되면 최신 기사를 불러옵니다.</div></div><button class="person-news-more" data-news-more disabled type="button">기사 10개 더 보기</button></section>`;
     }
 
     function make(item) {

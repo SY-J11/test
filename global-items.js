@@ -109,17 +109,15 @@
     function makeCard(query, provider, id) {
       const card = document.createElement("section");
       card.className = "person-news global-news-card";
-      card.dataset.query = query; card.dataset.source = provider.source; card.dataset.customId = id; card.dataset.provider = provider.name;
+      card.dataset.query = query; card.dataset.source = provider.source; card.dataset.provider = provider.name;
       let href;
       if (provider.source === "global") href = "https://news.google.com/search?q=" + encodeURIComponent(query) + "&hl=en-US&gl=US&ceid=US:en";
       else if (provider.source === "official-goldman") href = "https://www.goldmansachs.com/search?query=" + encodeURIComponent(query);
       else href = "https://www.morganstanley.com/search?text=" + encodeURIComponent(query);
       const head = document.createElement("div"); head.className = "person-news-head";
       const brand = document.createElement("b"); brand.textContent = provider.name;
-      if (provider.domain !== "news.google.com") {
-        brand.className = "provider-brand";
-        const img = document.createElement("img"); img.src = "https://www.google.com/s2/favicons?domain=" + provider.domain + "&sz=64"; img.alt = ""; img.loading = "lazy"; brand.prepend(img);
-      }
+      brand.className = "provider-brand";
+      const img = document.createElement("img"); img.src = "https://www.google.com/s2/favicons?domain=" + provider.domain + "&sz=64"; img.alt = ""; img.loading = "lazy"; brand.prepend(img);
       const actions = document.createElement("span"); actions.className = "person-news-actions";
       const searchLink = document.createElement("a"); searchLink.className = "person-news-search-link"; searchLink.href = href; searchLink.target = "_blank"; searchLink.rel = "noopener noreferrer"; searchLink.textContent = "전체 기사 보기 ↗";
       const newest = document.createElement("span"); newest.textContent = "최신순";
@@ -127,6 +125,9 @@
       const list = document.createElement("div"); list.className = "person-news-list";
       setStateMessage(list, "최신 기사를 불러오는 중…");
       card.append(head, list);
+      const more = document.createElement("button");
+      more.type = "button"; more.className = "person-news-more"; more.dataset.newsMore = ""; more.disabled = true; more.textContent = "기사 10개 더 보기";
+      card.appendChild(more);
       return card;
     }
 
@@ -172,7 +173,7 @@
       group.append(heading, grid);
       groupsContainer.appendChild(group);
       renderContents();
-      group.querySelectorAll(".global-news-card").forEach(loadCard);
+      if (window.refreshPersonNewsObserver) window.refreshPersonNewsObserver();
       if (deleteMode) addDeleteButton(group);
       return group;
     }
