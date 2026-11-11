@@ -728,12 +728,20 @@ $("themeBtn").addEventListener("click", () => {
       }
       const currentVisible = newsVisibleCounts.get(section) || 3;
       const targetVisible = currentVisible + 10;
-      newsVisibleCounts.set(section, targetVisible);
-      newsExpanded.add(section);
-      renderNewsItems(section);
       const items = newsItems.get(section) || [];
-      if (items.length < targetVisible && newsHasMore.get(section) !== false) loadNews(section);
-      else renderNewsItems(section);
+      // 확보된 기사가 부족하면 다음 offset을 먼저 가져온 뒤 펼친다.
+      // 요청 중 중복 클릭을 막고, 새 기사가 도착하면 최대 10개를 추가 노출한다.
+      if (items.length < targetVisible && newsHasMore.get(section) !== false) {
+        newsVisibleCounts.set(section, targetVisible);
+        loadNews(section).then(() => {
+          newsExpanded.add(section);
+          renderNewsItems(section);
+        });
+      } else {
+        newsVisibleCounts.set(section, Math.min(targetVisible, items.length));
+        newsExpanded.add(section);
+        renderNewsItems(section);
+      }
     });
   }
   document.querySelectorAll(".people-filter").forEach(b=>b.addEventListener("click",()=>{
