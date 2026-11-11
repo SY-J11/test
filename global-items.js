@@ -18,7 +18,7 @@
     root.dataset.customManagerReady = "1";
 
     const storageKey = "marketInsightGlobalItems_v1";
-    const worker = "https://n.hundprint.workers.dev";
+    const worker = "https://macro.mcraft-tiger-574.workers.dev";
     const providers = [
       { name: "Google", source: "global", domain: "news.google.com" },
       { name: "Goldman Sachs", source: "official-goldman", domain: "goldmansachs.com" },
