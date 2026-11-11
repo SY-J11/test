@@ -661,7 +661,7 @@ $("themeBtn").addEventListener("click", () => {
     const target=b.dataset.panel;
     document.querySelectorAll(".main-tab").forEach(x=>x.classList.toggle("active",x===b));
     document.querySelectorAll(".tab-panel").forEach(x=>x.classList.toggle("active",x.id==="panel-"+target));
-    if(target==="global-perspective" || target==="people-live" || target==="wall-street") observeNews();
+    if(target==="global-perspective" || target==="people-live" || target==="wall-street" || target==="stock-essentials") observeNews();
     if(target==="dashboard" && !state.dashboardLoaded && !state.dashboardLoading) {
       state.dashboardLoading = load().finally(() => { state.dashboardLoading = null; });
     }

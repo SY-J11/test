@@ -1,6 +1,6 @@
 /* 월가 인사이트 검색어 관리: 추가·삭제·복원·영구 삭제·초기화 */
 (() => {
-  const root = document.getElementById('panel-wall-street');
+  const root = document.getElementById('panel-stock-essentials');
   if (!root) return;
 
   const key = 'wallStreetInsightTerms_v1';
@@ -35,16 +35,28 @@
   function syncCustomPlaceholder() {
     const host = root.querySelector('#ws-custom-terms');
     if (!host) return;
-    const hasTerms = !!host.querySelector('.wall-street-term');
-    let placeholder = host.querySelector('.wall-street-empty-keywords');
-    if (!hasTerms && !placeholder) {
-      placeholder = document.createElement('p');
-      placeholder.className = 'wall-street-empty-keywords';
-      placeholder.textContent = '-';
-      host.appendChild(placeholder);
-    } else if (hasTerms && placeholder) {
-      placeholder.remove();
-    }
+    host.querySelector('.wall-street-empty-keywords')?.remove();
+  }
+
+  function syncCustomToc() {
+    const host = root.querySelector('#ws-custom-toc-keywords');
+    if (!host) return;
+    host.replaceChildren();
+    const terms = added.filter(item => item && item.term && item.id);
+    const links = terms.length ? terms : [{ id: 'ws-custom-terms', term: 'New' }];
+    links.forEach((item, index) => {
+      if (index) {
+        const dot = document.createElement('span');
+        dot.className = 'ws-toc-dot';
+        dot.textContent = ' · ';
+        host.appendChild(dot);
+      }
+      const link = document.createElement('a');
+      link.className = 'ws-keyword-link';
+      link.href = `#${item.id}`;
+      link.textContent = item.term;
+      host.appendChild(link);
+    });
   }
 
   function card(term, name, source) {
@@ -115,7 +127,7 @@
             if (template.content.firstElementChild) host.appendChild(template.content.firstElementChild);
           }
         }
-        syncCustomPlaceholder(); save(); renderDeleted();
+        syncCustomPlaceholder(); syncCustomToc(); save(); renderDeleted();
         if (window.refreshPersonNewsObserver) window.refreshPersonNewsObserver();
       });
       const permanent = document.createElement('button');
@@ -153,7 +165,7 @@
   });
   del.addEventListener('click', () => { deleteMode = !deleteMode; sync(); });
   reset.addEventListener('click', () => {
-    if (confirm('월가 인사이트 검색어를 기본 120개(기존 20개 분야 용어와 핵심 용어 100개)로 초기화할까요? 추가·삭제한 검색어와 복원 대기 내역이 모두 사라집니다.')) {
+    if (confirm('주식 시장 핵심 용어 100개를 기본 구성으로 초기화할까요? 추가·삭제한 검색어와 복원 대기 내역이 모두 사라집니다.')) {
       localStorage.removeItem(key); location.reload();
     }
   });
@@ -170,7 +182,7 @@
     const item = { id: 'ws-custom-' + Date.now().toString(36), term, meaning, category };
     added.push(item);
     const el = make(item, true);
-    save(); form.reset(); form.hidden = true; cancel.hidden = true; add.hidden = false;
+    save(); syncCustomToc(); form.reset(); form.hidden = true; cancel.hidden = true; add.hidden = false;
     if (window.refreshPersonNewsObserver) window.refreshPersonNewsObserver();
     el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
@@ -190,9 +202,9 @@
     if (item.isCustom) added = added.filter(x => x.id !== item.id);
     deleted = deleted.filter(x => x.id !== item.id);
     deleted.push(item);
-    el.remove(); syncCustomPlaceholder(); save(); renderDeleted();
+    el.remove(); syncCustomPlaceholder(); syncCustomToc(); save(); renderDeleted();
   });
-  syncCustomPlaceholder();
+  syncCustomPlaceholder(); syncCustomToc();
   renderDeleted(); sync();
   if (window.refreshPersonNewsObserver) window.refreshPersonNewsObserver();
 })();
