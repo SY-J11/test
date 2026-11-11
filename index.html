@@ -7,7 +7,7 @@
 <meta content="#f4f6fa" name="theme-color"/>
 <link href="./Stock_macro.png" rel="apple-touch-icon"/>
 <title>MARKET INSIGHT DAILY</title>
-<link href="style.css?v=30" rel="stylesheet"/>
+<link href="style.css?v=31" rel="stylesheet"/>
 <script>try{if(localStorage.getItem("theme_v1")==="dark"){document.documentElement.classList.add("dark");document.querySelector('meta[name="theme-color"]').content="#151a22"}}catch(e){}</script>
 </head>
 <body>
@@ -70,7 +70,7 @@
 <label>국가<input name="country" placeholder="예: 미국" required=""/></label>
 <label>직책<input name="role" placeholder="예: 연준 의장" required=""/></label>
 <label>분야<select name="group"><option>정책·거시</option><option>중앙은행</option><option>투자·자금</option><option>기술·기업</option></select></label>
-<label class="wide">시장 영향<input name="impact" placeholder="시장에 미치는 영향" required=""/></label>
+<label class="wide">시장 영향<select name="influenceGrade" required=""><option value="S">S</option><option value="A">A</option><option value="B" selected>B</option><option value="C">C</option><option value="D">D</option></select></label>
 <label class="wide">체크할 뉴스<input name="watch" placeholder="주요 발언·정책·실적 등" required=""/></label>
 <label class="wide">뉴스 검색용 영문 이름<input name="query" placeholder="예: Jerome Powell" required=""/></label>
 </div>
@@ -263,5 +263,5 @@
 </main>
 </div>
 <div class="toast" id="toast" role="status"></div>
-<script src="app.js?v=30"></script>
+<script src="app.js?v=31"></script>
 </body></html>

@@ -424,7 +424,7 @@ $("themeBtn").addEventListener("click", () => {
     "스탠리 드러켄밀러":"A", "빌 애크먼":"B", "데이비드 테퍼":"B", "캐시 우드":"B", "마이클 버리":"B", "하워드 막스":"A", "마크 미너비니":"A",
     "젠슨 황":"S", "샘 올트먼":"A", "사티아 나델라":"A", "순다르 피차이":"A", "마크 저커버그":"A", "일론 머스크":"S", "리사 수":"A"
   };
-  const gradeText = {S:"글로벌 핵심 변수", A:"높은 영향력", B:"분야별 영향력"};
+  const gradeText = {S:"글로벌 핵심 변수", A:"높은 영향력", B:"분야별 영향력", C:"제한적 영향력", D:"낮은 영향력"};
   const root=document.getElementById("peopleCards");
   if(!root) return;
   const form=document.getElementById("personForm");
@@ -480,9 +480,11 @@ $("themeBtn").addEventListener("click", () => {
       }));
     }
     root.innerHTML=rows.map(p=>{
-      const grade=influence[p.name]||"B";
+      const legacyGrade=/^[SABCD]$/.test(String(p.impact||"").trim())?String(p.impact).trim():"";
+      const grade=p.influenceGrade||legacyGrade||influence[p.name]||"B";
+      const impactText=legacyGrade?"":(p.impact||"");
       const overseasName = newsQuery(p);
-      return `<article class="person-card" data-person="${esc(p.name)}" draggable="${window.matchMedia && window.matchMedia("(min-width: 900px)").matches}"><div class="person-card-top"><div class="person-heading"><div class="person-name-line"><h3>${esc(p.name)}</h3><div class="person-card-badges"><span class="person-sector">${esc(p.group)}</span><span class="influence-grade grade-${grade}" title="${gradeText[grade]}">영향력 ${grade}</span></div></div><div class="person-meta">${esc(p.country)} · ${esc(p.role)}</div></div><button class="person-delete-btn" type="button" data-delete="${esc(p.name)}" aria-label="${esc(p.name)} 삭제">삭제</button></div><p class="person-impact">${esc(p.impact)}</p><div class="person-watch"><b>체크할 뉴스</b><br>${esc(p.watch)}</div>${p.name==="도널드 트럼프"?`<section class="truth-posts"><div class="person-news-head truth-posts-head"><a class="truth-brand-link" href="https://www.trumpstruth.org/" target="_blank" rel="noopener noreferrer" aria-label="Trump’s Truth 사이트 열기"><img src="https://www.trumpstruth.org/img/logo.svg" alt="Trump’s Truth"></a><span>최신순</span></div><div class="truth-post-list"><div class="person-news-state">최신 게시물을 불러오는 중…</div></div></section>`:""}<section class="person-news" data-query="${esc(overseasName)}" data-source="global"><div class="person-news-head"><b>최근 기사 [해외]</b><span class="person-news-actions"><a class="person-news-search-link" href="https://news.google.com/search?q=${encodeURIComponent(overseasName)}&hl=en-US&gl=US&ceid=US%3Aen" target="_blank" rel="noopener noreferrer">전체 기사 보기 ↗</a><span>최신순</span></span></div><div class="person-news-list"><div class="person-news-state">화면에 표시되면 최신 기사를 불러옵니다.</div></div><button type="button" class="person-news-more" data-news-more disabled>기사 10개 더 보기</button></section><section class="person-news" data-query="${esc(p.name)}" data-source="naver"><div class="person-news-head"><b>최근 기사 [NAVER]</b><span class="person-news-actions"><a class="person-news-search-link" href="https://search.naver.com/search.naver?where=news&query=${encodeURIComponent(p.name)}&sort=1" target="_blank" rel="noopener noreferrer">전체 기사 보기 ↗</a><span>최신순</span></span></div><div class="person-news-list"><div class="person-news-state">화면에 표시되면 최신 기사를 불러옵니다.</div></div><button type="button" class="person-news-more" data-news-more disabled>기사 10개 더 보기</button></section></article>`;
+      return `<article class="person-card" data-person="${esc(p.name)}" draggable="${window.matchMedia && window.matchMedia("(min-width: 900px)").matches}"><div class="person-card-top"><div class="person-heading"><div class="person-name-line"><h3>${esc(p.name)}</h3><div class="person-card-badges"><span class="person-sector">${esc(p.group)}</span><span class="influence-grade grade-${grade}" title="${gradeText[grade]}">인물 영향력 ${grade}</span></div></div><div class="person-meta">${esc(p.country)} · ${esc(p.role)}</div></div><button class="person-delete-btn" type="button" data-delete="${esc(p.name)}" aria-label="${esc(p.name)} 삭제">삭제</button></div><p class="person-impact">${esc(impactText)}</p><div class="person-watch"><b>체크할 뉴스</b><br>${esc(p.watch)}</div>${p.name==="도널드 트럼프"?`<section class="truth-posts"><div class="person-news-head truth-posts-head"><a class="truth-brand-link" href="https://www.trumpstruth.org/" target="_blank" rel="noopener noreferrer" aria-label="Trump’s Truth 사이트 열기"><img src="https://www.trumpstruth.org/img/logo.svg" alt="Trump’s Truth"></a><span>최신순</span></div><div class="truth-post-list"><div class="person-news-state">최신 게시물을 불러오는 중…</div></div></section>`:""}<section class="person-news" data-query="${esc(overseasName)}" data-source="global"><div class="person-news-head"><b>최근 기사 [해외]</b><span class="person-news-actions"><a class="person-news-search-link" href="https://news.google.com/search?q=${encodeURIComponent(overseasName)}&hl=en-US&gl=US&ceid=US%3Aen" target="_blank" rel="noopener noreferrer">전체 기사 보기 ↗</a><span>최신순</span></span></div><div class="person-news-list"><div class="person-news-state">화면에 표시되면 최신 기사를 불러옵니다.</div></div><button type="button" class="person-news-more" data-news-more disabled>기사 10개 더 보기</button></section><section class="person-news" data-query="${esc(p.name)}" data-source="naver"><div class="person-news-head"><b>최근 기사 [NAVER]</b><span class="person-news-actions"><a class="person-news-search-link" href="https://search.naver.com/search.naver?where=news&query=${encodeURIComponent(p.name)}&sort=1" target="_blank" rel="noopener noreferrer">전체 기사 보기 ↗</a><span>최신순</span></span></div><div class="person-news-list"><div class="person-news-state">화면에 표시되면 최신 기사를 불러옵니다.</div></div><button type="button" class="person-news-more" data-news-more disabled>기사 10개 더 보기</button></section></article>`;
     }).join("")||'<div class="empty">검색 조건에 맞는 인물이 없습니다.</div>';
     root.querySelectorAll("[data-delete]").forEach(button => {
       button.hidden = !deleteMode;
@@ -689,7 +691,7 @@ $("themeBtn").addEventListener("click", () => {
       country:String(data.get("country")||"").trim(),
       role:String(data.get("role")||"").trim(),
       group:String(data.get("group")||"정책·거시"),
-      impact:String(data.get("impact")||"").trim(),
+      influenceGrade:String(data.get("influenceGrade")||"B").trim(),
       watch:String(data.get("watch")||"").trim(),
       query:String(data.get("query")||"").trim()
     };

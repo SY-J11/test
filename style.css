@@ -464,3 +464,15 @@ html.dark .history-content .history-field-quote .history-quote,html.dark .histor
 #resetPeopleBtn:hover{border-color:var(--accent);color:var(--accent)}
 .custom-global-group>.global-group-delete{display:inline-flex;align-items:center;justify-content:center;margin:12px 0 0;padding:7px 14px;min-height:32px;border:1px solid #e3a1a5;border-radius:8px;background:#fff7f7;color:#b83c45;font-size:12px;font-weight:700;cursor:pointer}
 .global-deleted-actions .people-manage-btn{min-height:30px}
+
+
+/* 모바일 인물 관리 버튼은 한 줄로 유지 */
+@media(max-width:680px){
+ .people-management-bottom{display:flex!important;flex-wrap:nowrap!important;align-items:stretch;gap:5px;width:100%;min-width:0}
+ .people-management-bottom button{flex:1 1 0!important;width:auto!important;min-width:0!important;padding:9px 4px!important;font-size:10px!important;letter-spacing:-.04em;white-space:nowrap}
+}
+
+.influence-grade.grade-C{background:#edf1f5;color:#596579}
+.influence-grade.grade-D{background:#e7e9ed;color:#687080}
+html.dark .influence-grade.grade-C{background:#343d49;color:#c0cad8}
+html.dark .influence-grade.grade-D{background:#30343c;color:#aeb6c2}
