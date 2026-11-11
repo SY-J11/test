@@ -1,5 +1,5 @@
 
-const API_BASE = "https://macro.mcraft-tiger-574.workers.dev";
+const API_BASE = "https://n.hundprint.workers.dev";
 
 const CATEGORY_NAMES = {
   all: "전체 뉴스",
