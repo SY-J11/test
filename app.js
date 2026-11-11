@@ -938,7 +938,14 @@ buttons.forEach(btn=>btn.addEventListener('click',()=>{
           const restore = document.createElement("button"); restore.type = "button"; restore.className = "people-manage-btn"; restore.textContent = "복원";
           restore.addEventListener("click", () => restoreGroup(index));
           const remove = document.createElement("button"); remove.type = "button"; remove.className = "people-manage-btn danger"; remove.textContent = "영구 삭제";
-          remove.addEventListener("click", () => { deleted.splice(index, 1); save(); renderDeleted(); });
+          remove.addEventListener("click", () => {
+            const target = deleted[index];
+            if (!target) return;
+            if (!confirm(`"${target.market || "추가 항목"}" 항목을 영구 삭제할까요? 이 작업은 되돌릴 수 없습니다.`)) return;
+            deleted.splice(index, 1);
+            save();
+            renderDeleted();
+          });
           actions.append(restore, remove); row.append(label, actions); deletedList.appendChild(row);
         });
       }
@@ -972,22 +979,35 @@ buttons.forEach(btn=>btn.addEventListener('click',()=>{
     });
     save();
 
-    // 위임 방식으로 버튼을 처리해 동적 렌더링/모바일에서도 클릭 이벤트가 유지되게 합니다.
-    root.addEventListener("click", event => {
-      const target = event.target instanceof Element ? event.target : event.target?.parentElement;
-      if (!target) return;
-      if (target.closest("#addGlobalItemBtn")) {
-        event.preventDefault(); form.hidden = false; cancelBtn.hidden = false; addBtn.hidden = true;
-        form.scrollIntoView({ behavior: "smooth", block: "center" });
-        form.querySelector('input[name="market"]')?.focus();
-      } else if (target.closest("#cancelGlobalItemBtn")) {
-        event.preventDefault(); form.reset(); form.hidden = true; cancelBtn.hidden = true; addBtn.hidden = false;
-      } else if (target.closest("#toggleDeleteGlobalBtn")) {
-        event.preventDefault(); deleteMode = !deleteMode; syncDeleteMode();
-      } else if (target.closest("#resetGlobalItemsBtn")) {
-        event.preventDefault(); resetCustomGroups();
-      }
+    // 버튼에 직접 이벤트를 연결해 탭 전환/모바일 환경에서도 동작을 보장합니다.
+    addBtn.addEventListener("click", event => {
+      event.preventDefault();
+      form.hidden = false;
+      cancelBtn.hidden = false;
+      addBtn.hidden = true;
+      form.scrollIntoView({ behavior: "smooth", block: "center" });
+      form.querySelector('input[name="market"]')?.focus();
     });
+
+    cancelBtn.addEventListener("click", event => {
+      event.preventDefault();
+      form.reset();
+      form.hidden = true;
+      cancelBtn.hidden = true;
+      addBtn.hidden = false;
+    });
+
+    deleteBtn.addEventListener("click", event => {
+      event.preventDefault();
+      deleteMode = !deleteMode;
+      syncDeleteMode();
+    });
+
+    resetBtn.addEventListener("click", event => {
+      event.preventDefault();
+      resetCustomGroups();
+    });
+
     form.addEventListener("submit", event => {
       event.preventDefault();
       const input = form.querySelector('input[name="market"]');
@@ -1004,10 +1024,19 @@ buttons.forEach(btn=>btn.addEventListener('click',()=>{
     });
     renderDeleted();
     syncDeleteMode();
-    window.setInterval(() => {
-      const previousCount = deleted.length; purgeExpired();
-      if (deleted.length !== previousCount) { save(); renderDeleted(); }
-    }, 60 * 60 * 1000);
+    const refreshDeletedExpiry = () => {
+      const previousCount = deleted.length;
+      purgeExpired();
+      if (deleted.length !== previousCount) {
+        save();
+        renderDeleted();
+      }
+    };
+    window.setInterval(refreshDeletedExpiry, 60 * 60 * 1000);
+    window.addEventListener("focus", refreshDeletedExpiry);
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) refreshDeletedExpiry();
+    });
   };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init, { once: true });
   else init();
