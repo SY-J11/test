@@ -692,6 +692,7 @@ $("themeBtn").addEventListener("click", () => {
       role:String(data.get("role")||"").trim(),
       group:String(data.get("group")||"정책·거시"),
       influenceGrade:String(data.get("influenceGrade")||"B").trim(),
+      impact:String(data.get("impact")||"").trim(),
       watch:String(data.get("watch")||"").trim(),
       query:String(data.get("query")||"").trim()
     };
