@@ -685,6 +685,12 @@ $("themeBtn").addEventListener("click", () => {
         if(more) more.disabled=!loadedNews.has(section);
       }
     }
+    // 모바일 네트워크/피드 응답에서 첫 페이지가 1~2건만 반환되면
+    // 다음 offset을 이어 조회해 최초 노출 3건을 채운다.
+    const currentItems = newsItems.get(section) || [];
+    if (requestSucceeded && offset === 0 && currentItems.length < 3 && newsHasMore.get(section) !== false) {
+      await loadNews(section);
+    }
   }
 
   let newsObserver=null;
@@ -725,6 +731,7 @@ $("themeBtn").addEventListener("click", () => {
       renderNewsItems(section);
       const items = newsItems.get(section) || [];
       if (items.length < targetVisible && newsHasMore.get(section) !== false) loadNews(section);
+      else renderNewsItems(section);
     });
   }
   document.querySelectorAll(".people-filter").forEach(b=>b.addEventListener("click",()=>{
