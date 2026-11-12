@@ -950,3 +950,51 @@ html.dark #panel-people-live .people-bottom-management .deleted-people-panel {ba
   #panel-people-live .people-bottom-management .people-management-bottom button {width:100%;min-width:0}
   #panel-people-live .people-bottom-management .deleted-people-panel {width:100%;padding:12px}
 }
+
+
+/* v20: 1·2·3·5번 탭의 삭제 목록/빈 상태 영역을 동일한 밀도로 통일 */
+#wallStreetMainManagement .wall-street-deleted-panel,
+#wallStreetEssentialsManagement .wall-street-deleted-panel,
+#panel-global-perspective .global-bottom-management > .global-deleted-panel,
+#panel-people-live .people-bottom-management .deleted-people-panel {
+  padding:14px 15px;
+  margin-top:0;
+  box-sizing:border-box;
+}
+#wallStreetMainManagement .wall-street-deleted-panel h3,
+#wallStreetEssentialsManagement .wall-street-deleted-panel h3,
+#panel-global-perspective .global-bottom-management > .global-deleted-panel h4,
+#panel-people-live .people-bottom-management .deleted-people-heading h3 {
+  margin:0 0 4px;
+  font-size:13px;
+  line-height:1.4;
+  font-weight:800;
+}
+#wallStreetMainManagement .wall-street-deleted-list,
+#wallStreetEssentialsManagement .wall-street-deleted-list,
+#panel-global-perspective .global-bottom-management > .global-deleted-panel .global-deleted-list,
+#panel-people-live .people-bottom-management .deleted-people-list {
+  margin-top:0;
+}
+#wallStreetMainManagement .wall-street-deleted-list > p,
+#wallStreetEssentialsManagement .wall-street-deleted-list > p,
+#panel-global-perspective .global-bottom-management > .global-deleted-panel .global-deleted-list > p,
+#panel-people-live .people-bottom-management .deleted-people-list > p {
+  margin:0;
+  padding:0;
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.5;
+}
+#panel-people-live .people-bottom-management .deleted-people-heading p {
+  margin:0;
+  color:var(--muted);
+  font-size:11px;
+  line-height:1.5;
+}
+@media(max-width:680px) {
+  #wallStreetMainManagement .wall-street-deleted-panel,
+  #wallStreetEssentialsManagement .wall-street-deleted-panel,
+  #panel-global-perspective .global-bottom-management > .global-deleted-panel,
+  #panel-people-live .people-bottom-management .deleted-people-panel {padding:12px}
+}
