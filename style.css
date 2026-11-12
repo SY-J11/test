@@ -998,3 +998,21 @@ html.dark #panel-people-live .people-bottom-management .deleted-people-panel {ba
   #panel-global-perspective .global-bottom-management > .global-deleted-panel,
   #panel-people-live .people-bottom-management .deleted-people-panel {padding:12px}
 }
+
+
+/* v21: 삭제 복원 영역 구분선과 관리 버튼 간격 통일 */
+#wallStreetMainManagement .wall-street-deleted-panel,
+#wallStreetEssentialsManagement .wall-street-deleted-panel {
+  margin-top:12px;
+}
+#wallStreetMainManagement .wall-street-deleted-list,
+#wallStreetEssentialsManagement .wall-street-deleted-list,
+#panel-global-perspective .global-bottom-management > .global-deleted-panel .global-deleted-list,
+#panel-people-live .people-bottom-management .deleted-people-list {
+  margin-top:9px;
+  padding-top:9px;
+  border-top:1px solid var(--line);
+}
+#panel-people-live .people-bottom-management .deleted-people-heading p {
+  display:none;
+}
