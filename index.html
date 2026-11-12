@@ -1,378 +1,60 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#f3f5f9">
-<title>MARKET INSIGHT</title>
-<link rel="apple-touch-icon" href="./Stock_main.png">
-<style>
-*{box-sizing:border-box}
-:root{--bg:#f3f5f9;--card:#fff;--line:#e6eaf1;--text:#202938;--muted:#929dad;--accent:#263e60;--green:#4ac18a;--tool:#f8f9fb;--tool-line:#edf0f4;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#151a22;--card:#202733;--line:#303a49;--text:#edf1f6;--muted:#9aa6b8;--accent:#38577f;--tool:#202733;--tool-line:#303a49}}
-:root[data-theme="dark"]{--bg:#151a22;--card:#202733;--line:#303a49;--text:#edf1f6;--muted:#9aa6b8;--accent:#38577f;--tool:#202733;--tool-line:#303a49}
-html{scroll-padding-top:env(safe-area-inset-top,0px)}
-body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;font-size:12px}
-.app{max-width:850px;margin:auto;min-height:100vh}
-header{height:61px;display:flex;align-items:center;justify-content:space-between;padding:0 15px;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
-.brand{display:flex;gap:8px;align-items:center}
-.brand i{width:4px;height:19px;background:var(--green);border-radius:4px}
-.brand b{font-size:16px}
-.brand small{display:block;font-size:8px;color:var(--muted);letter-spacing:.7px;margin-top:2px}
-.tools button{border:1px solid var(--tool-line);background:var(--tool);border-radius:10px;width:32px;height:32px;color:var(--muted);font-size:14px;cursor:pointer}
-main{padding:10px}
-.intro{padding:15px;margin-bottom:9px}
-.intro h2{font-size:17px;margin:0 0 4px}
-.intro p{font-size:10px;color:var(--muted);margin:0}
-.group{margin:14px 4px 7px;font-size:10px;font-weight:700;color:var(--muted)}
-.group .ko{font-size:12px;margin-right:3px}
-.list{display:grid;gap:7px}
-a.link{display:flex;align-items:center;gap:12px;padding:14px;background:var(--card);border:1px solid var(--line);border-radius:13px;box-shadow:0 2px 10px #26364f08;color:inherit;text-decoration:none;-webkit-tap-highlight-color:transparent}
-a.link:active{opacity:.65}
-a.link:focus-visible{outline:2px solid var(--green);outline-offset:2px}
-.custom-item{display:flex;align-items:center;gap:4px;background:var(--card);border:1px solid var(--line);border-radius:13px;box-shadow:0 2px 10px #26364f08;overflow:hidden}
-.custom-item a.link{flex:1;min-width:0;border:0;box-shadow:none;background:transparent}
-.custom-delete{flex:none;margin-right:10px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--tool);color:var(--muted);font:inherit;font-size:10px;cursor:pointer}
-.custom-delete:active{opacity:.6}
-.trash-actions{display:flex;gap:6px;flex:none;margin-right:10px}
-.trash-actions button{padding:8px 11px;border:1px solid var(--line);border-radius:8px;background:var(--tool);color:var(--text);font:inherit;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap}
-.trash-actions button:active{opacity:.65}
-.trash-actions .restore-item{background:var(--accent);border-color:var(--accent);color:#fff}
-.trash-actions .permanent-delete{color:#d64b4b}
-.trash-meta{font-size:9px;color:var(--muted);margin-top:5px;letter-spacing:.1px}
-#customTrash{margin-top:8px}
-#trashMenu{display:grid;gap:7px}
-.custom-add{margin-top:7px;width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:13px;background:var(--card);border:1px dashed var(--muted);border-radius:13px;color:var(--text);font:inherit;font-size:12px;font-weight:700;cursor:pointer}
-.custom-add:active{opacity:.65}
-.modal-backdrop{position:fixed;inset:0;background:#10182799;display:none;align-items:center;justify-content:center;padding:18px;z-index:20}
-.modal-backdrop.open{display:flex}
-.modal{width:min(100%,420px);background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:0 18px 55px #0003}
-.modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
-.modal-head h2{font-size:16px;margin:0}
-.modal-close{border:0;background:var(--tool);color:var(--text);width:30px;height:30px;border-radius:9px;font-size:18px;cursor:pointer}
-.field{display:block;margin:12px 0}
-.field label{display:block;font-size:11px;font-weight:700;margin-bottom:6px}
-.field input{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:9px;background:var(--tool);color:var(--text);font:inherit;font-size:13px;outline:none}
-.field input:focus{border-color:var(--green)}
-.icon-picker{display:grid;grid-template-columns:repeat(7,1fr);gap:7px}
-.icon-option{height:39px;border:1px solid var(--line);border-radius:9px;background:var(--tool);font-size:19px;cursor:pointer}
-.icon-option.selected{border:2px solid var(--green);background:var(--card)}
-.modal-actions{display:flex;gap:8px;margin-top:18px}
-.modal-actions button{flex:1;padding:11px;border-radius:9px;border:1px solid var(--line);font:inherit;font-weight:700;cursor:pointer}
-.modal-cancel{background:var(--tool);color:var(--text)}
-.modal-save{background:var(--accent);color:#fff;border-color:var(--accent)!important}
-.form-error{color:#d64b4b;font-size:10px;min-height:14px;margin-top:7px}
-.ico{flex:none;width:40px;height:40px;border-radius:11px;background:var(--tool);border:1px solid var(--tool-line);display:flex;align-items:center;justify-content:center;font-size:19px}
-.txt{flex:1;min-width:0}
-.txt b{display:block;font-size:14px}
-.txt small{display:block;font-size:9px;color:var(--muted);margin-top:3px;letter-spacing:.5px}
-.go{flex:none;font-size:20px;color:var(--muted)}
-hr{border:0;border-top:1px solid var(--line);margin:18px 4px 0}
-footer{text-align:center;color:var(--muted);font-size:8px;padding:18px 3px}
-@media(min-width:600px){.list.two{grid-template-columns:repeat(2,minmax(0,1fr))}}
-</style>
+<title>연방준비제도 모니터 | FEDERAL RESERVE MONITOR</title>
+<link rel="stylesheet" href="fed.css?v=8">
 </head>
 <body>
 <div class="app">
-<header>
-  <div class="brand"><i></i><div><b>마켓 인사이트</b><small>MARKET INSIGHT</small></div></div>
-  <div class="tools"><button id="theme" type="button" aria-label="테마 전환">◐</button></div>
-</header>
-<main>
-  <div class="group"><span class="ko">주식시장 분석</span> STOCK MARKET ANALYSIS</div>
-  <nav class="list two" aria-label="주식시장 분석 페이지">
-    <a class="link" href="https://sy-j11.github.io/c/"><span class="ico">🌅</span><span class="txt"><b>국내 증시 개장 전 분석</b><small>PRE-MARKET ANALYSIS</small></span><span class="go">›</span></a>
-    <a class="link" href="https://sy-j11.github.io/t/"><span class="ico">📊</span><span class="txt"><b>시장 수급 분석</b><small>MARKET FLOW ANALYSIS</small></span><span class="go">›</span></a>
-    <a class="link" href="https://sy-j11.github.io/st/"><span class="ico">🔥</span><span class="txt"><b>오늘의 주요 거래 종목</b><small>TODAY'S MOVERS</small></span><span class="go">›</span></a>
-    <a class="link" href="https://sy-j11.github.io/s"><span class="ico">🔎</span><span class="txt"><b>종목 인사이트</b><small>STOCK INSIGHT</small></span><span class="go">›</span></a>
-    <a class="link" href="https://sy-j11.github.io/n/"><span class="ico">📰</span><span class="txt"><b>월가 인사이트</b><small>WALL STREET INSIGHT</small></span><span class="go">›</span></a>
-  </nav>
+  <header class="topbar">
+    <a class="brand" href="./index.html"><span class="brand-mark">F</span><span><b>연방준비제도 모니터</b><small>FEDERAL RESERVE MONITOR</small></span></a>
+    <div class="top-actions"><span id="updatedAt" class="updated">공식 명단 확인 중</span><button id="themeBtn" class="icon-btn" type="button" aria-label="명암 전환">◐</button><button id="refreshBtn" class="icon-btn" type="button" aria-label="새로고침">↻</button></div>
+  </header>
 
-  <hr>
-  <div class="group"><span class="ko">매크로 경제 분석</span> MACRO ANALYSIS</div>
-  <nav class="list" aria-label="매크로 경제 분석 페이지">
-    <a class="link" href="https://sy-j11.github.io/fr/"><span class="ico">🏛️</span><span class="txt"><b>연방준비제도 모니터</b><small>FEDERAL RESERVE MONITER</small></span><span class="go">›</span></a>
-    <a class="link" href="https://sy-j11.github.io/f/"><span class="ico">🏦</span><span class="txt"><b>미국 경제지표 분석</b><small>US ECONOMIC INDICATORS ANALYSIS</small></span><span class="go">›</span></a>
-  </nav>
+  <main>
+    <section class="hero">
+      <div><span class="eyebrow">US MONETARY POLICY · PEOPLE TRACKER</span><h1>연방준비제도를 움직이는<br><em>핵심 인물</em>을 추적합니다</h1><p>현직 연방준비제도 이사회와 FOMC 구성원을 공식 명단으로 자동 갱신하고, 인물별 최신 뉴스 검색 결과를 목록으로 제공합니다.</p></div>
+      <div class="hero-date"><span>OFFICIAL ROSTER</span><b id="rosterYear">—</b><small>Federal Reserve</small></div>
+    </section>
 
-  <hr>
-  <div class="group"><span class="ko">맞춤 메뉴</span> CUSTOMIZED MENU</div>
-  <nav class="list" id="customMenu" aria-label="맞춤 메뉴"></nav>
-  <button class="custom-add" id="addCustomMenu" type="button"><span>＋</span> 추가하기</button>
-  <button class="custom-add" id="toggleTrash" type="button" aria-expanded="false"><span>♻️</span> 삭제한 메뉴 복구</button>
-  <section id="customTrash" hidden aria-label="삭제한 메뉴 목록">
-    <div class="group">삭제한 메뉴 <span id="trashCount"></span></div>
-    <nav class="list" id="trashMenu"></nav>
-  </section>
-</main>
-<footer>투자 판단과 책임은 본인에게 있습니다.</footer>
-</div>
+    <section class="summary-grid">
+      <article class="summary-card"><span>BOARD OF GOVERNORS</span><b id="boardCount">—</b><small>연준 이사회</small></article>
+      <article class="summary-card"><span>FOMC VOTING MEMBERS</span><b id="fomcCount">—</b><small>투표권 보유 위원</small></article>
+      <article class="summary-card"><span>ALTERNATE MEMBERS</span><b id="alternateCount">—</b><small>대체 위원</small></article>
+    </section>
 
-<div class="modal-backdrop" id="customModal" role="dialog" aria-modal="true" aria-labelledby="customModalTitle">
-  <div class="modal">
-    <div class="modal-head">
-      <h2 id="customModalTitle">맞춤 메뉴 추가</h2>
-      <button class="modal-close" id="closeCustomModal" type="button" aria-label="닫기">×</button>
+    <nav class="tabs" aria-label="인물 구분">
+      <button class="tab active" data-tab="board">연준 이사 7명 <small>FED GOVERNORS</small></button>
+      <button class="tab" data-tab="fomc">FOMC Members <small>투표권 보유 위원</small></button>
+    </nav>
+
+    <section class="intro card">
+      <div><span class="eyebrow">CURRENT MEMBERSHIP</span><h2 id="sectionTitle">Federal Reserve Board of Governors</h2><p id="sectionDescription">연준 이사회 현직 구성원입니다. 인물 카드를 선택하면 해당 인물의 최신 뉴스 검색 결과를 확인할 수 있습니다.</p></div>
+      <div class="intro-links"><a href="https://www.federalreserve.gov/aboutthefed/bios/board/" target="_blank" rel="noopener">연준 이사 공식 명단 ↗</a><a href="https://www.federalreserve.gov/monetarypolicy/FOMC.htm" target="_blank" rel="noopener">FOMC 공식 명단 ↗</a></div>
+    </section>
+
+    <div class="content-layout">
+      <section class="people-area">
+        <div class="section-head"><div><span class="eyebrow">PEOPLE</span><h2 id="peopleHeading">현직 연준 이사</h2></div><input id="peopleSearch" type="search" placeholder="이름 또는 직책 검색" aria-label="인물 검색"></div>
+        <div id="peopleList" class="people-grid"><div class="loading">연준 공식 명단을 불러오고 있습니다.</div></div>
+        <section id="alternatesSection" class="alternates card" hidden><div class="section-head"><div><span class="eyebrow">NON-VOTING / ALTERNATES</span><h3>대체 위원</h3></div><span class="muted">FOMC Alternate Members</span></div><div id="alternatesList" class="alternate-list"></div></section>
+      </section>
+
+      <aside class="news-area card">
+        <div class="news-head"><div><span class="eyebrow">LATEST COVERAGE</span><h2 id="newsPerson">인물을 선택하세요</h2><p id="newsQuery">선택한 인물의 최신 뉴스</p></div><button id="searchAgain" class="text-btn" type="button" disabled>다시 검색 ↻</button></div>
+        <div id="newsStatus" class="news-status">왼쪽에서 인물을 선택하면 최신 뉴스가 표시됩니다.</div>
+        <div id="newsList" class="news-list"></div><button id="loadMoreNews" class="text-btn load-more-news" type="button" hidden>기사 5개 더 보기 ↓</button>
+        <div class="news-foot"><span id="newsProvider">이름 기준 최신 뉴스 검색 결과</span><a id="googleSearch" href="#" target="_blank" rel="noopener" hidden>Google News에서 더 보기 ↗</a></div>
+      </aside>
     </div>
-    <form id="customMenuForm">
-      <div class="field">
-        <label>아이콘 선택</label>
-        <div class="icon-picker" id="iconPicker"></div>
-      </div>
-      <div class="field">
-        <label for="customTitle">제목</label>
-        <input id="customTitle" type="text" maxlength="40" placeholder="예: 글로벌 시장 분석" required>
-      </div>
-      <div class="field">
-        <label for="customEnglish">영문명</label>
-        <input id="customEnglish" type="text" maxlength="60" placeholder="예: GLOBAL MARKET ANALYSIS" required>
-      </div>
-      <div class="field">
-        <label for="customUrl">URL</label>
-        <input id="customUrl" type="url" inputmode="url" placeholder="https://example.com" required>
-      </div>
-      <div class="form-error" id="customFormError" aria-live="polite"></div>
-      <div class="modal-actions">
-        <button class="modal-cancel" id="cancelCustomMenu" type="button">취소</button>
-        <button class="modal-save" type="submit">추가하기</button>
-      </div>
-    </form>
-  </div>
+
+    <footer><span>자료 출처: Board of Governors · Federal Open Market Committee</span><span>명단 자동 확인 · 뉴스 목록 및 원문 링크 제공</span></footer>
+  </main>
 </div>
-
-<script>
-(function(){
-  var root=document.documentElement,btn=document.getElementById('theme');
-  try{var t=localStorage.getItem('hub-theme');if(t)root.setAttribute('data-theme',t)}catch(e){}
-  btn.addEventListener('click',function(){
-    var dark=root.getAttribute('data-theme')==='dark'||(!root.getAttribute('data-theme')&&matchMedia('(prefers-color-scheme:dark)').matches);
-    var next=dark?'light':'dark';
-    root.setAttribute('data-theme',next);
-    try{localStorage.setItem('hub-theme',next)}catch(e){}
-  });
-
-  var customMenu=document.getElementById('customMenu');
-  var trashMenu=document.getElementById('trashMenu');
-  var trashSection=document.getElementById('customTrash');
-  var trashCount=document.getElementById('trashCount');
-  var toggleTrash=document.getElementById('toggleTrash');
-  var modal=document.getElementById('customModal');
-  var form=document.getElementById('customMenuForm');
-  var iconPicker=document.getElementById('iconPicker');
-  var selectedIcon='🔗';
-  var iconChoices=['🔗','📈','📊','💹','🌍','🌐','📰','🏦','💰','💵','🪙','📉','📅','🗓️','📌','⭐','🔥','💡','🔍','🧭','🏛️','📚','🧮','⚙️','🎯','🚀','☀️','🌅'];
-  var storageKey='market-insight-custom-menu';
-  var trashStorageKey='market-insight-custom-menu-trash';
-  var retentionMs=30*24*60*60*1000;
-
-  function readStorage(key){
-    try{
-      var value=JSON.parse(localStorage.getItem(key)||'[]');
-      return Array.isArray(value)?value:[];
-    }catch(e){return []}
-  }
-  function writeStorage(key,items){
-    localStorage.setItem(key,JSON.stringify(items));
-  }
-  function readCustomItems(){
-    var items=readStorage(storageKey);
-    var defaultItem={
-      icon:'📈',
-      title:'네이버 Npay 증권',
-      english:'NAVER Npay STOCK',
-      url:'https://stock.naver.com/'
-    };
-    // 기존 저장 데이터도 지원하며, 휴지통에 있거나 영구 삭제한 메뉴는 재생성하지 않습니다.
-    try{
-      var trash=readStorage(trashStorageKey);
-      var wasPermanentlyDeleted=localStorage.getItem('market-insight-naver-default-permanently-deleted')==='1';
-      var exists=items.some(function(item){return item&&item.url===defaultItem.url});
-      var inTrash=trash.some(function(item){return item&&item.url===defaultItem.url});
-      if(!exists&&!inTrash&&!wasPermanentlyDeleted){
-        items.unshift(defaultItem);
-        writeStorage(storageKey,items);
-      }
-    }catch(e){}
-    return items;
-  }
-  function readTrashItems(){
-    var now=Date.now();
-    var items=readStorage(trashStorageKey);
-    var active=items.filter(function(item){
-      return item&&item.deletedAt&&now-Number(item.deletedAt)<retentionMs;
-    });
-    if(active.length!==items.length){
-      try{writeStorage(trashStorageKey,active)}catch(e){}
-    }
-    return active;
-  }
-  function moveToTrash(index){
-    var items=readCustomItems();
-    if(index<0||index>=items.length)return;
-    var removed=items.splice(index,1)[0];
-    var trash=readTrashItems();
-    removed.deletedAt=Date.now();
-    trash.unshift(removed);
-    try{
-      writeStorage(storageKey,items);
-      writeStorage(trashStorageKey,trash);
-      renderCustomItems();
-    }catch(e){
-      window.alert('삭제 항목을 보관하지 못했습니다. 브라우저 저장 공간을 확인해 주세요.');
-    }
-  }
-  function restoreTrashItem(index){
-    var trash=readTrashItems();
-    if(index<0||index>=trash.length)return;
-    var item=trash.splice(index,1)[0];
-    delete item.deletedAt;
-    var items=readCustomItems();
-    items.push(item);
-    try{
-      writeStorage(storageKey,items);
-      writeStorage(trashStorageKey,trash);
-      renderCustomItems();
-    }catch(e){
-      window.alert('메뉴를 복구하지 못했습니다. 브라우저 저장 공간을 확인해 주세요.');
-    }
-  }
-  function permanentlyDeleteTrashItem(index){
-    var trash=readTrashItems();
-    if(index<0||index>=trash.length)return;
-    var item=trash[index];
-    if(!window.confirm('"' + item.title + '" 메뉴를 영구 삭제할까요? 이 작업은 되돌릴 수 없습니다.'))return;
-    trash.splice(index,1);
-    try{
-      if(item.url==='https://stock.naver.com/'){
-        localStorage.setItem('market-insight-naver-default-permanently-deleted','1');
-      }
-      writeStorage(trashStorageKey,trash);
-      renderCustomItems();
-    }catch(e){
-      window.alert('영구 삭제하지 못했습니다. 브라우저 저장 공간을 확인해 주세요.');
-    }
-  }
-  function renderCustomItems(){
-    customMenu.innerHTML='';
-    readCustomItems().forEach(function(item,index){
-      var wrap=document.createElement('div');
-      wrap.className='custom-item';
-      var a=document.createElement('a');
-      a.className='link';
-      a.href=item.url;
-      a.target='_blank';
-      a.rel='noopener noreferrer';
-      var ico=document.createElement('span');
-      ico.className='ico';ico.textContent=item.icon;
-      var txt=document.createElement('span');txt.className='txt';
-      var title=document.createElement('b');title.textContent=item.title;
-      var english=document.createElement('small');english.textContent=item.english;
-      txt.appendChild(title);txt.appendChild(english);
-      var go=document.createElement('span');go.className='go';go.textContent='›';
-      a.appendChild(ico);a.appendChild(txt);a.appendChild(go);
-      var del=document.createElement('button');
-      del.type='button';del.className='custom-delete';del.textContent='삭제';
-      del.setAttribute('aria-label',item.title+' 삭제하기');
-      del.addEventListener('click',function(){moveToTrash(index)});
-      wrap.appendChild(a);wrap.appendChild(del);
-      customMenu.appendChild(wrap);
-    });
-    renderTrashItems();
-  }
-  function renderTrashItems(){
-    var items=readTrashItems();
-    trashMenu.innerHTML='';
-    trashCount.textContent='('+items.length+'개)';
-    items.forEach(function(item,index){
-      var wrap=document.createElement('div');
-      wrap.className='custom-item';
-      var a=document.createElement('div');
-      a.className='link';
-      a.style.flex='1';
-      a.style.minWidth='0';
-      var ico=document.createElement('span');
-      ico.className='ico';ico.textContent=item.icon;
-      var txt=document.createElement('span');txt.className='txt';
-      var title=document.createElement('b');title.textContent=item.title;
-      var english=document.createElement('small');english.textContent=item.english;
-      var meta=document.createElement('div');meta.className='trash-meta';
-      var days=Math.max(0,30-Math.floor((Date.now()-Number(item.deletedAt))/86400000));
-      meta.textContent='자동 영구 삭제까지 '+days+'일';
-      txt.appendChild(title);txt.appendChild(english);txt.appendChild(meta);
-      a.appendChild(ico);a.appendChild(txt);
-      var actions=document.createElement('div');actions.className='trash-actions';
-      var restore=document.createElement('button');restore.type='button';
-      restore.className='restore-item';restore.textContent='복구';
-      restore.addEventListener('click',function(){restoreTrashItem(index)});
-      var permanent=document.createElement('button');permanent.type='button';
-      permanent.className='permanent-delete';permanent.textContent='영구 삭제';
-      permanent.addEventListener('click',function(){permanentlyDeleteTrashItem(index)});
-      actions.appendChild(restore);actions.appendChild(permanent);
-      wrap.appendChild(a);wrap.appendChild(actions);
-      trashMenu.appendChild(wrap);
-    });
-    if(!items.length){
-      var empty=document.createElement('div');
-      empty.style.cssText='padding:14px;color:var(--muted);text-align:center;background:var(--card);border:1px solid var(--line);border-radius:12px';
-      empty.textContent='삭제한 메뉴가 없습니다.';
-      trashMenu.appendChild(empty);
-    }
-  }
-  toggleTrash.addEventListener('click',function(){
-    var opening=trashSection.hidden;
-    trashSection.hidden=!opening;
-    toggleTrash.setAttribute('aria-expanded',String(opening));
-    toggleTrash.innerHTML=opening?'<span>♻️</span> 복구 메뉴 닫기':'<span>♻️</span> 삭제한 메뉴 복구';
-    if(opening)renderTrashItems();
-  });
-  function renderIconPicker(){
-    iconPicker.innerHTML='';
-    iconChoices.forEach(function(icon){
-      var option=document.createElement('button');
-      option.type='button';option.className='icon-option'+(icon===selectedIcon?' selected':'');
-      option.textContent=icon;option.setAttribute('aria-label',icon);
-      option.addEventListener('click',function(){
-        selectedIcon=icon;renderIconPicker();
-      });
-      iconPicker.appendChild(option);
-    });
-  }
-  function openModal(){
-    selectedIcon='🔗';form.reset();
-    document.getElementById('customFormError').textContent='';
-    renderIconPicker();modal.classList.add('open');
-    document.getElementById('customTitle').focus();
-  }
-  function closeModal(){modal.classList.remove('open')}
-  document.getElementById('addCustomMenu').addEventListener('click',openModal);
-  document.getElementById('closeCustomModal').addEventListener('click',closeModal);
-  document.getElementById('cancelCustomMenu').addEventListener('click',closeModal);
-  modal.addEventListener('click',function(e){if(e.target===modal)closeModal()});
-  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&modal.classList.contains('open'))closeModal()});
-  form.addEventListener('submit',function(e){
-    e.preventDefault();
-    var title=document.getElementById('customTitle').value.trim();
-    var english=document.getElementById('customEnglish').value.trim();
-    var rawUrl=document.getElementById('customUrl').value.trim();
-    var error=document.getElementById('customFormError');
-    var parsed;
-    try{parsed=new URL(rawUrl)}catch(e){}
-    if(!title||!english||!parsed||!/^https?:$/.test(parsed.protocol)){
-      error.textContent='제목, 영문명과 올바른 http 또는 https URL을 입력해 주세요.';
-      return;
-    }
-    var items=readCustomItems();
-    items.push({icon:selectedIcon,title:title,english:english,url:parsed.href});
-    try{
-      writeStorage(storageKey,items);
-    }catch(e){
-      error.textContent='저장할 수 없습니다. 브라우저 저장 공간을 확인해 주세요.';
-      return;
-    }
-    renderCustomItems();closeModal();
-  });
-  renderCustomItems();
-})();
-</script>
+<div id="toast" class="toast" role="status"></div>
+<script src="fed.js?v=8"></script>
 </body>
 </html>
