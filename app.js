@@ -618,13 +618,11 @@ $("themeBtn").addEventListener("click", () => {
         more.setAttribute('data-news-all', '');
       } else {
         more.removeAttribute('data-news-all');
-        const hasHiddenItems=visible.length<items.length;
-        const canFetchMore=newsHasMore.get(section)!==false;
-        // 결과가 적거나 서버가 hasMore=false를 반환해도 버튼을 숨기지 않습니다.
-        // 첫 클릭은 현재 확보된 기사를 펼치고, 이후에는 전체 검색 결과 버튼으로 전환합니다.
+        const exhausted = newsHasMore.get(section) === false && visible.length >= items.length;
         more.hidden=false;
         more.disabled=loadingNews.has(section)||!loadedNews.has(section);
-        more.textContent='기사 10개 더 보기';
+        more.textContent=exhausted ? '전체 기사 검색' : '기사 10개 더 보기';
+        if(exhausted) more.setAttribute('data-news-all', '');
       }
     }
   }
@@ -715,7 +713,7 @@ $("themeBtn").addEventListener("click", () => {
       if (!button) return;
       const section = button.closest('.person-news');
       if (!section || loadingNews.has(section) || !loadedNews.has(section)) return;
-      if (newsExpanded.has(section)) {
+      if (newsExpanded.has(section) || button.hasAttribute('data-news-all')) {
         const source=section.dataset.source||'global';
         const query=section.dataset.query||'';
         let href;
@@ -745,12 +743,12 @@ $("themeBtn").addEventListener("click", () => {
             if (after <= before) break;
           }
           newsVisibleCounts.set(section, Math.min(targetVisible, (newsItems.get(section) || []).length));
-          newsExpanded.add(section);
+          if (newsHasMore.get(section) === false && (newsItems.get(section) || []).length <= (newsVisibleCounts.get(section) || 3)) newsExpanded.add(section);
           renderNewsItems(section);
         })();
       } else {
         newsVisibleCounts.set(section, Math.min(targetVisible, items.length));
-        newsExpanded.add(section);
+        if (newsHasMore.get(section) === false && items.length <= targetVisible) newsExpanded.add(section);
         renderNewsItems(section);
       }
     });
