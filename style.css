@@ -654,3 +654,22 @@ html.dark #dateLabel.date-weekday{color:#edf1f6!important}
 #panel-people-live .person-heading-toggle:focus-visible{outline:2px solid var(--accent)}
 #panel-people-live .person-heading-toggle h3::after{content:'＋';display:inline-block;margin-left:8px;color:var(--muted);font-size:13px;font-weight:600;vertical-align:2px}
 #panel-people-live .person-card.is-expanded .person-heading-toggle h3::after{content:'－'}
+
+
+/* 요청 반영: 1·2·5번 탭 관리 버튼을 인물 탭과 같은 우측 정렬·버튼 스타일로 통일 */
+#panel-global-perspective .global-bottom-management{display:flex;align-items:center;justify-content:space-between;gap:16px}
+#panel-global-perspective .global-management-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin:0;flex-shrink:0}
+#panel-global-perspective .global-management-actions .people-manage-btn{min-width:116px;padding:11px 16px;font-size:12px;line-height:1.25;white-space:nowrap}
+#wallStreetMainManagement .wall-street-management-head .global-management-actions,
+#wallStreetEssentialsManagement .wall-street-management-head .global-management-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin:0;flex-shrink:0}
+#wallStreetMainManagement .global-management-actions .people-manage-btn,
+#wallStreetEssentialsManagement .global-management-actions .people-manage-btn{min-width:116px;padding:11px 16px;font-size:12px;line-height:1.25;white-space:nowrap}
+@media(max-width:680px){
+  #panel-global-perspective .global-bottom-management{align-items:stretch;flex-direction:column;gap:10px;padding:14px}
+  #panel-global-perspective .global-management-actions,
+  #wallStreetMainManagement .wall-street-management-head .global-management-actions,
+  #wallStreetEssentialsManagement .wall-street-management-head .global-management-actions{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;width:100%}
+  #panel-global-perspective .global-management-actions .people-manage-btn,
+  #wallStreetMainManagement .global-management-actions .people-manage-btn,
+  #wallStreetEssentialsManagement .global-management-actions .people-manage-btn{width:100%;min-width:0;padding:10px 8px;font-size:11px;white-space:nowrap}
+}
