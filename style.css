@@ -1010,9 +1010,21 @@ html.dark #panel-people-live .people-bottom-management .deleted-people-panel {ba
 #panel-global-perspective .global-bottom-management > .global-deleted-panel .global-deleted-list,
 #panel-people-live .people-bottom-management .deleted-people-list {
   margin-top:9px;
-  padding-top:9px;
+  padding-top:0;
+  border-top:0;
+}
+/* 삭제 내역이 있을 때는 첫 번째 행의 상단선, 없을 때는 빈 상태 문구의 상단선만 표시 */
+#wallStreetMainManagement .wall-street-deleted-list > p,
+#wallStreetEssentialsManagement .wall-street-deleted-list > p,
+#panel-global-perspective .global-bottom-management > .global-deleted-panel .global-deleted-list > p,
+#panel-people-live .people-bottom-management .deleted-people-list > p {
+  margin:0;
+  padding:9px 0 0;
   border-top:1px solid var(--line);
 }
 #panel-people-live .people-bottom-management .deleted-people-heading p {
   display:none;
 }
+
+
+/* v22: 삭제 목록 상단 구분선 중복 방지 — 행 또는 빈 상태 중 한 곳에서만 표시 */
