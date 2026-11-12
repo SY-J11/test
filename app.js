@@ -440,6 +440,9 @@ $("themeBtn").addEventListener("click", () => {
   const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const loadedNews = new Set();
   const loadingNews = new Set();
+  // 같은 검색어/페이지는 60초 동안 재사용하고, 동시에 발생한 중복 요청은 하나로 합칩니다.
+  const personNewsClientCache = new Map();
+  const personNewsInFlight = new Map();
   const newsOffsets = new WeakMap();
   const newsItems = new WeakMap();
   const newsProviders = new WeakMap();
@@ -629,6 +632,32 @@ $("themeBtn").addEventListener("click", () => {
     }
   }
 
+  async function fetchPersonNewsData(url, cacheKey){
+    const now=Date.now();
+    const cached=personNewsClientCache.get(cacheKey);
+    if(cached && cached.expiresAt>now) return cached.data;
+    if(cached) personNewsClientCache.delete(cacheKey);
+    if(personNewsInFlight.has(cacheKey)) return personNewsInFlight.get(cacheKey);
+    const task=(async()=>{
+      const controller=new AbortController();
+      const timeout=setTimeout(()=>controller.abort(),12000);
+      try{
+        const response=await fetch(url,{signal:controller.signal,headers:{'Accept':'application/json'},cache:'force-cache'});
+        const data=await response.json();
+        if(!response.ok) throw new Error(data.error||('뉴스 서버 응답 오류 (HTTP '+response.status+')'));
+        if(data.error && (!Array.isArray(data.items)||!data.items.length)) throw new Error(data.error);
+        personNewsClientCache.set(cacheKey,{data,expiresAt:Date.now()+60000});
+        if(personNewsClientCache.size>120){
+          for(const [key,value] of personNewsClientCache){if(value.expiresAt<=Date.now()) personNewsClientCache.delete(key);}
+          while(personNewsClientCache.size>120) personNewsClientCache.delete(personNewsClientCache.keys().next().value);
+        }
+        return data;
+      } finally {clearTimeout(timeout);}
+    })();
+    personNewsInFlight.set(cacheKey,task);
+    try{return await task;}finally{if(personNewsInFlight.get(cacheKey)===task) personNewsInFlight.delete(cacheKey);}
+  }
+
   async function loadNews(section){
     if(!section || loadingNews.has(section) || newsHasMore.get(section) === false) return;
     loadingNews.add(section);
@@ -641,15 +670,10 @@ $("themeBtn").addEventListener("click", () => {
     let requestSucceeded=false;
     try{
       const source=section.dataset.source||'global';
-      const url='https://macro.mcraft-tiger-574.workers.dev/api/person-news?q='+encodeURIComponent(section.dataset.query)+'&source='+encodeURIComponent(source)+'&limit=10&offset='+offset;
-      const controller=new AbortController();
-      const timeout=setTimeout(()=>controller.abort(),12000);
-      let response;
-      try { response=await fetch(url,{signal:controller.signal,headers:{'Accept':'application/json'},cache:'force-cache'}); }
-      finally { clearTimeout(timeout); }
-      const data=await response.json();
-      if(!response.ok) throw new Error(data.error||('뉴스 서버 응답 오류 (HTTP '+response.status+')'));
-      if(data.error && (!Array.isArray(data.items)||!data.items.length)) throw new Error(data.error);
+      const query=String(section.dataset.query||'').trim();
+      const url='https://macro.mcraft-tiger-574.workers.dev/api/person-news?q='+encodeURIComponent(query)+'&source='+encodeURIComponent(source)+'&limit=10&offset='+offset;
+      const requestKey=source+'|'+query.toLocaleLowerCase()+'|10|'+offset;
+      const data=await fetchPersonNewsData(url,requestKey);
       const incoming=Array.isArray(data.items)?data.items:[];
       if(data.provider && !newsProviders.has(section)) newsProviders.set(section,data.provider);
       const existing=newsItems.get(section)||[];
