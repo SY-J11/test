@@ -620,3 +620,37 @@ html.dark #dateLabel.date-weekday{color:#edf1f6!important}
 #panel-stock-essentials .wall-street-term.is-expanded .wall-street-term-heading>.wall-street-term-toggle h3::after{content:'－'}
 #panel-stock-essentials .wall-street-term:not(.is-expanded) .wall-street-term-heading{margin-bottom:0}
 #panel-stock-essentials .wall-street-term.is-expanded .wall-street-term-heading{margin-bottom:12px}
+
+/* 첫 번째 탭과 다섯 번째 탭: 뉴스 검색어를 선택한 경우에만 결과 표시 */
+#panel-wall-street .wall-street-term:not(.is-expanded) .wall-street-provider-grid,
+#panel-stock-essentials .wall-street-term:not(.is-expanded) .wall-street-provider-grid{display:none}
+#panel-wall-street .wall-street-term-heading>.wall-street-term-toggle,
+#panel-stock-essentials .wall-street-term-heading>.wall-street-term-toggle{cursor:pointer;flex:1;min-width:0;border-radius:7px;outline-offset:3px}
+#panel-wall-street .wall-street-term-heading>.wall-street-term-toggle:focus-visible,
+#panel-stock-essentials .wall-street-term-heading>.wall-street-term-toggle:focus-visible{outline:2px solid var(--accent)}
+#panel-wall-street .wall-street-term-heading>.wall-street-term-toggle h3::after,
+#panel-stock-essentials .wall-street-term-heading>.wall-street-term-toggle h3::after{content:'＋';display:inline-block;margin-left:8px;color:var(--muted);font-size:13px;font-weight:600;vertical-align:2px}
+#panel-wall-street .wall-street-term.is-expanded .wall-street-term-heading>.wall-street-term-toggle h3::after,
+#panel-stock-essentials .wall-street-term.is-expanded .wall-street-term-heading>.wall-street-term-toggle h3::after{content:'－'}
+#panel-wall-street .wall-street-term:not(.is-expanded) .wall-street-term-heading,
+#panel-stock-essentials .wall-street-term:not(.is-expanded) .wall-street-term-heading{margin-bottom:0}
+#panel-wall-street .wall-street-term.is-expanded .wall-street-term-heading,
+#panel-stock-essentials .wall-street-term.is-expanded .wall-street-term-heading{margin-bottom:12px}
+
+/* 두 번째 탭: 주제별로 선택한 검색 결과만 펼침 */
+#panel-global-perspective .global-market-group:not(.is-expanded) .global-market-grid{display:none}
+#panel-global-perspective .global-market-heading-toggle{cursor:pointer;border-radius:8px;outline-offset:4px}
+#panel-global-perspective .global-market-heading-toggle:focus-visible{outline:2px solid var(--accent)}
+#panel-global-perspective .global-market-heading-toggle h2::after{content:'＋';display:inline-block;margin-left:8px;color:var(--muted);font-size:13px;font-weight:600;vertical-align:2px}
+#panel-global-perspective .global-market-group.is-expanded .global-market-heading-toggle h2::after{content:'－'}
+#panel-global-perspective .global-market-group:not(.is-expanded) .global-market-heading{margin-bottom:0}
+
+/* 세 번째 탭: 인물 목록은 유지하고 선택한 인물의 상세/뉴스만 펼침 */
+#panel-people-live .person-card:not(.is-expanded)>.person-impact,
+#panel-people-live .person-card:not(.is-expanded)>.person-watch,
+#panel-people-live .person-card:not(.is-expanded)>.person-news,
+#panel-people-live .person-card:not(.is-expanded)>.truth-posts{display:none}
+#panel-people-live .person-heading-toggle{cursor:pointer;border-radius:8px;outline-offset:4px}
+#panel-people-live .person-heading-toggle:focus-visible{outline:2px solid var(--accent)}
+#panel-people-live .person-heading-toggle h3::after{content:'＋';display:inline-block;margin-left:8px;color:var(--muted);font-size:13px;font-weight:600;vertical-align:2px}
+#panel-people-live .person-card.is-expanded .person-heading-toggle h3::after{content:'－'}
