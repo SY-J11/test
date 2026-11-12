@@ -919,3 +919,32 @@ html.dark #panel-global-perspective .global-deleted-actions .danger {background:
   #wallStreetMainManagement .wall-street-deleted-actions,
   #wallStreetEssentialsManagement .wall-street-deleted-actions {width:100%;margin-left:0}
 }
+
+
+/* v17: 1번 탭과 같은 2단 구조로 2·3번 탭 관리/복원 영역 정렬 */
+#panel-global-perspective .global-bottom-management.global-management-two-row {
+  display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px 16px;
+}
+#panel-global-perspective .global-bottom-management.global-management-two-row > .global-deleted-panel {
+  flex:0 0 100%; width:100%; margin:0; box-sizing:border-box;
+}
+#panel-people-live .people-bottom-management {
+  display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px 16px;
+}
+#panel-people-live .people-bottom-management .deleted-people-panel {
+  display:block; flex:0 0 100%; width:100%; min-width:0; box-sizing:border-box;
+  margin:0; padding:14px 15px; border:1px solid var(--line); border-radius:11px; background:var(--bg);
+}
+#panel-people-live .people-bottom-management .deleted-people-heading h3 {margin:0 0 4px;font-size:13px;line-height:1.4;font-weight:800}
+#panel-people-live .people-bottom-management .deleted-people-heading p {margin:0;color:var(--muted);font-size:11px;line-height:1.5}
+#panel-people-live .people-bottom-management .deleted-people-list {margin-top:10px}
+html.dark #panel-people-live .people-bottom-management .deleted-people-panel {background:#202733;border-color:#303a49}
+@media(max-width:680px){
+  #panel-global-perspective .global-bottom-management.global-management-two-row {align-items:stretch;flex-direction:row;gap:10px;padding:14px}
+  #panel-global-perspective .global-bottom-management.global-management-two-row > div:first-child {flex:1 1 100%}
+  #panel-global-perspective .global-bottom-management.global-management-two-row > .global-deleted-panel {flex:0 0 100%;width:100%;}
+  #panel-people-live .people-bottom-management {align-items:stretch;flex-direction:column;gap:10px;padding:14px}
+  #panel-people-live .people-bottom-management .people-management-bottom {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:100%;gap:7px}
+  #panel-people-live .people-bottom-management .people-management-bottom button {width:100%;min-width:0}
+  #panel-people-live .people-bottom-management .deleted-people-panel {width:100%;padding:12px}
+}
