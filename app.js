@@ -716,7 +716,10 @@ $("themeBtn").addEventListener("click", () => {
   let newsObserver=null;
   function observeNews(){
     if(newsObserver) newsObserver.disconnect();
-    const sections=[...document.querySelectorAll(".person-news:not([data-custom-id])")];
+    const sections=[...document.querySelectorAll(".person-news:not([data-custom-id])")].filter(section=>{
+      const term=section.closest('#panel-stock-essentials .wall-street-term');
+      return !term || term.classList.contains('is-expanded');
+    });
     if("IntersectionObserver" in window){
       newsObserver=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){loadNews(entry.target);newsObserver.unobserve(entry.target);}}),{rootMargin:"250px 0px"});
       sections.forEach(section=>{if(!loadedNews.has(section))newsObserver.observe(section);});

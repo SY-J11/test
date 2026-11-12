@@ -159,6 +159,18 @@
       return `<section class="person-news global-news-card wall-street-news-card" data-query="${esc(term)}" data-source="${source}"><div class="person-news-head"><b class="provider-brand"><img src="https://www.google.com/s2/favicons?domain=${domain}&sz=64" alt="" loading="lazy">${provider}</b><span class="person-news-actions"><a class="person-news-search-link" href="${href}" target="_blank" rel="noopener noreferrer">전체 기사 보기 ↗</a><span>최신순</span></span></div><div class="person-news-list"><div class="person-news-state">화면에 표시되면 최신 기사를 불러옵니다.</div></div><button class="person-news-more" data-news-more disabled type="button">기사 10개 더 보기</button></section>`;
     }
 
+    function setupTermToggle(termElement) {
+      if (!termElement || termElement.dataset.toggleReady === 'true') return;
+      const title = termElement.querySelector('.wall-street-term-heading > div');
+      if (!title) return;
+      title.classList.add('wall-street-term-toggle');
+      title.setAttribute('role', 'button');
+      title.setAttribute('tabindex', '0');
+      title.setAttribute('aria-expanded', termElement.classList.contains('is-expanded') ? 'true' : 'false');
+      title.setAttribute('aria-label', `${termElement.dataset.term || title.querySelector('h3')?.textContent || '검색어'} 검색 결과 펼치기`);
+      termElement.dataset.toggleReady = 'true';
+    }
+
     function make(item) {
       const host = getGroupHost(item.groupKey);
       if (!host || panel.querySelector(`[data-term-id="${CSS.escape(item.id)}"]`)) return null;
@@ -173,6 +185,7 @@
       el.innerHTML = `<div class="wall-street-term-heading"><div><h3>${esc(item.term)}</h3><p class="wall-street-meaning">${esc(meaning)} · Google News, Goldman Sachs, Morgan Stanley 검색 결과</p></div><button class="wall-street-delete-term" type="button" data-delete-wall-term="${esc(item.id)}">삭제</button></div><div class="wall-street-provider-grid">${makeCard(item.term, 'Google', 'global')}${makeCard(item.term, 'Goldman Sachs', 'official-goldman')}${makeCard(item.term, 'Morgan Stanley', 'official-morgan')}</div>`;
       if (host.classList.contains('wall-street-terms')) host.appendChild(el);
       else host.appendChild(el);
+      setupTermToggle(el);
       addTocLink(item);
       return el;
     }
@@ -214,6 +227,7 @@
           if (element && getGroupHost(groupKey)) {
             element.dataset.category = groupKey;
             getGroupHost(groupKey).appendChild(element);
+            setupTermToggle(element);
             addTocLink({ id: restored.id, term: restored.term, groupKey });
           } else {
             const itemToRestore = { id: restored.id, term: restored.term, meaning: restored.meaning || '', groupKey };
@@ -344,6 +358,46 @@
       save();
       syncCustomToc();
       renderDeleted();
+    });
+
+    // 검색 결과는 사용자가 검색어를 펼쳤을 때만 요청합니다.
+    panel.querySelectorAll('.wall-street-term').forEach(setupTermToggle);
+
+    function toggleTerm(termElement, forceOpen = null) {
+      if (!termElement) return;
+      const open = forceOpen === null ? !termElement.classList.contains('is-expanded') : !!forceOpen;
+      termElement.classList.toggle('is-expanded', open);
+      const title = termElement.querySelector('.wall-street-term-heading > div');
+      if (title) {
+        title.setAttribute('aria-expanded', String(open));
+        title.setAttribute('aria-label', `${termElement.dataset.term || title.querySelector('h3')?.textContent || '검색어'} 검색 결과 ${open ? '접기' : '펼치기'}`);
+      }
+      if (open && window.refreshPersonNewsObserver) window.refreshPersonNewsObserver();
+    }
+
+    panel.addEventListener('click', event => {
+      const tocLink = event.target.closest('.ws-keyword-link');
+      if (tocLink && panel.contains(tocLink)) {
+        const targetId = decodeURIComponent((tocLink.getAttribute('href') || '').replace(/^#/, ''));
+        const target = targetId ? document.getElementById(targetId) : null;
+        if (target && panel.contains(target)) {
+          event.preventDefault();
+          toggleTerm(target, true);
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        return;
+      }
+      const title = event.target.closest('.wall-street-term-heading > div.wall-street-term-toggle');
+      if (!title || !panel.contains(title)) return;
+      if (event.target.closest('a, button')) return;
+      toggleTerm(title.closest('.wall-street-term'));
+    });
+
+    panel.addEventListener('keydown', event => {
+      const title = event.target.closest('.wall-street-term-heading > div.wall-street-term-toggle');
+      if (!title || !panel.contains(title) || (event.key !== 'Enter' && event.key !== ' ')) return;
+      event.preventDefault();
+      toggleTerm(title.closest('.wall-street-term'));
     });
 
     // Keep the initial custom-keyword placeholder visible until the first custom term is added.
