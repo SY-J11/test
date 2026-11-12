@@ -611,19 +611,11 @@ $("themeBtn").addEventListener("click", () => {
       const state=document.createElement('div');state.className='person-news-state';state.textContent='최근 기사를 찾지 못했습니다.';list.appendChild(state);
     }
     if(more){
-      if(newsExpanded.has(section)){
-        more.hidden=false;
-        more.disabled=false;
-        more.textContent='전체 기사 검색';
-        more.setAttribute('data-news-all', '');
-      } else {
-        more.removeAttribute('data-news-all');
-        const exhausted = newsHasMore.get(section) === false && visible.length >= items.length;
-        more.hidden=false;
-        more.disabled=loadingNews.has(section)||!loadedNews.has(section);
-        more.textContent=exhausted ? '전체 기사 검색' : '기사 10개 더 보기';
-        if(exhausted) more.setAttribute('data-news-all', '');
-      }
+      const hasHiddenItems=visible.length<items.length;
+      const canFetchMore=newsHasMore.get(section)!==false;
+      more.hidden=!hasHiddenItems&&!canFetchMore&&loadedNews.has(section);
+      more.disabled=loadingNews.has(section)||!loadedNews.has(section)||(!hasHiddenItems&&!canFetchMore);
+      more.textContent='기사 10개 더 보기';
     }
   }
 
@@ -639,11 +631,11 @@ $("themeBtn").addEventListener("click", () => {
     let requestSucceeded=false;
     try{
       const source=section.dataset.source||'global';
-      const url='https://macro.mcraft-tiger-574.workers.dev/api/person-news?q='+encodeURIComponent(section.dataset.query)+'&source='+encodeURIComponent(source)+'&limit=10&offset='+offset+'&_ts='+Date.now();
+      const url='https://macro.mcraft-tiger-574.workers.dev/api/person-news?q='+encodeURIComponent(section.dataset.query)+'&source='+encodeURIComponent(source)+'&limit=10&offset='+offset;
       const controller=new AbortController();
-      const timeout=setTimeout(()=>controller.abort(),30000);
+      const timeout=setTimeout(()=>controller.abort(),12000);
       let response;
-      try { response=await fetch(url,{signal:controller.signal,headers:{'Accept':'application/json'},cache:'no-store'}); }
+      try { response=await fetch(url,{signal:controller.signal,headers:{'Accept':'application/json'},cache:'force-cache'}); }
       finally { clearTimeout(timeout); }
       const data=await response.json();
       if(!response.ok) throw new Error(data.error||('뉴스 서버 응답 오류 (HTTP '+response.status+')'));
@@ -685,12 +677,6 @@ $("themeBtn").addEventListener("click", () => {
         if(more) more.disabled=!loadedNews.has(section);
       }
     }
-    // 모바일 네트워크/피드 응답에서 첫 페이지가 1~2건만 반환되면
-    // 다음 offset을 이어 조회해 최초 노출 3건을 채운다.
-    const currentItems = newsItems.get(section) || [];
-    if (requestSucceeded && offset === 0 && currentItems.length < 3 && newsHasMore.get(section) !== false) {
-      await loadNews(section);
-    }
   }
 
   let newsObserver=null;
@@ -713,42 +699,14 @@ $("themeBtn").addEventListener("click", () => {
       if (!button) return;
       const section = button.closest('.person-news');
       if (!section || loadingNews.has(section) || !loadedNews.has(section)) return;
-      if (newsExpanded.has(section) || button.hasAttribute('data-news-all')) {
-        const source=section.dataset.source||'global';
-        const query=section.dataset.query||'';
-        let href;
-        if(source==='official-goldman') href='https://www.goldmansachs.com/search?query='+encodeURIComponent(query);
-        else if(source==='official-morgan') href='https://www.morganstanley.com/search?text='+encodeURIComponent(query);
-        else if(source==='naver') href='https://search.naver.com/search.naver?where=news&query='+encodeURIComponent(query)+'&sort=1';
-        else href='https://news.google.com/search?q='+encodeURIComponent(query)+'&hl=en-US&gl=US&ceid=US%3Aen';
-        window.open(href, '_blank', 'noopener,noreferrer');
-        return;
-      }
       const currentVisible = newsVisibleCounts.get(section) || 3;
       const targetVisible = currentVisible + 10;
+      newsVisibleCounts.set(section, targetVisible);
       const items = newsItems.get(section) || [];
-      // 확보된 기사가 부족하면 다음 offset을 먼저 가져온 뒤 펼친다.
-      // 요청 중 중복 클릭을 막고, 새 기사가 도착하면 최대 10개를 추가 노출한다.
       if (items.length < targetVisible && newsHasMore.get(section) !== false) {
-        newsVisibleCounts.set(section, targetVisible);
-        (async () => {
-          // 한 번의 응답이 10개 미만이어도 목표 노출 수(기본 3개 + 10개)에
-          // 도달하거나 서버가 더 이상 결과가 없다고 할 때까지 다음 페이지를 이어 받습니다.
-          while ((newsItems.get(section) || []).length < targetVisible &&
-                 newsHasMore.get(section) !== false &&
-                 !loadingNews.has(section)) {
-            const before = (newsItems.get(section) || []).length;
-            await loadNews(section);
-            const after = (newsItems.get(section) || []).length;
-            if (after <= before) break;
-          }
-          newsVisibleCounts.set(section, Math.min(targetVisible, (newsItems.get(section) || []).length));
-          if (newsHasMore.get(section) === false && (newsItems.get(section) || []).length <= (newsVisibleCounts.get(section) || 3)) newsExpanded.add(section);
-          renderNewsItems(section);
-        })();
+        renderNewsItems(section);
+        loadNews(section);
       } else {
-        newsVisibleCounts.set(section, Math.min(targetVisible, items.length));
-        if (newsHasMore.get(section) === false && items.length <= targetVisible) newsExpanded.add(section);
         renderNewsItems(section);
       }
     });
