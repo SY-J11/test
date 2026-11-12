@@ -201,7 +201,7 @@
       deletedBox.replaceChildren();
       if (!deleted.length) {
         const p = document.createElement('p');
-        p.className = 'person-news-state';
+        p.className = 'wall-street-deleted-empty';
         p.textContent = '삭제한 검색어가 없습니다.';
         deletedBox.appendChild(p);
         return;

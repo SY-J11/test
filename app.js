@@ -487,7 +487,7 @@ $("themeBtn").addEventListener("click", () => {
       const deadline = Number(item.deletedAt) + 30*86400000;
       const days = Math.max(0, Math.ceil((deadline-now())/86400000));
       return `<div class="deleted-person-row"><div class="deleted-person-info"><b>${esc(item.person.name)}</b><small>삭제: ${fmtDate(item.deletedAt)} · 자동 영구 삭제: ${fmtDate(deadline)} · 남은 기간 ${days}일</small></div><div class="deleted-person-actions"><button type="button" data-restore="${i}">복구</button><button type="button" class="permanent" data-permanent="${i}">영구 삭제</button></div></div>`;
-    }).join("") : '<p class="deleted-empty">복구할 인물이 없습니다.</p>';
+    }).join("") : '<p class="deleted-empty">삭제한 인물이 없습니다.</p>';
     restoreRoot.querySelectorAll('[data-restore]').forEach(btn => btn.addEventListener('click', () => {
       const item = deletedPeople[Number(btn.dataset.restore)]; if (!item) return;
       if (people.some(p => p.name === item.person.name)) { alert("이미 목록에 있는 인물입니다."); return; }
